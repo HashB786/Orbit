@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { motion } from 'framer-motion';
-import { Rocket, Gamepad2, Trophy, Play } from 'lucide-react';
+import { Rocket, Gamepad2, Play, Grid as GridIcon } from 'lucide-react';
 import OrbitBird from '../components/games/flight/OrbitBird';
+import GridBattle from '../components/games/grid/GridBattle';
 
 const Games = () => {
     const { t } = useLanguage();
@@ -14,8 +15,16 @@ const Games = () => {
             title: 'Orbit Bird',
             description: 'Navigate through the asteroid belt! A 3D infinite runner.',
             icon: Rocket,
-            color: 'from-orange-400 to-rose-500',
+            color: 'from-indigo-400 to-purple-500',
             component: OrbitBird
+        },
+        {
+            id: 'grid-battle',
+            title: 'Grid Battle',
+            description: 'The ultimate classroom quiz showdown! Teams, bombs, and glory.',
+            icon: GridIcon, // Need to import GridIcon
+            color: 'from-blue-600 to-indigo-600',
+            component: GridBattle // Need to import GridBattle
         }
     ];
 

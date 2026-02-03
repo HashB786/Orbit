@@ -1,283 +1,224 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Stars, Trail, PerspectiveCamera, Sparkles, Float, Text3D, Center, Environment } from '@react-three/drei';
+import { Stars, Trail, PerspectiveCamera, Sparkles, Float, Environment, Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { Play, RotateCcw, Zap } from 'lucide-react';
+import { Play, RotateCcw, Zap, AlertTriangle } from 'lucide-react';
+import GameLoader from './GameLoader';
 
-// --- GAME CONFIG v3 ---
-const BASE_SPEED = 40;
-const SPEED_INC = 0.5; // Speed increase per second
-const GRAVITY = 1.8; // Heavier gravity
-const JUMP_FORCE = 18; // Stronger punch
-const TERMINAL_VELOCITY = -25;
-const OBSTACLE_SPAWN_DIST = 120;
-const OBSTACLE_GAP = 35; // More space between obstacles to react
+// --- GAME CONFIG v4 (HYPER) ---
+const CONFIG = {
+    BASE_SPEED: 50,
+    HYPER_SPEED: 180,
+    GRAVITY: 2.0,
+    JUMP_FORCE: 20,
+    SPEED_INC: 0.8,
+    TERMINAL_VELOC: -30,
+    OBSTACLE_SPAWN_DIST: 200,
+    OBSTACLE_GAP: 40,
+    FLUX_PER_ORB: 15,
+    FLUX_DRAIN: 25,
+};
 
 // --- HELPERS ---
 const randomRange = (min, max) => Math.random() * (max - min) + min;
 
-// --- COMPONENTS ---
-
-// 1. The Player Ship
-const Ship = ({ isPlaying, onCrash, setScore, gameSpeed }) => {
-    const shipRef = useRef();
-    const velocity = useRef(0);
-    const targetRotation = useRef(0);
-
-    useFrame((state, delta) => {
-        if (!shipRef.current) return;
-
-        // Idle Animation
-        if (!isPlaying) {
-            shipRef.current.position.y = Math.sin(state.clock.elapsedTime * 2) * 0.5;
-            shipRef.current.rotation.z = Math.sin(state.clock.elapsedTime) * 0.1;
-            shipRef.current.rotation.x = 0;
-            return;
-        }
-
-        const dt = Math.min(delta, 0.1);
-
-        // Physics: Acceleration
-        velocity.current -= GRAVITY * dt * 60;
-        if (velocity.current < TERMINAL_VELOCITY) velocity.current = TERMINAL_VELOCITY;
-
-        // Apply velocity
-        shipRef.current.position.y += velocity.current * dt;
-
-        // Dynamic Tilt (Banking)
-        // Nose dives when falling, pitches up when climbing
-        const targetPitch = -velocity.current * 0.03;
-        shipRef.current.rotation.x = THREE.MathUtils.lerp(shipRef.current.rotation.x, targetPitch, 0.1);
-
-        // Camera Shake effect based on speed could go here, but let's keep camera steady for gameplay clarity.
-
-        // Floor/Ceiling Bounds
-        if (shipRef.current.position.y < -14 || shipRef.current.position.y > 14) {
-            onCrash();
-        }
-    });
-
-    useEffect(() => {
-        const jump = (e) => {
-            if (!isPlaying) return;
-            if (e.code === 'Space' || e.type === 'pointerdown') {
-                velocity.current = JUMP_FORCE;
-                // Add a small forward kick effect or particle burst here?
-            }
-        };
-        window.addEventListener('keydown', jump);
-        window.addEventListener('pointerdown', jump);
-        return () => {
-            window.removeEventListener('keydown', jump);
-            window.removeEventListener('pointerdown', jump);
-        };
-    }, [isPlaying]);
-
+// 1. The Player Ship (Visual Only - Controlled by GameWorld)
+const Ship = React.forwardRef(({ isHyper }, ref) => {
     return (
-        <group ref={shipRef} position={[0, 0, 0]}>
-            <Trail width={3} length={8} color="#00ffff" attenuation={(t) => t * t}>
+        <group ref={ref}>
+            <Trail width={isHyper ? 8 : 3} length={isHyper ? 20 : 8} color={isHyper ? "#ff00ff" : "#00ffff"} attenuation={(t) => t * t}>
                 <group rotation={[0, Math.PI, 0]}>
-                    {/* Fuselage */}
                     <mesh castShadow receiveShadow>
                         <coneGeometry args={[0.7, 3, 6]} />
-                        <meshStandardMaterial color="#3b82f6" roughness={0.3} metalness={0.8} />
+                        <meshStandardMaterial color={isHyper ? "#d946ef" : "#3b82f6"} roughness={0.3} metalness={0.8} />
                     </mesh>
-                    {/* Cockpit */}
                     <mesh position={[0, 0.5, 0.5]}>
                         <boxGeometry args={[0.6, 1.2, 0.8]} />
-                        <meshStandardMaterial color="#60a5fa" emissive="#3b82f6" emissiveIntensity={0.5} />
+                        <meshStandardMaterial color={isHyper ? "#f0abfc" : "#60a5fa"} emissive={isHyper ? "#d946ef" : "#3b82f6"} emissiveIntensity={0.5} />
                     </mesh>
-                    {/* Wings */}
-                    <mesh position={[0, -0.5, 0]}>
-                        <boxGeometry args={[3, 0.2, 1.5]} />
-                        <meshStandardMaterial color="#1e40af" metalness={0.8} />
-                    </mesh>
-                    {/* Engines */}
-                    <mesh position={[1, -0.5, 1]}>
-                        <cylinderGeometry args={[0.3, 0.4, 2]} />
-                        <meshStandardMaterial color="#333" />
-                    </mesh>
-                    <mesh position={[-1, -0.5, 1]}>
-                        <cylinderGeometry args={[0.3, 0.4, 2]} />
-                        <meshStandardMaterial color="#333" />
-                    </mesh>
-                    {/* Engine Glows */}
-                    <pointLight position={[1, -0.5, 2]} color="cyan" distance={3} intensity={5} />
-                    <pointLight position={[-1, -0.5, 2]} color="cyan" distance={3} intensity={5} />
+                    <pointLight position={[0, 0, 2]} color={isHyper ? "magenta" : "cyan"} distance={5} intensity={5} />
                 </group>
             </Trail>
         </group>
     );
-};
+});
 
-// 2. Obstacles (Asteroids & Structures)
-const Obstacle = ({ position, type, rotSpeed }) => {
+// 2. Advanced Obstacles & Collectibles
+const Entity = ({ z, type, y, rotSpeed, isHyper }) => {
     const meshRef = useRef();
 
+    // Animate rotation (Visual only, safe for useFrame)
     useFrame((state, delta) => {
-        if (meshRef.current) {
+        if (!meshRef.current) return;
+
+        if (type === 'orb') {
+            meshRef.current.position.y = y + Math.sin(state.clock.elapsedTime * 5) * 0.5;
+            meshRef.current.rotation.y += delta * 2;
+        } else {
             meshRef.current.rotation.x += rotSpeed * delta;
             meshRef.current.rotation.y += rotSpeed * delta;
         }
     });
 
     return (
-        <group position={position}>
-            {/* Hitbox Visualization (Debug only, disabled for prod) */}
+        <group position={[0, y, z]}>
+            {/* Energy Orb */}
+            {type === 'orb' && (
+                <group ref={meshRef}>
+                    <mesh>
+                        <octahedronGeometry args={[0.8, 0]} />
+                        <meshStandardMaterial color="#facc15" emissive="#facc15" emissiveIntensity={3} />
+                    </mesh>
+                    <pointLight color="yellow" distance={8} intensity={2} />
+                    <Sparkles count={5} scale={3} size={2} color="yellow" />
+                </group>
+            )}
 
+            {/* Asteroid */}
             {type === 'asteroid' && (
                 <Float speed={2} rotationIntensity={1} floatIntensity={1}>
-                    <mesh ref={meshRef} castShadow receiveShadow>
+                    <mesh ref={meshRef} castShadow receiveShadow scale={isHyper ? 0 : 1}>
                         <dodecahedronGeometry args={[2.5, 0]} />
                         <meshStandardMaterial color="#78350f" roughness={0.8} />
                     </mesh>
-                    {/* Glow Core */}
-                    <mesh scale={[0.8, 0.8, 0.8]}>
-                        <dodecahedronGeometry args={[2.5, 0]} />
-                        <meshBasicMaterial color="#ef4444" wireframe />
-                    </mesh>
+                    {/* Hyper Mode Ghost Visual */}
+                    {isHyper && (
+                        <mesh ref={meshRef} scale={0.9}>
+                            <dodecahedronGeometry args={[2.5, 0]} />
+                            <meshBasicMaterial color="#ef4444" wireframe transparent opacity={0.2} />
+                        </mesh>
+                    )}
                 </Float>
             )}
 
-            {type === 'bar' && (
-                <mesh castShadow receiveShadow>
-                    <boxGeometry args={[12, 1.5, 1.5]} />
-                    <meshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={2} toneMapped={false} />
-                </mesh>
-            )}
-
-            {type === 'ring' && (
-                <group rotation={[0, 0, Math.PI / 4]}>
-                    <mesh castShadow>
-                        <torusGeometry args={[5, 0.5, 8, 20]} />
-                        <meshStandardMaterial color="#d946ef" emissive="#d946ef" emissiveIntensity={3} toneMapped={false} />
+            {/* Scanning Gate */}
+            {type === 'gate' && (
+                <group rotation={[0, 0, Math.PI / 2]}>
+                    <mesh ref={meshRef}>
+                        <boxGeometry args={[16, 1, 1]} />
+                        <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={2} />
                     </mesh>
                 </group>
+            )}
+
+            {/* Mines */}
+            {type === 'mine' && (
+                <Float speed={4} floatIntensity={2}>
+                    <mesh ref={meshRef}>
+                        <icosahedronGeometry args={[1.2, 0]} />
+                        <meshStandardMaterial color="#333" roughness={0.2} metalness={1} />
+                    </mesh>
+                    <pointLight color="red" distance={3} intensity={5} animate={{ intensity: [0, 5, 0] }} />
+                </Float>
             )}
         </group>
     );
 };
 
-// 3. The World Engine
-function GameLoop({ isPlaying, setGameState, setScore }) {
+// 3. Combined Game World + Logic Component
+const GameWorld = ({ gameState, setGameState, setScore, setFlux, flux, isHyper, setIsHyper }) => {
+    const shipRef = useRef();
     const shipY = useRef(0);
     const velocity = useRef(0);
-    const speedRef = useRef(BASE_SPEED);
-    const obstaclesRef = useRef([]); // { id, z, type, y, passed }
-    const [renderObstacles, setRenderObstacles] = useState([]);
-    const scoreRef = useRef(0);
+    const speedRef = useRef(CONFIG.BASE_SPEED);
+    const entitiesRef = useRef([]);
+    const [entities, setEntities] = useState([]); // This update is throttleable/ok
 
+    // Main Loop
     useFrame((state, delta) => {
-        if (!isPlaying) {
-            // Bobbing logic for idle state
-            shipY.current = Math.sin(state.clock.elapsedTime * 3) * 0.5;
+        if (gameState !== 'playing') {
+            // Idle visual
+            if (shipRef.current) {
+                shipRef.current.position.y = Math.sin(state.clock.elapsedTime * 2) * 0.5;
+                shipRef.current.rotation.x = 0;
+            }
             return;
         }
 
         const dt = Math.min(delta, 0.1);
 
-        // --- SPEED SCALING ---
-        // Increase speed slowly over time
-        speedRef.current += SPEED_INC * dt;
-
-        // --- PHYSICS ---
-        velocity.current -= GRAVITY * 60 * dt;
-        if (velocity.current < TERMINAL_VELOCITY) velocity.current = TERMINAL_VELOCITY;
-
-        shipY.current += velocity.current * dt;
-
-        // Bounds Check
-        if (shipY.current < -13 || shipY.current > 13) {
-            setGameState('gameover');
-        }
-
-        // --- OBSTACLE ENGINE ---
-        const moveDist = speedRef.current * dt;
-
-        // 1. Move
-        obstaclesRef.current.forEach(o => {
-            o.z += moveDist;
-        });
-
-        // 2. Spawn
-        const lastOb = obstaclesRef.current[obstaclesRef.current.length - 1];
-        // Ensure obstacles span far into the distance
-        if (!lastOb || lastOb.z > -OBSTACLE_SPAWN_DIST) {
-            const z = lastOb ? lastOb.z - OBSTACLE_GAP : -40;
-
-            // Difficulty Progression
-            const difficulty = Math.min(1.0, scoreRef.current / 100); // 0 to 1 scaling
-
-            const types = ['asteroid', 'bar', 'ring'];
-            // As difficulty increases, use more bars/rings vs asteroids?
-            // Random selection for now
-            const type = types[Math.floor(Math.random() * types.length)];
-
-            let y = 0;
-            if (type === 'asteroid') y = randomRange(-8, 8);
-            if (type === 'bar') y = randomRange(-7, 7);
-            if (type === 'ring') y = randomRange(-5, 5);
-
-            obstaclesRef.current.push({
-                id: Math.random(),
-                z: z,
-                type,
-                y,
-                rotSpeed: randomRange(0.5, 2),
-                passed: false
+        // --- UPDATE PHYSICS ---
+        if (isHyper) {
+            speedRef.current = THREE.MathUtils.lerp(speedRef.current, CONFIG.HYPER_SPEED, dt * 2);
+            setFlux(prev => {
+                const next = prev - CONFIG.FLUX_DRAIN * dt;
+                if (next <= 0) { setIsHyper(false); return 0; }
+                return next;
             });
+            velocity.current = THREE.MathUtils.lerp(velocity.current, 0, dt * 5);
+            shipY.current = THREE.MathUtils.lerp(shipY.current, 0, dt * 5);
+        } else {
+            speedRef.current += CONFIG.SPEED_INC * dt;
+            velocity.current -= CONFIG.GRAVITY * 60 * dt;
+            if (velocity.current < CONFIG.TERMINAL_VELOC) velocity.current = CONFIG.TERMINAL_VELOC;
+            shipY.current += velocity.current * dt;
         }
 
-        // 3. Cleanup
-        if (obstaclesRef.current[0] && obstaclesRef.current[0].z > 15) {
-            obstaclesRef.current.shift();
+        // Bounds
+        if (shipY.current < -14 || shipY.current > 14) {
+            if (!isHyper) setGameState('gameover');
         }
 
-        // 4. Collision Detection (Simple AABB / Radius)
-        // Ship is approx 2 units tall, 1 unit wide.
-        obstaclesRef.current.forEach(o => {
-            // Only check if close in Z
-            if (o.z > -2 && o.z < 2) {
-                const dy = Math.abs(shipY.current - o.y);
+        // --- UPDATE VISUALS DIRECTLY (NO STATE LIFTING) ---
+        if (shipRef.current) {
+            shipRef.current.position.y = shipY.current;
+            const targetPitch = -velocity.current * (isHyper ? 0.005 : 0.03);
+            shipRef.current.rotation.x = THREE.MathUtils.lerp(shipRef.current.rotation.x, targetPitch, 0.1);
+            if (isHyper) shipRef.current.rotation.z += dt * 10;
+            else shipRef.current.rotation.z = THREE.MathUtils.lerp(shipRef.current.rotation.z, 0, 0.1);
+        }
 
-                if (o.type === 'asteroid') {
-                    // Radius ~2.5
-                    if (dy < 3.0) setGameState('gameover');
-                } else if (o.type === 'bar') {
-                    // Bar Width 12, Height 1.5. Center Y. 
-                    // Ship is X=0. Bar is X=0.
-                    // Hit if Y align.
-                    if (dy < 1.8) setGameState('gameover');
-                } else if (o.type === 'ring') {
-                    // Torus Radius 5. Inner Radius ~4.5.
-                    // Must be inside the hole.
-                    // Hole = > 4.5 is HIT.
-                    // Wait, Torus geometry: Radius 5 is center of tube. Tube radius 0.5.
-                    // So outer radius 5.5, inner radius 4.5.
-                    // If Ship > 4.0 away from center, CRASH (hit rim).
-                    if (dy > 3.5) setGameState('gameover');
+        // --- UPDATE ENTITIES ---
+        const moveDist = speedRef.current * dt;
+        entitiesRef.current.forEach(e => e.z += moveDist);
+
+        // Spawn Logic
+        const last = entitiesRef.current[entitiesRef.current.length - 1];
+        if (!last || last.z > -CONFIG.OBSTACLE_SPAWN_DIST) {
+            const z = last ? last.z - CONFIG.OBSTACLE_GAP : -40;
+            const isOrb = Math.random() > 0.7;
+            if (isOrb) {
+                entitiesRef.current.push({ id: Math.random(), z, type: 'orb', y: randomRange(-8, 8), passed: false });
+            } else {
+                const types = ['asteroid', 'gate', 'mine'];
+                const type = types[Math.floor(Math.random() * types.length)];
+                entitiesRef.current.push({ id: Math.random(), z, type, y: type === 'gate' ? 0 : randomRange(-8, 8), rotSpeed: randomRange(0.5, 3), passed: false });
+            }
+        }
+        if (entitiesRef.current[0] && entitiesRef.current[0].z > 20) entitiesRef.current.shift();
+
+        // Collision Check
+        entitiesRef.current.forEach(e => {
+            if (e.collected || e.passed) return;
+            if (e.z > -2 && e.z < 2) {
+                const dy = Math.abs(shipY.current - e.y);
+                if (e.type === 'orb') {
+                    if (dy < 3) {
+                        e.collected = true;
+                        setFlux(f => Math.min(100, f + CONFIG.FLUX_PER_ORB));
+                        setScore(s => s + 50);
+                    }
+                } else if (!isHyper) {
+                    if ((e.type === 'asteroid' && dy < 3) || (e.type === 'mine' && dy < 2) || (e.type === 'gate' && dy < 2)) {
+                        setGameState('gameover');
+                    }
                 }
             }
-
-            // Score Point at passing Z=0
-            if (o.z > 0 && !o.passed) {
-                o.passed = true;
-                scoreRef.current += 1;
-                setScore(scoreRef.current);
+            if (e.z > 5 && !e.passed && !e.collected) {
+                e.passed = true;
+                setScore(s => s + (isHyper ? 5 : 1));
             }
         });
 
-        // Sync React State for Rendering
-        setRenderObstacles([...obstaclesRef.current]);
+        // Loop array
+        setEntities([...entitiesRef.current]);
     });
 
-    // Inputs
+    // Input
     useEffect(() => {
         const jump = (e) => {
-            if (!isPlaying) return;
-            if (e.code === 'Space' || e.type === 'pointerdown') {
-                velocity.current = JUMP_FORCE;
-            }
+            if (gameState !== 'playing' || isHyper) return;
+            if (e.code === 'Space' || e.type === 'pointerdown') velocity.current = CONFIG.JUMP_FORCE;
         };
         window.addEventListener('keydown', jump);
         window.addEventListener('pointerdown', jump);
@@ -285,158 +226,123 @@ function GameLoop({ isPlaying, setGameState, setScore }) {
             window.removeEventListener('keydown', jump);
             window.removeEventListener('pointerdown', jump);
         };
-    }, [isPlaying]);
+    }, [gameState, isHyper]);
 
+    // Reset
     useEffect(() => {
-        if (!isPlaying) {
-            shipY.current = 0;
-            velocity.current = 0;
-            speedRef.current = BASE_SPEED;
-            obstaclesRef.current = [];
-            scoreRef.current = 0;
-            setScore(0);
-            setRenderObstacles([]);
+        if (gameState !== 'playing') {
+            shipY.current = 0; velocity.current = 0; speedRef.current = CONFIG.BASE_SPEED; entitiesRef.current = [];
         }
-    }, [isPlaying]);
+    }, [gameState]);
 
     return (
         <group>
-            {/* Player & Camera Group */}
-            <group position={[0, 0, 0]}>
-                <Ship isPlaying={isPlaying} onCrash={() => setGameState('gameover')} setScore={setScore} gameSpeed={speedRef.current} />
+            {/* Player Visual (Controlled by Ref in local Loop) */}
+            <Ship ref={shipRef} isHyper={isHyper} />
 
-                {/* Visual Ship Model at Ref Position */}
-                <group position={[0, shipY.current, 0]}>
-                    <ShipVisual velocity={velocity.current} />
-                </group>
-            </group>
-
-            {/* Obstacles */}
-            {renderObstacles.map(o => (
-                <Obstacle key={o.id} position={[0, o.y, o.z]} type={o.type} rotSpeed={o.rotSpeed} />
+            {/* Entities */}
+            {entities.map(e => (
+                !e.collected && <Entity key={e.id} z={e.z} y={e.y} type={e.type} rotSpeed={e.rotSpeed} isHyper={isHyper} />
             ))}
         </group>
     );
-}
-
-// Visual Wrapper to allow accessing 'velocity' prop inside useFrame via the main Loop ref
-// Actually, I can just pass the props to Ship component and let it handle visuals.
-// Simplified: ShipVisual component used inside GameLoop
-const ShipVisual = ({ velocity }) => {
-    const meshRef = useRef();
-    useFrame(() => {
-        if (meshRef.current) {
-            // Smooth tilt
-            const targetRot = -velocity * 0.05;
-            meshRef.current.rotation.x = THREE.MathUtils.lerp(meshRef.current.rotation.x, targetRot, 0.1);
-            meshRef.current.rotation.z = THREE.MathUtils.lerp(meshRef.current.rotation.z, targetRot * 0.5, 0.1);
-        }
-    });
-
-    return (
-        <group ref={meshRef}>
-            <mesh castShadow receiveShadow rotation={[0, Math.PI, 0]}>
-                <group rotation={[Math.PI / 2, 0, 0]}>
-                    <coneGeometry args={[0.5, 2, 8]} />
-                    <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={0.5} toneMapped={false} />
-                </group>
-            </mesh>
-            <Trail width={4} length={12} color="#00ffff" attenuation={(t) => t * t} />
-            <pointLight distance={10} intensity={2} color="cyan" />
-        </group>
-    );
 };
-
 
 // --- MAIN DEFAULT EXPORT ---
 const OrbitBird = () => {
     const [gameState, setGameState] = useState('ready');
     const [score, setScore] = useState(0);
+    const [flux, setFlux] = useState(0); // 0-100
+    const [isHyper, setIsHyper] = useState(false);
+
+    // Hyper Trigger
+    useEffect(() => {
+        const trigger = (e) => {
+            if (e.key === 'Shift') {
+                if (flux >= 100 && gameState === 'playing') setIsHyper(true);
+            }
+        };
+        window.addEventListener('keydown', trigger);
+        return () => window.removeEventListener('keydown', trigger);
+    }, [flux, gameState]);
 
     return (
-        <div className="w-full h-full relative bg-gray-950 font-sans selection:bg-none overflow-hidden">
-            <Canvas shadows>
-                {/* Camera: Slightly Angled side/rear view for depth perception */}
-                <PerspectiveCamera makeDefault position={[18, 5, 22]} fov={40} onUpdate={c => c.lookAt(0, 0, 0)} />
+        <div className="w-full h-full relative bg-gray-950 font-sans overflow-hidden">
+            <Suspense fallback={<GameLoader />}>
+                <Canvas shadows>
+                    <PerspectiveCamera makeDefault position={[18, 5, 22]} fov={isHyper ? 60 : 40} onUpdate={c => c.lookAt(0, 0, 0)} />
+                    <Environment preset="city" />
+                    <Stars radius={150} depth={50} count={5000} factor={6} fade speed={isHyper ? 10 : 2} />
+                    <fog attach="fog" args={['#050510', 20, isHyper ? 200 : 120]} />
 
-                {/* Environment */}
-                <Environment preset="city" />
-                <Stars radius={150} depth={50} count={5000} factor={6} fade speed={3} />
-                <fog attach="fog" args={['#050510', 20, 120]} />
+                    {isHyper && <Sparkles count={500} scale={[50, 50, 200]} size={10} speed={10} opacity={0.8} color="magenta" />}
+                    {!isHyper && <Sparkles count={200} scale={[20, 20, 100]} size={6} speed={2} opacity={0.5} color="#4fd1c5" />}
 
-                {/* Speed Lines (Sparkles) */}
-                <Sparkles count={200} scale={[20, 20, 100]} size={6} speed={gameState === 'playing' ? 2 : 0.2} opacity={0.5} color="#4fd1c5" />
+                    <ambientLight intensity={0.2} />
+                    <pointLight position={[10, 10, 10]} intensity={1} castShadow />
 
-                {/* Lighting */}
-                <ambientLight intensity={0.2} />
-                <pointLight position={[10, 10, 10]} intensity={1} castShadow />
-                <spotLight position={[-20, 20, 20]} angle={0.3} penumbra={1} intensity={2} castShadow color="purple" />
+                    {/* GAME WORLD + LOGIC + RENDERER */}
+                    <GameWorld
+                        gameState={gameState}
+                        setGameState={setGameState}
+                        setScore={setScore}
+                        setFlux={setFlux}
+                        flux={flux}
+                        isHyper={isHyper}
+                        setIsHyper={setIsHyper}
+                    />
 
-                {/* Game World */}
-                <GameLoop isPlaying={gameState === 'playing'} setGameState={setGameState} setScore={setScore} />
-
-                {/* Helper Grid for Ground Ref */}
-                <group position={[0, -15, 0]}>
-                    <gridHelper args={[200, 20, '#333', '#111']} />
-                    {/* Fake Ground Reflection */}
-                    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
-                        <planeGeometry args={[200, 200]} />
-                        <meshStandardMaterial color="#000" roughness={0.1} metalness={0.8} opacity={0.8} transparent />
-                    </mesh>
-                </group>
-            </Canvas>
+                    <group position={[0, -15, 0]}>
+                        <gridHelper args={[200, 20, '#333', '#111']} />
+                    </group>
+                </Canvas>
+            </Suspense>
 
             {/* UI LAYER */}
-            <div className="absolute inset-0 pointer-events-none p-10 flex flex-col justify-between z-50">
-                <div className="flex justify-between items-start">
+            <div className="absolute inset-0 pointer-events-none p-8 flex flex-col justify-between z-50">
+                {/* HUD */}
+                <div className="flex justify-between items-start w-full">
                     <div>
-                        <h2 className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500 drop-shadow-xl font-mono italic">
-                            {score}
-                        </h2>
+                        <div className="text-cyan-400 font-mono text-xs mb-1">DISTANCE</div>
+                        <h2 className="text-6xl font-black text-white italic tracking-tighter">{Math.floor(score)}<span className="text-2xl not-italic text-gray-500">km</span></h2>
+                    </div>
+
+                    {/* Flux Meter */}
+                    <div className="flex flex-col items-end">
+                        <div className={`text-xs font-mono mb-1 ${flux >= 100 ? 'text-magenta-400 animate-pulse' : 'text-cyan-400'}`}>
+                            {flux >= 100 ? 'HYPER READY [SHIFT]' : 'FLUX CAPACITOR'}
+                        </div>
+                        <div className="w-64 h-4 bg-gray-900 rounded-full border border-gray-700 overflow-hidden">
+                            <div
+                                className={`h-full transition-all duration-300 ${flux >= 100 ? 'bg-fuchsia-500 shadow-[0_0_15px_#d946ef]' : 'bg-cyan-500'}`}
+                                style={{ width: `${Math.min(100, flux)}%` }}
+                            />
+                        </div>
                     </div>
                 </div>
 
+                {/* Menus */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-auto">
                     {gameState === 'ready' && (
-                        <div className="text-center animate-in fade-in zoom-in duration-500">
-                            <h1 className="text-8xl font-black text-white mb-2 tracking-tighter drop-shadow-[0_0_25px_rgba(0,255,255,0.5)]">
-                                ORBIT RUNNER
-                            </h1>
-                            <p className="text-cyan-400 mb-8 font-mono tracking-widest text-lg uppercase">
-                                Hyper-Velocity Interceptor
-                            </p>
-
+                        <div className="text-center">
+                            <h1 className="text-9xl font-black text-white mb-2 tracking-tighter italic">ORBIT<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-fuchsia-500">HYPER</span></h1>
                             <button
                                 onClick={() => setGameState('playing')}
-                                className="group relative px-12 py-5 bg-white text-black font-black text-2xl skew-x-[-10deg] hover:bg-cyan-400 transition-all hover:scale-110 shadow-[0_0_20px_rgba(255,255,255,0.5)]"
+                                className="px-16 py-6 bg-white text-black font-black text-3xl skew-x-[-10deg] hover:bg-cyan-400 hover:scale-105 transition-all shadow-[0_0_40px_rgba(6,182,212,0.6)]"
                             >
-                                <span className="block skew-x-[10deg] flex items-center gap-3">
-                                    <Play fill="currentColor" /> ENGAGE
-                                </span>
+                                ENGAGE
                             </button>
-                            <p className="text-gray-500 mt-8 font-mono text-sm">
-                                [SPACE] THRUST &bull; [GRAVITY] NORMAL
-                            </p>
                         </div>
                     )}
-
                     {gameState === 'gameover' && (
-                        <div className="bg-red-950/90 backdrop-blur-xl p-16 border-y-4 border-red-500 text-center animate-in slide-in-from-bottom duration-300 shadow-2xl">
-                            <h1 className="text-7xl font-black text-red-500 mb-2 drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]">WRECKED</h1>
-                            <div className="flex justify-center gap-12 my-8 border-t border-b border-red-800 py-6">
-                                <div>
-                                    <p className="text-red-400 font-mono text-sm">DISTANCE</p>
-                                    <p className="text-5xl font-bold text-white">{score}km</p>
-                                </div>
-                            </div>
-
+                        <div className="bg-black/90 p-12 border border-red-500 text-center">
+                            <h1 className="text-red-500 text-8xl font-black mb-4">CRITICAL FAILURE</h1>
+                            <div className="text-4xl text-white font-mono mb-8">SCORE: {Math.floor(score)}</div>
                             <button
-                                onClick={() => { setGameState('ready'); setScore(0); }}
-                                className="px-10 py-4 bg-red-600 text-white font-bold text-xl rounded-none hover:bg-red-500 transition-all mx-auto flex items-center gap-2 skew-x-[-10deg] shadow-[0_0_20px_rgba(220,38,38,0.6)]"
+                                onClick={() => { setGameState('ready'); setScore(0); setFlux(0); }}
+                                className="px-10 py-4 bg-red-600 text-white font-bold text-xl hover:bg-red-500"
                             >
-                                <span className="block skew-x-[10deg] flex items-center gap-2">
-                                    <RotateCcw size={24} /> SYSTEM RESET
-                                </span>
+                                SYSTEM REBOOT
                             </button>
                         </div>
                     )}

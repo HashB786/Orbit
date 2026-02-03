@@ -5,6 +5,7 @@ import { Clock, MapPin, CheckCircle2, ChevronDown, Plus, BookOpen, AlertCircle }
 import { useUser } from '../context/UserContext';
 import { useTask } from '../context/TaskContext';
 import timetableData from '../data/timetable.json';
+import AddHomeworkModal from '../components/timetable/AddHomeworkModal';
 
 const parseTime = (timeStr) => {
     if (!timeStr) return { start: 0, end: 0 };
@@ -33,7 +34,6 @@ const Timetable = () => {
     // Quick Add Task State
     const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
     const [selectedLesson, setSelectedLesson] = useState(null); // { subject: 'Math', ... }
-    const [quickTaskText, setQuickTaskText] = useState('');
 
     // Update session storage
     useEffect(() => {
@@ -60,20 +60,8 @@ const Timetable = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isGradeOpen]);
 
-    const handleQuickAdd = (e) => {
-        e.preventDefault();
-        if (!quickTaskText.trim()) return;
-
-        addTask({
-            text: quickTaskText,
-            subject: selectedLesson.subject,
-            category: 'school',
-            priority: 'medium',
-            dueDate: '', // Could default to next lesson date if we wanted to be fancy
-            notes: `Added from Timetable (${selectedLesson.day})`
-        });
-
-        setQuickTaskText('');
+    const handleAddHomework = (taskData) => {
+        addTask(taskData);
         setIsAddTaskOpen(false);
     };
 
@@ -83,8 +71,30 @@ const Timetable = () => {
     };
 
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const currentDayIndex = now.getDay();
+    const currentDayIndex = now.getDay(); // 0 = Sunday
     const currentDayName = DAYS[currentDayIndex];
+
+    // Check if a lesson has passed
+    const isLessonPassed = (dayName, timeSlot) => {
+        const dayIndex = DAYS.indexOf(dayName);
+        // 0=Sun, 1=Mon... 
+        // Timetable usually Mon-Fri. 
+        // If currentDay is Mon(1), and lesson is Tue(2) -> Future.
+        // If currentDay is Mon(1), and lesson is Sun(0) -> Passed. (Assuming week starts Sunday? Or Monday?)
+
+        // Let's assume standard week wrap-around is tricky. 
+        // Simpler: Compare indexes. If we treat Sunday as 0, Mon as 1. 
+        // If today is Wed(3). Mon(1) is passed. Tue(2) is passed.
+        // But what about next week? The view is "Weekly Schedule". 
+        // Usually implies "This Week".
+
+        if (dayIndex < currentDayIndex) return true; // Previous day in this week
+        if (dayIndex > currentDayIndex) return false; // Future day in this week
+
+        // Same day
+        const { end } = parseTime(timeSlot);
+        return end < currentMinutes;
+    };
 
     const gradeData = timetableData.grades[viewGrade];
     const classInfo = (gradeData && gradeData[viewColor]) ? gradeData[viewColor] : timetableData.grades['8']['green'];
@@ -139,50 +149,12 @@ const Timetable = () => {
 
     return (
         <div className="space-y-6 pb-20 relative">
-            {/* Quick Add Modal */}
-            <AnimatePresence>
-                {isAddTaskOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white dark:bg-dark-surface p-6 rounded-2xl shadow-xl w-full max-w-sm"
-                        >
-                            <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
-                                <BookOpen size={20} className="text-primary-500" />
-                                {selectedLesson?.subject} Homework
-                            </h3>
-                            <p className="text-sm text-gray-500 mb-4">Add a task for {selectedLesson?.day}</p>
-
-                            <form onSubmit={handleQuickAdd}>
-                                <input
-                                    autoFocus
-                                    value={quickTaskText}
-                                    onChange={e => setQuickTaskText(e.target.value)}
-                                    placeholder="What needs to be done?"
-                                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 mb-4 outline-none focus:ring-2 focus:ring-primary-500"
-                                />
-                                <div className="flex justify-end gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsAddTaskOpen(false)}
-                                        className="px-4 py-2 text-gray-500 font-medium"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="px-6 py-2 bg-primary-500 text-white rounded-xl font-bold hover:scale-105 transition-transform"
-                                    >
-                                        Add Task
-                                    </button>
-                                </div>
-                            </form>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+            <AddHomeworkModal
+                isOpen={isAddTaskOpen}
+                onClose={() => setIsAddTaskOpen(false)}
+                lesson={selectedLesson}
+                onAdd={handleAddHomework}
+            />
 
             {/* Warning Banner */}
             <AnimatePresence>
@@ -326,7 +298,11 @@ const Timetable = () => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: idx * 0.1 }}
-                            className={`rounded-2xl p-5 border transition-all hover:shadow-md ${isToday ? 'bg-primary-50/50 dark:bg-primary-900/10 border-primary-100 dark:border-primary-800' : 'glass-card'}`}
+                            className={`rounded-2xl p-5 border transition-all hover:shadow-md 
+                                ${isToday
+                                    ? 'bg-primary-50/50 dark:bg-primary-900/10 border-primary-100 dark:border-primary-800'
+                                    : 'glass-card'}
+                            `}
                         >
                             <h3 className={`font-bold mb-4 flex items-center justify-between ${isToday ? 'text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-200'}`}>
                                 {day}
@@ -337,9 +313,10 @@ const Timetable = () => {
                                 {schedule.map((lesson, i) => {
                                     const timeSlot = timetableData.time_slots[String(lesson.period)];
                                     const taskCount = getTaskCount(lesson.subject);
+                                    const isPassed = isLessonPassed(day, timeSlot);
 
                                     return (
-                                        <div key={i} className="flex gap-3 items-start group relative">
+                                        <div key={i} className={`flex gap-3 items-start group relative transition-opacity ${isPassed ? 'opacity-50 grayscale-[0.5]' : ''}`}>
                                             <div className="w-12 text-xs text-gray-400 font-mono pt-1 text-right shrink-0">
                                                 {timeSlot?.split(' - ')[0]}
                                             </div>
@@ -347,7 +324,10 @@ const Timetable = () => {
                                                 <div className="font-bold text-gray-800 dark:text-gray-200 text-sm group-hover:text-primary-500 transition-colors flex items-center gap-2">
                                                     {lesson.subject}
                                                     {taskCount > 0 && (
-                                                        <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 rounded-full flex items-center gap-0.5">
+                                                        <span className={`text-[10px] px-1.5 rounded-full flex items-center gap-0.5 ${isPassed
+                                                            ? 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                                                            : 'bg-amber-100 text-amber-700'
+                                                            }`}>
                                                             <AlertCircle size={8} /> {taskCount}
                                                         </span>
                                                     )}
@@ -358,7 +338,7 @@ const Timetable = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Quick Add Button on Hover */}
+                                            {/* Quick Add Button on Hover - Always available even if passed */}
                                             <button
                                                 onClick={() => openQuickAdd(lesson, day)}
                                                 className="absolute right-0 top-1 p-1.5 text-gray-300 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg opacity-0 group-hover:opacity-100 transition-all"

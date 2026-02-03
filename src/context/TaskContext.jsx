@@ -7,23 +7,14 @@ export const TaskProvider = ({ children }) => {
     // 1. Task State
     const [todos, setTodos] = useState(() => {
         const saved = localStorage.getItem('premium_todos');
-        const oldTodos = localStorage.getItem('todos');
-
         if (saved) return JSON.parse(saved);
-        if (oldTodos) {
-            // Migration support
-            const simple = JSON.parse(oldTodos);
-            return simple.map(t => ({
-                ...t,
-                priority: 'medium',
-                category: 'personal',
-                subtasks: [],
-                dueDate: null,
-                notes: '',
-                subject: '' // Linked subject from timetable
-            }));
-        }
         return [];
+    });
+
+    // 1.5 Trash State
+    const [trash, setTrash] = useState(() => {
+        const saved = localStorage.getItem('premium_trash');
+        return saved ? JSON.parse(saved) : [];
     });
 
     // 2. Categories State
@@ -42,6 +33,10 @@ export const TaskProvider = ({ children }) => {
     }, [todos]);
 
     useEffect(() => {
+        localStorage.setItem('premium_trash', JSON.stringify(trash));
+    }, [trash]);
+
+    useEffect(() => {
         localStorage.setItem('todo_categories', JSON.stringify(categories));
     }, [categories]);
 
@@ -56,6 +51,9 @@ export const TaskProvider = ({ children }) => {
             dueDate: null,
             notes: '',
             subject: '',
+            assignmentType: 'solo', // 'solo', 'team', 'both', 'unknown'
+            isOptional: 'unknown',  // 'must', 'optional', 'unknown'
+            createdAt: new Date().toISOString(),
             ...newTodo
         }, ...prev]);
     };
@@ -79,7 +77,29 @@ export const TaskProvider = ({ children }) => {
     };
 
     const deleteTask = (id) => {
-        setTodos(prev => prev.filter(t => t.id !== id));
+        // Soft delete: Move to trash
+        const taskToDelete = todos.find(t => t.id === id);
+        if (taskToDelete) {
+            setTrash(prev => [{ ...taskToDelete, deletedAt: new Date().toISOString() }, ...prev]);
+            setTodos(prev => prev.filter(t => t.id !== id));
+        }
+    };
+
+    const restoreTask = (id) => {
+        const taskToRestore = trash.find(t => t.id === id);
+        if (taskToRestore) {
+            const { deletedAt, ...rest } = taskToRestore;
+            setTodos(prev => [rest, ...prev]);
+            setTrash(prev => prev.filter(t => t.id !== id));
+        }
+    };
+
+    const permanentlyDeleteTask = (id) => {
+        setTrash(prev => prev.filter(t => t.id !== id));
+    };
+
+    const emptyTrash = () => {
+        setTrash([]);
     };
 
     const updateTask = (id, updates) => {
@@ -115,10 +135,14 @@ export const TaskProvider = ({ children }) => {
     return (
         <TaskContext.Provider value={{
             todos,
-            setTodos, // Exposed for reordering
+            trash,
+            setTodos,
             addTask,
             toggleTask,
             deleteTask,
+            restoreTask,
+            permanentlyDeleteTask,
+            emptyTrash,
             updateTask,
             categories,
             addCategory,

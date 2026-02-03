@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { motion, Reorder, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Circle, Trash2, ChevronDown, Flag, Calendar, AlignLeft, GripVertical, X, Plus } from 'lucide-react';
+import { CheckCircle2, Circle, Trash2, ChevronDown, Flag, Calendar, AlignLeft, GripVertical, X, Plus, RefreshCw, AlertCircle, Skull } from 'lucide-react';
 import { format } from 'date-fns';
 
-const TodoItem = ({ todo, onToggle, onDelete, onUpdate }) => {
+const TodoItem = ({ todo, onToggle, onDelete, onUpdate, isTrash, onRestore, onPermanentDelete }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [subtaskInput, setSubtaskInput] = useState('');
 
@@ -51,12 +51,15 @@ const TodoItem = ({ todo, onToggle, onDelete, onUpdate }) => {
                     </div>
 
                     {/* Checkbox */}
-                    <button
-                        onClick={() => onToggle(todo.id)}
-                        className={`mt-0.5 transition-colors ${todo.completed ? 'text-primary-500' : 'text-gray-300 hover:text-primary-500'}`}
-                    >
-                        {todo.completed ? <CheckCircle2 size={22} className="fill-current" /> : <Circle size={22} />}
-                    </button>
+                    {/* Checkbox (Hidden/Disabled in Trash) */}
+                    {!isTrash && (
+                        <button
+                            onClick={() => onToggle(todo.id)}
+                            className={`mt-0.5 transition-colors ${todo.completed ? 'text-primary-500' : 'text-gray-300 hover:text-primary-500'}`}
+                        >
+                            {todo.completed ? <CheckCircle2 size={22} className="fill-current" /> : <Circle size={22} />}
+                        </button>
+                    )}
 
                     {/* Main Content */}
                     <div className="flex-1 min-w-0" onClick={() => !todo.completed && setIsExpanded(!isExpanded)}>
@@ -159,12 +162,31 @@ const TodoItem = ({ todo, onToggle, onDelete, onUpdate }) => {
 
                     {/* Actions */}
                     <div className="flex flex-col gap-2">
-                        <button
-                            onClick={() => onDelete(todo.id)}
-                            className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                        >
-                            <Trash2 size={18} />
-                        </button>
+                        {isTrash ? (
+                            <>
+                                <button
+                                    onClick={() => onRestore(todo.id)}
+                                    className="p-1.5 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                                    title="Restore"
+                                >
+                                    <RefreshCw size={18} />
+                                </button>
+                                <button
+                                    onClick={() => onPermanentDelete(todo.id)}
+                                    className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                    title="Delete Forever"
+                                >
+                                    <Skull size={18} />
+                                </button>
+                            </>
+                        ) : (
+                            <button
+                                onClick={() => onDelete(todo.id)}
+                                className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            >
+                                <Trash2 size={18} />
+                            </button>
+                        )}
                         <button
                             onClick={() => setIsExpanded(!isExpanded)}
                             className={`p-1.5 text-gray-300 hover:text-gray-600 transition-transform ${isExpanded ? 'rotate-180 text-gray-600' : ''}`}

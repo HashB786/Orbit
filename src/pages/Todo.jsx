@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
-import TodoInput from '../components/todo/TodoInput';
+// import TodoInput from '../components/todo/TodoInput'; // REMOVED
 import TodoItem from '../components/todo/TodoItem';
 import TodoCalendar from '../components/todo/TodoCalendar';
 import TodoFilters from '../components/todo/TodoFilters';
@@ -13,6 +13,7 @@ const Todo = () => {
     const { t } = useLanguage();
     const {
         todos,
+        trash,
         setTodos,
         addTask,
         toggleTask,
@@ -20,7 +21,9 @@ const Todo = () => {
         updateTask,
         categories,
         addCategory,
-        removeCategory
+        removeCategory,
+        restoreTask,
+        permanentlyDeleteTask
     } = useTask();
 
     // Mapping context functions to local names used by components
@@ -29,7 +32,7 @@ const Todo = () => {
     const deleteTodo = deleteTask;
     const updateTodo = updateTask;
 
-    const [filter, setFilter] = useState('all'); // all, active, completed
+    const [filter, setFilter] = useState('all'); // all, active, completed, trash
     const [viewMode, setViewMode] = useState('list'); // list, calendar
 
     const [sortMode, setSortMode] = useState('custom'); // 'custom' | 'auto'
@@ -45,7 +48,10 @@ const Todo = () => {
 
     // Advanced Filtering & Sorting Logic
     const getProcessedTodos = () => {
-        let result = [...todos];
+        let result = filter === 'trash' ? [...trash] : [...todos];
+
+        // Skip filtering for trash view usually, or keep it?
+        // Let's keep filters but ensure 'active/completed' view logic is bypassed if trash.
 
         // 1. Filtering
         // Priority Filter
@@ -69,6 +75,7 @@ const Todo = () => {
         // View Filter (List specific)
         if (filter === 'active') result = result.filter(t => !t.completed);
         if (filter === 'completed') result = result.filter(t => t.completed);
+        // trash is already handled by source selection
 
         // 2. Sorting
         if (sortMode === 'auto') {
@@ -123,13 +130,8 @@ const Todo = () => {
                 </div>
             </div>
 
-            {/* Input Area */}
-            <TodoInput
-                onAdd={addTodo}
-                categories={categories}
-                onAddCategory={addCategory}
-                onRemoveCategory={removeCategory}
-            />
+            {/* Input Area REMOVED - Tasks must be added via Timetable */}
+            {/* <TodoInput ... /> */}
 
             {/* Filters & Sorting */}
             <TodoFilters
@@ -145,7 +147,7 @@ const Todo = () => {
                 {/* Filters (only for List view) */}
                 {viewMode === 'list' ? (
                     <div className="flex gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
-                        {['all', 'active', 'completed'].map(f => (
+                        {['all', 'active', 'completed', 'trash'].map(f => (
                             <button
                                 key={f}
                                 onClick={() => setFilter(f)}
@@ -200,7 +202,10 @@ const Todo = () => {
                                         todo={todo}
                                         onToggle={toggleTodo}
                                         onDelete={deleteTodo}
+                                        onRestore={restoreTask}
+                                        onPermanentDelete={permanentlyDeleteTask}
                                         onUpdate={updateTodo}
+                                        isTrash={filter === 'trash'}
                                     />
                                 ))}
                             </AnimatePresence>

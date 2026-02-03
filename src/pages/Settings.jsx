@@ -195,23 +195,103 @@ const AppearanceSettings = () => {
     );
 };
 
-const AnimationSettings = () => {
-    const { performance, updatePerformance } = useTheme();
+const AnimationPreview = ({ type }) => {
+    return (
+        <div className="w-full h-32 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden relative border border-gray-200 dark:border-gray-700 mb-4 flex items-center justify-center">
 
-    const Meter = ({ value, label, color }) => (
-        <div className="mt-2">
-            <div className="flex justify-between text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">
-                <span>{label}</span>
-                <span>{value}% Impact</span>
-            </div>
-            <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div
-                    className={`h-full rounded-full ${color}`}
-                    style={{ width: `${value}%` }}
-                />
-            </div>
+            {/* Glassmorphism Preview */}
+            {type === 'blur' && (
+                <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+                    {/* Background Shapes */}
+                    <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                        className="absolute w-32 h-32 bg-gradient-to-tr from-purple-500 to-pink-500 rounded-full blur-xl -top-10 -left-10 opacity-70"
+                    />
+                    <motion.div
+                        animate={{ rotate: -360 }}
+                        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                        className="absolute w-40 h-40 bg-gradient-to-tr from-blue-500 to-teal-500 rounded-full blur-xl -bottom-10 -right-10 opacity-70"
+                    />
+
+                    {/* The Card */}
+                    <div className="relative z-10 w-2/3 h-2/3 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-white/10 dark:bg-black/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg"></div>
+                        <span className="relative z-20 font-bold text-gray-800 dark:text-white drop-shadow-md">Frosted Glass</span>
+                    </div>
+                </div>
+            )}
+
+            {/* Particles Preview */}
+            {type === 'particles' && (
+                <div className="relative w-full h-full overflow-hidden bg-gray-900">
+                    {[...Array(8)].map((_, i) => (
+                        <motion.div
+                            key={i}
+                            className="absolute w-2 h-2 bg-yellow-400 rounded-full"
+                            initial={{ y: 140, x: Math.random() * 300, opacity: 0 }}
+                            animate={{ y: -20, opacity: [0, 1, 0] }}
+                            transition={{
+                                duration: 2 + Math.random() * 2,
+                                repeat: Infinity,
+                                delay: Math.random() * 2,
+                                ease: "easeOut"
+                            }}
+                        />
+                    ))}
+                    {[...Array(5)].map((_, i) => (
+                        <motion.div
+                            key={i + 10}
+                            className="absolute w-3 h-3 border-2 border-primary-400 rounded-sm"
+                            initial={{ y: 140, x: Math.random() * 300, rotate: 0, opacity: 0 }}
+                            animate={{ y: -20, rotate: 360, opacity: [0, 1, 0] }}
+                            transition={{
+                                duration: 3 + Math.random() * 2,
+                                repeat: Infinity,
+                                delay: Math.random() * 3,
+                                ease: "easeOut"
+                            }}
+                        />
+                    ))}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-white font-bold z-10">Celebration Effects</span>
+                    </div>
+                </div>
+            )}
+
+            {/* Reduced Motion Preview */}
+            {type === 'reduced' && (
+                <div className="flex gap-8 items-center justify-center w-full h-full bg-white dark:bg-gray-900">
+                    {/* Bouncy (Normal) */}
+                    <div className="text-center">
+                        <motion.div
+                            animate={{ y: [0, -20, 0] }}
+                            transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 1 }}
+                            className="w-10 h-10 bg-green-500 rounded-full mb-2 mx-auto shadow-lg"
+                        />
+                        <p className="text-[10px] text-gray-500 uppercase font-bold">Standard</p>
+                    </div>
+
+                    <div className="h-12 w-px bg-gray-200 dark:bg-gray-700 mx-2" />
+
+                    {/* Fade (Reduced) */}
+                    <div className="text-center">
+                        <motion.div
+                            animate={{ opacity: [1, 0.2, 1] }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                            className="w-10 h-10 bg-gray-400 rounded-full mb-2 mx-auto"
+                        />
+                        <p className="text-[10px] text-gray-500 uppercase font-bold">Reduced</p>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
+};
+
+const AnimationSettings = () => {
+    const { performance, updatePerformance } = useTheme();
 
     return (
         <div className="space-y-6">
@@ -238,7 +318,8 @@ const AnimationSettings = () => {
                             <h4 className="font-bold text-gray-900 dark:text-white">Glassmorphism (Blur)</h4>
                             <span className="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold rounded uppercase">High Cost</span>
                         </div>
-                        <p className="text-sm text-gray-500">Enables frosted glass blur effects on cards and modals.</p>
+                        <p className="text-sm text-gray-500 mb-3">Enables frosted glass blur effects on cards and modals.</p>
+                        <AnimationPreview type="blur" />
                         <Meter value={80} label="GPU Usage" color="bg-red-500" />
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -261,7 +342,8 @@ const AnimationSettings = () => {
                             <h4 className="font-bold text-gray-900 dark:text-white">Particle Effects</h4>
                             <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[10px] font-bold rounded uppercase">Medium Cost</span>
                         </div>
-                        <p className="text-sm text-gray-500">Floating blobs and confetti celebrations.</p>
+                        <p className="text-sm text-gray-500 mb-3">Floating blobs and confetti celebrations.</p>
+                        <AnimationPreview type="particles" />
                         <Meter value={45} label="CPU Usage" color="bg-orange-500" />
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -284,7 +366,8 @@ const AnimationSettings = () => {
                             <h4 className="font-bold text-gray-900 dark:text-white">Reduced Motion</h4>
                             <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded uppercase">Saves Battery</span>
                         </div>
-                        <p className="text-sm text-gray-500">Simplifies transitions and disables smooth scaling/movement.</p>
+                        <p className="text-sm text-gray-500 mb-3">Simplifies transitions and disables smooth scaling/movement.</p>
+                        <AnimationPreview type="reduced" />
                         <Meter value={10} label="Impact" color="bg-green-500" />
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
