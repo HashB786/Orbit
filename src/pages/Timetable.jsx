@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, MapPin, CheckCircle2, ChevronDown, Plus, BookOpen, AlertCircle } from 'lucide-react';
+import { Clock, MapPin, CheckCircle2, ChevronDown, Plus, BookOpen, AlertCircle, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { useTask } from '../context/TaskContext';
 import timetableData from '../data/timetable.json';
-import AddHomeworkModal from '../components/timetable/AddHomeworkModal';
+import LessonTasksModal from '../components/timetable/LessonTasksModal';
+import { format, startOfWeek, endOfWeek, isSameDay, parseISO, isWithinInterval, addWeeks, subWeeks, addDays } from 'date-fns';
 
 const parseTime = (timeStr) => {
     if (!timeStr) return { start: 0, end: 0 };
@@ -34,6 +35,12 @@ const Timetable = () => {
     // Quick Add Task State
     const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
     const [selectedLesson, setSelectedLesson] = useState(null); // { subject: 'Math', ... }
+    const [selectedLessonDate, setSelectedLessonDate] = useState(null); // Date object passed to modal
+
+    // Week Navigation State
+    const [currentDate, setCurrentDate] = useState(new Date());
+
+    // Update session storage
 
     // Update session storage
     useEffect(() => {
@@ -65,8 +72,9 @@ const Timetable = () => {
         setIsAddTaskOpen(false);
     };
 
-    const openQuickAdd = (lesson, day) => {
-        setSelectedLesson({ ...lesson, day });
+    const openQuickAdd = (lesson, date) => {
+        setSelectedLesson({ ...lesson });
+        setSelectedLessonDate(date);
         setIsAddTaskOpen(true);
     };
 
@@ -145,15 +153,37 @@ const Timetable = () => {
     const isDifferentView = (viewGrade !== userData.grade) || (viewColor !== userData.classColor);
 
     // Helpers for task counting
-    const getTaskCount = (subject) => todos.filter(t => t.subject === subject && !t.completed).length;
+    // Helpers for task counting
+    const getTaskCountOnDate = (subject, date) => {
+        return todos.filter(t =>
+            t.subject === subject &&
+            !t.completed &&
+            t.dueDate &&
+            isSameDay(new Date(t.dueDate), date)
+        ).length;
+    };
+
+    // Week Display Data
+    // Week Display Data
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+
+    // Check if subject has ANY task due in the current week view
+    // Check if subject has task due on specific date
+    const hasTaskDueOnDate = (subject, date) => {
+        return todos.some(t => {
+            if (t.subject !== subject || t.completed || !t.dueDate) return false;
+            return isSameDay(new Date(t.dueDate), date);
+        });
+    };
 
     return (
         <div className="space-y-6 pb-20 relative">
-            <AddHomeworkModal
+            <LessonTasksModal
                 isOpen={isAddTaskOpen}
                 onClose={() => setIsAddTaskOpen(false)}
                 lesson={selectedLesson}
-                onAdd={handleAddHomework}
+                initialDate={selectedLessonDate}
             />
 
             {/* Warning Banner */}
@@ -178,11 +208,28 @@ const Timetable = () => {
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-teal-500">
                         {t('timetable')}
                     </h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2">
-                        {classInfo.class_teacher}
-                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600" />
-                        Room {classInfo.room}
-                    </p>
+                    <div className="flex flex-col gap-1 mt-1">
+                        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm font-medium">
+                            <button onClick={() => setCurrentDate(subWeeks(currentDate, 1))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors">
+                                <ChevronLeft size={16} />
+                            </button>
+                            <span className="flex items-center gap-2">
+                                <Calendar size={14} className="text-primary-500" />
+                                Week of {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d')}
+                            </span>
+                            <button onClick={() => setCurrentDate(addWeeks(currentDate, 1))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors">
+                                <ChevronRight size={16} />
+                            </button>
+                            <button onClick={() => setCurrentDate(new Date())} className="text-xs text-primary-500 hover:underline ml-2">
+                                Today
+                            </button>
+                        </div>
+                        <p className="text-gray-400 text-xs flex items-center gap-2">
+                            {classInfo.class_teacher}
+                            <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+                            Room {classInfo.room}
+                        </p>
+                    </div>
                 </div>
 
                 {/* 2-Step Selector */}
@@ -254,9 +301,9 @@ const Timetable = () => {
                         <div>
                             <div className="flex justify-between items-start">
                                 <h2 className="text-3xl font-bold mb-2">{currentLesson.subject}</h2>
-                                {getTaskCount(currentLesson.subject) > 0 && (
+                                {getTaskCountOnDate(currentLesson.subject, new Date()) > 0 && (
                                     <span className="bg-white/20 px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1">
-                                        <AlertCircle size={12} /> {getTaskCount(currentLesson.subject)} Tasks
+                                        <AlertCircle size={12} /> {getTaskCountOnDate(currentLesson.subject, new Date())} Due Today
                                     </span>
                                 )}
                             </div>
@@ -287,7 +334,12 @@ const Timetable = () => {
             {/* Weekly Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day, idx) => {
-                    const isToday = day === currentDayName;
+                    // Calculate exact date for this column
+                    // Since weekStartsOn: 1 (Monday), Monday is weekStart + 0 days
+                    const dayOffset = idx;
+                    const columnDate = addDays(weekStart, dayOffset);
+
+                    const isToday = isSameDay(columnDate, new Date());
                     const schedule = classInfo.schedule[day] || [];
 
                     if (schedule.length === 0) return null;
@@ -312,7 +364,7 @@ const Timetable = () => {
                             <div className="space-y-3">
                                 {schedule.map((lesson, i) => {
                                     const timeSlot = timetableData.time_slots[String(lesson.period)];
-                                    const taskCount = getTaskCount(lesson.subject);
+                                    const taskCount = getTaskCountOnDate(lesson.subject, columnDate);
                                     const isPassed = isLessonPassed(day, timeSlot);
 
                                     return (
@@ -340,9 +392,9 @@ const Timetable = () => {
 
                                             {/* Quick Add Button on Hover - Always available even if passed */}
                                             <button
-                                                onClick={() => openQuickAdd(lesson, day)}
+                                                onClick={() => openQuickAdd(lesson, columnDate)}
                                                 className="absolute right-0 top-1 p-1.5 text-gray-300 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                                                title="Add Homework"
+                                                title="View/Add Assignments"
                                             >
                                                 <Plus size={16} />
                                             </button>

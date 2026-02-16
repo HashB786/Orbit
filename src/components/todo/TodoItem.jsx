@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { motion, Reorder, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Circle, Trash2, ChevronDown, Flag, Calendar, AlignLeft, GripVertical, X, Plus, RefreshCw, AlertCircle, Skull } from 'lucide-react';
+import { CheckCircle2, Circle, Trash2, ChevronDown, Flag, Calendar, AlignLeft, GripVertical, X, Plus, RefreshCw, AlertCircle, Skull, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
 
-const TodoItem = ({ todo, onToggle, onDelete, onUpdate, isTrash, onRestore, onPermanentDelete }) => {
+const TodoItem = ({ todo, onToggle, onDelete, onUpdate, isTrash, onRestore, onPermanentDelete, onEdit }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [subtaskInput, setSubtaskInput] = useState('');
 
@@ -187,6 +187,13 @@ const TodoItem = ({ todo, onToggle, onDelete, onUpdate, isTrash, onRestore, onPe
                                 <Trash2 size={18} />
                             </button>
                         )}
+                        <button
+                            onClick={() => onEdit && onEdit(todo)}
+                            className="p-1.5 text-gray-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                            title="Edit Task"
+                        >
+                            <Edit2 size={18} />
+                        </button>
                         <button
                             onClick={() => setIsExpanded(!isExpanded)}
                             className={`p-1.5 text-gray-300 hover:text-gray-600 transition-transform ${isExpanded ? 'rotate-180 text-gray-600' : ''}`}

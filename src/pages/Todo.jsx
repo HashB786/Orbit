@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
-// import TodoInput from '../components/todo/TodoInput'; // REMOVED
+import TodoInput from '../components/todo/TodoInput';
 import TodoItem from '../components/todo/TodoItem';
 import TodoCalendar from '../components/todo/TodoCalendar';
 import TodoFilters from '../components/todo/TodoFilters';
 import { ListTodo, Trash2, PieChart, Calendar as CalendarIcon, LayoutGrid } from 'lucide-react';
+import TodoEditModal from '../components/todo/TodoEditModal';
 
 import { useTask } from '../context/TaskContext';
 
@@ -34,6 +35,7 @@ const Todo = () => {
 
     const [filter, setFilter] = useState('all'); // all, active, completed, trash
     const [viewMode, setViewMode] = useState('list'); // list, calendar
+    const [editingTask, setEditingTask] = useState(null);
 
     const [sortMode, setSortMode] = useState('custom'); // 'custom' | 'auto'
     const [activeFilters, setActiveFilters] = useState({
@@ -130,8 +132,8 @@ const Todo = () => {
                 </div>
             </div>
 
-            {/* Input Area REMOVED - Tasks must be added via Timetable */}
-            {/* <TodoInput ... /> */}
+            {/* Input Area */}
+            <TodoInput onAdd={addTodo} categories={categories} />
 
             {/* Filters & Sorting */}
             <TodoFilters
@@ -205,6 +207,7 @@ const Todo = () => {
                                         onRestore={restoreTask}
                                         onPermanentDelete={permanentlyDeleteTask}
                                         onUpdate={updateTodo}
+                                        onEdit={setEditingTask}
                                         isTrash={filter === 'trash'}
                                     />
                                 ))}
@@ -235,6 +238,16 @@ const Todo = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <TodoEditModal
+                isOpen={!!editingTask}
+                todo={editingTask}
+                onClose={() => setEditingTask(null)}
+                onSave={updateTodo}
+                categories={categories}
+                onAddCategory={addCategory}
+                onRemoveCategory={removeCategory}
+            />
         </div>
     );
 };

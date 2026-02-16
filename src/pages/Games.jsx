@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Rocket, Gamepad2, Play, Grid as GridIcon } from 'lucide-react';
 import OrbitBird from '../components/games/flight/OrbitBird';
 import GridBattle from '../components/games/grid/GridBattle';
+import OrbitRunner2D from '../components/games/arcade/OrbitRunner2D';
 
 const Games = () => {
     const { t } = useLanguage();
@@ -24,19 +25,27 @@ const Games = () => {
             description: 'The ultimate classroom quiz showdown! Teams, bombs, and glory.',
             icon: GridIcon, // Need to import GridIcon
             color: 'from-blue-600 to-indigo-600',
-            component: GridBattle // Need to import GridBattle
+            component: GridBattle
+        },
+        {
+            id: 'orbit-runner-2d',
+            title: 'Orbit Runner 2D',
+            description: '2-Player Co-op Survival. Fly together, crash together.',
+            icon: Gamepad2,
+            color: 'from-cyan-500 to-fuchsia-500',
+            component: OrbitRunner2D
         }
     ];
 
     if (activeGame) {
         const GameComponent = activeGame.component;
         return (
-            <div className="fixed inset-0 z-50 bg-black">
+            <div className="absolute inset-0 z-[100] bg-gray-950 flex flex-col">
                 <button
                     onClick={() => setActiveGame(null)}
-                    className="absolute top-4 left-4 z-50 bg-white/10 backdrop-blur text-white px-4 py-2 rounded-xl font-bold hover:bg-white/20 transition-all"
+                    className="absolute top-4 right-4 z-50 bg-white/10 backdrop-blur text-white px-4 py-2 rounded-xl font-bold hover:bg-white/20 hover:text-red-400 transition-all flex items-center gap-2"
                 >
-                    Exit Game
+                    <span className="text-xl">&times;</span> Exit to Orbit
                 </button>
                 <GameComponent />
             </div>

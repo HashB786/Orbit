@@ -195,9 +195,16 @@ const AppearanceSettings = () => {
     );
 };
 
-const AnimationPreview = ({ type }) => {
+const AnimationPreview = ({ type, enabled }) => {
     return (
         <div className="w-full h-32 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden relative border border-gray-200 dark:border-gray-700 mb-4 flex items-center justify-center">
+
+            {/* Disabled Overlay/State */}
+            {!enabled && type !== 'reduced' && (
+                <div className="absolute inset-0 z-30 bg-gray-100/80 dark:bg-gray-900/80 backdrop-blur-[1px] flex items-center justify-center text-gray-400 font-mono text-xs uppercase tracking-widest">
+                    <span>Disabled</span>
+                </div>
+            )}
 
             {/* Glassmorphism Preview */}
             {type === 'blur' && (
@@ -216,8 +223,10 @@ const AnimationPreview = ({ type }) => {
 
                     {/* The Card */}
                     <div className="relative z-10 w-2/3 h-2/3 flex items-center justify-center">
-                        <div className="absolute inset-0 bg-white/10 dark:bg-black/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg"></div>
-                        <span className="relative z-20 font-bold text-gray-800 dark:text-white drop-shadow-md">Frosted Glass</span>
+                        <div className={`absolute inset-0 border border-white/20 rounded-xl shadow-lg transition-all duration-300 ${enabled ? 'bg-white/10 dark:bg-black/10 backdrop-blur-md' : 'bg-white dark:bg-gray-900'}`}></div>
+                        <span className="relative z-20 font-bold text-gray-800 dark:text-white drop-shadow-md">
+                            {enabled ? 'Frosted Glass' : 'Solid Opaque'}
+                        </span>
                     </div>
                 </div>
             )}
@@ -225,37 +234,44 @@ const AnimationPreview = ({ type }) => {
             {/* Particles Preview */}
             {type === 'particles' && (
                 <div className="relative w-full h-full overflow-hidden bg-gray-900">
-                    {[...Array(8)].map((_, i) => (
-                        <motion.div
-                            key={i}
-                            className="absolute w-2 h-2 bg-yellow-400 rounded-full"
-                            initial={{ y: 140, x: Math.random() * 300, opacity: 0 }}
-                            animate={{ y: -20, opacity: [0, 1, 0] }}
-                            transition={{
-                                duration: 2 + Math.random() * 2,
-                                repeat: Infinity,
-                                delay: Math.random() * 2,
-                                ease: "easeOut"
-                            }}
-                        />
-                    ))}
-                    {[...Array(5)].map((_, i) => (
-                        <motion.div
-                            key={i + 10}
-                            className="absolute w-3 h-3 border-2 border-primary-400 rounded-sm"
-                            initial={{ y: 140, x: Math.random() * 300, rotate: 0, opacity: 0 }}
-                            animate={{ y: -20, rotate: 360, opacity: [0, 1, 0] }}
-                            transition={{
-                                duration: 3 + Math.random() * 2,
-                                repeat: Infinity,
-                                delay: Math.random() * 3,
-                                ease: "easeOut"
-                            }}
-                        />
-                    ))}
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-white font-bold z-10">Celebration Effects</span>
+                        <span className={`font-bold z-10 transition-colors ${enabled ? 'text-white' : 'text-gray-600'}`}>
+                            {enabled ? 'Celebration Effects' : 'No Effects'}
+                        </span>
                     </div>
+
+                    {enabled && (
+                        <>
+                            {[...Array(8)].map((_, i) => (
+                                <motion.div
+                                    key={i}
+                                    className="absolute w-2 h-2 bg-yellow-400 rounded-full"
+                                    initial={{ y: 140, x: Math.random() * 300, opacity: 0 }}
+                                    animate={{ y: -20, opacity: [0, 1, 0] }}
+                                    transition={{
+                                        duration: 2 + Math.random() * 2,
+                                        repeat: Infinity,
+                                        delay: Math.random() * 2,
+                                        ease: "easeOut"
+                                    }}
+                                />
+                            ))}
+                            {[...Array(5)].map((_, i) => (
+                                <motion.div
+                                    key={i + 10}
+                                    className="absolute w-3 h-3 border-2 border-primary-400 rounded-sm"
+                                    initial={{ y: 140, x: Math.random() * 300, rotate: 0, opacity: 0 }}
+                                    animate={{ y: -20, rotate: 360, opacity: [0, 1, 0] }}
+                                    transition={{
+                                        duration: 3 + Math.random() * 2,
+                                        repeat: Infinity,
+                                        delay: Math.random() * 3,
+                                        ease: "easeOut"
+                                    }}
+                                />
+                            ))}
+                        </>
+                    )}
                 </div>
             )}
 
@@ -263,9 +279,9 @@ const AnimationPreview = ({ type }) => {
             {type === 'reduced' && (
                 <div className="flex gap-8 items-center justify-center w-full h-full bg-white dark:bg-gray-900">
                     {/* Bouncy (Normal) */}
-                    <div className="text-center">
+                    <div className={`text-center transition-opacity ${enabled ? 'opacity-30 grayscale' : 'opacity-100'}`}>
                         <motion.div
-                            animate={{ y: [0, -20, 0] }}
+                            animate={!enabled ? { y: [0, -20, 0] } : {}}
                             transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 1 }}
                             className="w-10 h-10 bg-green-500 rounded-full mb-2 mx-auto shadow-lg"
                         />
@@ -275,9 +291,9 @@ const AnimationPreview = ({ type }) => {
                     <div className="h-12 w-px bg-gray-200 dark:bg-gray-700 mx-2" />
 
                     {/* Fade (Reduced) */}
-                    <div className="text-center">
+                    <div className={`text-center transition-opacity ${!enabled ? 'opacity-30 grayscale' : 'opacity-100'}`}>
                         <motion.div
-                            animate={{ opacity: [1, 0.2, 1] }}
+                            animate={enabled ? { opacity: [1, 0.2, 1] } : {}}
                             transition={{ duration: 1.5, repeat: Infinity }}
                             className="w-10 h-10 bg-gray-400 rounded-full mb-2 mx-auto"
                         />
@@ -290,13 +306,42 @@ const AnimationPreview = ({ type }) => {
     );
 };
 
+const Meter = ({ value, label, color }) => (
+    <div className="mt-2">
+        <div className="flex justify-between text-xs mb-1">
+            <span className="text-gray-500 font-medium">{label}</span>
+            <span className={`font-bold ${color.replace('bg-', 'text-')}`}>{value}%</span>
+        </div>
+        <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+            <div className={`h-full ${color}`} style={{ width: `${value}%` }} />
+        </div>
+    </div>
+);
+
 const AnimationSettings = () => {
     const { performance, updatePerformance } = useTheme();
+
+    // Preset Handlers
+    const setPreset = (mode) => {
+        if (mode === 'save') {
+            updatePerformance('blur', false);
+            updatePerformance('particles', false);
+            updatePerformance('reducedMotion', true);
+        } else if (mode === 'balanced') {
+            updatePerformance('blur', true);
+            updatePerformance('particles', false);
+            updatePerformance('reducedMotion', false);
+        } else if (mode === 'max') {
+            updatePerformance('blur', true);
+            updatePerformance('particles', true);
+            updatePerformance('reducedMotion', false);
+        }
+    };
 
     return (
         <div className="space-y-6">
             <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 p-6 rounded-2xl border border-amber-500/20">
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-4 mb-6">
                     <div className="p-3 bg-amber-100 dark:bg-amber-900/30 text-amber-600 rounded-xl">
                         <Battery size={24} />
                     </div>
@@ -304,9 +349,24 @@ const AnimationSettings = () => {
                         <h3 className="text-lg font-bold text-amber-700 dark:text-amber-500">Performance Monitor</h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                             Customize visual effects to balance aesthetics and battery life.
-                            Disabling intense effects can improve performance on older devices.
                         </p>
                     </div>
+                </div>
+
+                {/* Presets */}
+                <div className="grid grid-cols-3 gap-3">
+                    <button onClick={() => setPreset('save')} className="p-3 bg-white dark:bg-black/20 rounded-xl border border-amber-500/20 hover:border-amber-500/50 transition-colors text-center group">
+                        <div className="font-bold text-amber-700 dark:text-amber-500 text-sm mb-1 group-hover:scale-105 transition-transform">Power Saver</div>
+                        <div className="text-[10px] opacity-70">Minimal FX</div>
+                    </button>
+                    <button onClick={() => setPreset('balanced')} className="p-3 bg-white dark:bg-black/20 rounded-xl border border-amber-500/20 hover:border-amber-500/50 transition-colors text-center group">
+                        <div className="font-bold text-amber-700 dark:text-amber-500 text-sm mb-1 group-hover:scale-105 transition-transform">Balanced</div>
+                        <div className="text-[10px] opacity-70">Standard</div>
+                    </button>
+                    <button onClick={() => setPreset('max')} className="p-3 bg-white dark:bg-black/20 rounded-xl border border-amber-500/20 hover:border-amber-500/50 transition-colors text-center group">
+                        <div className="font-bold text-amber-700 dark:text-amber-500 text-sm mb-1 group-hover:scale-105 transition-transform">High Fidelity</div>
+                        <div className="text-[10px] opacity-70">All Effects</div>
+                    </button>
                 </div>
             </div>
 
@@ -319,7 +379,7 @@ const AnimationSettings = () => {
                             <span className="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold rounded uppercase">High Cost</span>
                         </div>
                         <p className="text-sm text-gray-500 mb-3">Enables frosted glass blur effects on cards and modals.</p>
-                        <AnimationPreview type="blur" />
+                        <AnimationPreview type="blur" enabled={performance.blur} />
                         <Meter value={80} label="GPU Usage" color="bg-red-500" />
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -343,7 +403,7 @@ const AnimationSettings = () => {
                             <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[10px] font-bold rounded uppercase">Medium Cost</span>
                         </div>
                         <p className="text-sm text-gray-500 mb-3">Floating blobs and confetti celebrations.</p>
-                        <AnimationPreview type="particles" />
+                        <AnimationPreview type="particles" enabled={performance.particles} />
                         <Meter value={45} label="CPU Usage" color="bg-orange-500" />
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -367,7 +427,7 @@ const AnimationSettings = () => {
                             <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded uppercase">Saves Battery</span>
                         </div>
                         <p className="text-sm text-gray-500 mb-3">Simplifies transitions and disables smooth scaling/movement.</p>
-                        <AnimationPreview type="reduced" />
+                        <AnimationPreview type="reduced" enabled={performance.reducedMotion} />
                         <Meter value={10} label="Impact" color="bg-green-500" />
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">

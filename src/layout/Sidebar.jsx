@@ -41,7 +41,7 @@ const Sidebar = () => {
             {/* Toggle Button */}
             <button
                 onClick={() => setCollapsed(!collapsed)}
-                className="absolute -right-3 top-8 w-6 h-6 bg-white dark:bg-dark-surface border border-gray-200 dark:border-gray-700 rounded-full flex items-center justify-center shadow-sm text-gray-400 hover:text-primary-500 transition-colors z-50"
+                className="absolute -right-3 top-9 w-6 h-6 bg-white dark:bg-dark-surface border border-gray-200 dark:border-gray-700 rounded-full flex items-center justify-center shadow-md text-gray-500 hover:text-primary-600 hover:border-primary-300 transition-all z-50 hover:scale-110"
             >
                 <motion.div animate={{ rotate: collapsed ? 0 : 180 }}>
                     <ChevronRight size={14} />
@@ -112,30 +112,52 @@ const Sidebar = () => {
             </nav>
 
             {/* Footer Actions */}
-            <div className="p-4 border-t border-gray-100 dark:border-gray-800 space-y-1">
+            <div className="p-4 border-t border-gray-100 dark:border-gray-800 space-y-1 overflow-hidden">
                 {/* Theme Toggle */}
                 <button
                     onClick={toggleTheme}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-500 dark:text-gray-400 transition-colors ${collapsed ? 'justify-center' : ''}`}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-500 dark:text-gray-400 transition-colors relative overflow-hidden ${collapsed ? 'justify-center' : ''}`}
                 >
-                    {theme === 'dark' ? <Moon size={22} className="text-purple-400" /> : <Sun size={22} className="text-amber-500" />}
-                    {!collapsed && <span className="text-sm font-medium">{t('theme')}</span>}
+                    {theme === 'dark' ? <Moon size={22} className="text-purple-400 shrink-0" /> : <Sun size={22} className="text-amber-500 shrink-0" />}
+
+                    <AnimatePresence>
+                        {!collapsed && (
+                            <motion.span
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="text-sm font-medium whitespace-nowrap"
+                            >
+                                {t('theme')}
+                            </motion.span>
+                        )}
+                    </AnimatePresence>
                 </button>
 
                 {/* Profile Link (Settings) */}
                 <NavLink
                     to="/settings"
-                    className={({ isActive }) => `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-500 dark:text-gray-400 transition-colors ${collapsed ? 'justify-center' : ''} ${isActive ? 'bg-primary-50 dark:bg-primary-900/10 text-primary-600' : ''}`}
+                    className={({ isActive }) => `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-500 dark:text-gray-400 transition-colors relative overflow-hidden ${collapsed ? 'justify-center' : ''} ${isActive ? 'bg-primary-50 dark:bg-primary-900/10 text-primary-600' : ''}`}
                 >
                     <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center shrink-0">
                         <span className="font-bold text-xs">{userData?.name?.[0]?.toUpperCase() || 'U'}</span>
                     </div>
-                    {!collapsed && (
-                        <div className="flex flex-col items-start overflow-hidden">
-                            <span className="text-sm font-bold truncate w-full text-left">{userData?.name || 'User'}</span>
-                            <span className="text-[10px] text-gray-400 truncate w-full text-left">View Profile</span>
-                        </div>
-                    )}
+
+                    <AnimatePresence>
+                        {!collapsed && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="flex flex-col items-start overflow-hidden whitespace-nowrap"
+                            >
+                                <span className="text-sm font-bold truncate w-full text-left">{userData?.name || 'User'}</span>
+                                <span className="text-[10px] text-gray-400 truncate w-full text-left">View Profile</span>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </NavLink>
             </div>
         </motion.aside>
