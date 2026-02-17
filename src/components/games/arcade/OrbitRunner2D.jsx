@@ -1,14 +1,14 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, Trophy, Play, RotateCcw, Pause, Keyboard } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { RotateCcw, Keyboard, MousePointer2 } from 'lucide-react';
 
 // --- GAME CONFIG ---
-const GRAVITY = 0.5; // Downward force
-const JUMP = -8;     // Upward impulse
-const SPEED = 4;     // Scroll speed
-const GAP_SIZE = 180; // Vertical gap between pipes
+const GRAVITY = 0.5;
+const JUMP = -8;
+const SPEED = 4;
+const GAP_SIZE = 180;
 const PIPE_WIDTH = 60;
-const PIPE_SPAWN_RATE = 100; // Frames between pipes
+const PIPE_SPAWN_RATE = 100;
 const PLAYER_SIZE = 30;
 
 const OrbitRunner2D = () => {
@@ -18,41 +18,85 @@ const OrbitRunner2D = () => {
     const scoreRef = useRef(0);
 
     const [gameState, setGameState] = useState('ready'); // ready, playing, gameover
-    const [winner, setWinner] = useState(null); // 'p1', 'p2', 'draw'
     const [finalScore, setFinalScore] = useState(0);
 
     // --- GAME STATE REF (Mutable for Loop) ---
     const state = useRef({
         p1: { y: 300, vy: 0, dead: false, color: '#06b6d4' }, // Cyan
         p2: { y: 300, vy: 0, dead: false, color: '#d946ef' }, // Magenta
-        pipes: [], // { x, y, passed }
+        pipes: [],
     });
 
-    // --- INPUT HANDLING ---
+    // --- INPUT HANDLING (Universal) ---
     useEffect(() => {
-        const handleKeyDown = (e) => {
+        const handleInput = (type, code) => {
             if (gameState !== 'playing') return;
 
-            // Player 1 (Space / W)
-            if ((e.code === 'Space' || e.code === 'KeyW') && !state.current.p1.dead) {
+            // Player 1
+            if ((code === 'Space' || code === 'KeyW' || type === 'left-tap') && !state.current.p1.dead) {
                 state.current.p1.vy = JUMP;
             }
 
-            // Player 2 (Enter / ArrowUp)
-            if ((e.code === 'Enter' || e.code === 'ArrowUp') && !state.current.p2.dead) {
+            // Player 2
+            if ((code === 'Enter' || code === 'ArrowUp' || type === 'right-tap') && !state.current.p2.dead) {
                 state.current.p2.vy = JUMP;
             }
         };
 
+        const handleKeyDown = (e) => handleInput('key', e.code);
+
+        const handleTouch = (e) => {
+            // Prevent default zooming/scrolling on touch
+            // e.preventDefault(); // Sometimes interferes with UI outside canvas, be careful
+
+            const width = window.innerWidth;
+            // Handle multi-touch
+            for (let i = 0; i < e.touches.length; i++) {
+                const touchX = e.touches[i].clientX;
+                if (touchX < width / 2) handleInput('left-tap');
+                else handleInput('right-tap');
+            }
+        };
+
+        const handleMouseDown = (e) => {
+            const width = window.innerWidth;
+            if (e.clientX < width / 2) handleInput('left-tap');
+            else handleInput('right-tap');
+        };
+
         window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
+        // Add listeners to window or canvas? Window ensures catches all.
+        // But might conflict with UI buttons. 
+        // Logic: if input target is NOT a button, process it.
+
+        // Touch/Mouse logic needs to be careful not to trigger if clicking a UI button
+        // We'll attach these to the canvas container or window but check target.
+
+        // Actually, attaching to window is best for "play anywhere" feel on smart boards.
+        // We just need to check if e.target is a button.
+
+        const safeInput = (handler) => (e) => {
+            if (e.target.closest('button')) return; // Ignore button clicks
+            handler(e);
+        };
+
+        window.addEventListener('touchstart', safeInput(handleTouch), { passive: false });
+        window.addEventListener('mousedown', safeInput(handleMouseDown));
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('touchstart', safeInput(handleTouch));
+            window.removeEventListener('mousedown', safeInput(handleMouseDown));
+        };
     }, [gameState]);
+
 
     // --- GAME LOOP ---
     const update = () => {
         if (gameState !== 'playing') return;
 
         const canvas = canvasRef.current;
+        if (!canvas) return;
         const ctx = canvas.getContext('2d');
         const height = canvas.height;
         const width = canvas.width;
@@ -70,15 +114,12 @@ const OrbitRunner2D = () => {
                     p.dead = true;
                 }
             } else {
-                // Drift back if dead
-                p.x = (p.x || 100) - 2;
+                p.x = (p.x || 100) - 2; // Drift back
             }
         });
 
         // 2. SPAWN PIPES
         if (frameRef.current % PIPE_SPAWN_RATE === 0) {
-            // Random height for top pipe (leaving gap)
-            // Min height = 50, Max height = height - gap - 50
             const minH = 50;
             const maxH = height - GAP_SIZE - 50;
             const topHeight = Math.floor(Math.random() * (maxH - minH + 1)) + minH;
@@ -94,28 +135,22 @@ const OrbitRunner2D = () => {
         state.current.pipes.forEach((pipe, index) => {
             pipe.x -= SPEED;
 
-            // Remove off-screen pipes
             if (pipe.x + PIPE_WIDTH < 0) {
                 state.current.pipes.splice(index, 1);
             }
 
-            // Check Score (Passing State)
-            if (!pipe.passed && pipe.x + PIPE_WIDTH < 100) { // 100 is player x
+            // Score logic
+            if (!pipe.passed && pipe.x + PIPE_WIDTH < 100) {
                 pipe.passed = true;
                 if (!state.current.p1.dead || !state.current.p2.dead) {
                     scoreRef.current++;
                 }
             }
 
-            // check collision for each living player
+            // Collision
             [state.current.p1, state.current.p2].forEach(p => {
                 if (p.dead) return;
-
-                // Horizontal overlap
-                // Player X is fixed at 100
                 if (100 < pipe.x + PIPE_WIDTH && 100 + PLAYER_SIZE > pipe.x) {
-                    // Vertical check
-                    // Hit Top Pipe OR Hit Bottom Pipe
                     if (p.y < pipe.topHeight || p.y + PLAYER_SIZE > pipe.topHeight + GAP_SIZE) {
                         p.dead = true;
                     }
@@ -135,12 +170,18 @@ const OrbitRunner2D = () => {
     };
 
     const draw = (ctx, width, height) => {
-        // Clear background
-        ctx.fillStyle = '#020617'; // gray-950
+        // Clear
+        ctx.fillStyle = '#020617';
         ctx.fillRect(0, 0, width, height);
 
-        // Draw Grid (Retro effect)
+        // Split Screen Line (Subtle)
         ctx.strokeStyle = '#1e293b';
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath(); ctx.moveTo(width / 2, 0); ctx.lineTo(width / 2, height); ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Grid
+        ctx.strokeStyle = '#0f172a';
         ctx.lineWidth = 1;
         for (let i = 0; i < width; i += 40) {
             ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, height); ctx.stroke();
@@ -149,21 +190,29 @@ const OrbitRunner2D = () => {
             ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(width, i); ctx.stroke();
         }
 
+        // Zones Labels (Only if Playing and early game)
+        if (scoreRef.current < 2) {
+            ctx.font = 'bold 20px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#1e293b';
+            ctx.fillText("TAP LEFT (P1)", width * 0.25, height - 50);
+            ctx.fillText("TAP RIGHT (P2)", width * 0.75, height - 50);
+        }
+
         // Draw Pipes
         state.current.pipes.forEach(pipe => {
-            ctx.fillStyle = '#22c55e'; // Green neon
+            ctx.fillStyle = '#22c55e';
             ctx.strokeStyle = '#4ade80';
             ctx.lineWidth = 2;
 
-            // Top Pipe
+            // Top
             ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
             ctx.strokeRect(pipe.x, 0, PIPE_WIDTH, pipe.topHeight);
 
-            // Bottom Pipe
+            // Bottom
             const bottomY = pipe.topHeight + GAP_SIZE;
-            const bottomH = height - bottomY;
-            ctx.fillRect(pipe.x, bottomY, PIPE_WIDTH, bottomH);
-            ctx.strokeRect(pipe.x, bottomY, PIPE_WIDTH, bottomH);
+            ctx.fillRect(pipe.x, bottomY, PIPE_WIDTH, height - bottomY);
+            ctx.strokeRect(pipe.x, bottomY, PIPE_WIDTH, height - bottomY);
         });
 
         // Draw Players
@@ -174,42 +223,30 @@ const OrbitRunner2D = () => {
             ctx.shadowColor = p.color;
             ctx.shadowBlur = 20;
 
-            // Rocket Shape
+            if (p.dead) ctx.globalAlpha = 0.5;
+
             ctx.beginPath();
-            ctx.moveTo(0, -PLAYER_SIZE / 2); // Tip
-            ctx.lineTo(PLAYER_SIZE / 2, PLAYER_SIZE / 2); // Right
-            ctx.lineTo(0, PLAYER_SIZE / 3); // Center indentation
-            ctx.lineTo(-PLAYER_SIZE / 2, PLAYER_SIZE / 2); // Left
+            ctx.moveTo(0, -PLAYER_SIZE / 2);
+            ctx.lineTo(PLAYER_SIZE / 2, PLAYER_SIZE / 2);
+            ctx.lineTo(0, PLAYER_SIZE / 3);
+            ctx.lineTo(-PLAYER_SIZE / 2, PLAYER_SIZE / 2);
             ctx.closePath();
-
             ctx.fill();
-
-            if (p.dead) {
-                // X eyes
-                ctx.strokeStyle = '#FFF';
-                ctx.lineWidth = 2;
-                ctx.beginPath(); ctx.moveTo(-5, -5); ctx.lineTo(5, 5); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(5, -5); ctx.lineTo(-5, 5); ctx.stroke();
-            }
 
             ctx.restore();
         };
 
-        // Player 1
         drawPlayer(state.current.p1, 100);
-        // Player 2
         drawPlayer(state.current.p2, 100);
 
-        // Draw Score
+        // Score
         ctx.fillStyle = 'white';
         ctx.font = 'bold 48px monospace';
         ctx.textAlign = 'center';
         ctx.fillText(scoreRef.current, width / 2, 80);
     };
 
-    // --- GAME CONTROL ---
     const startGame = () => {
-        // Reset Logic
         state.current = {
             p1: { y: 300, vy: 0, dead: false, color: '#06b6d4' },
             p2: { y: 300, vy: 0, dead: false, color: '#d946ef' },
@@ -218,8 +255,6 @@ const OrbitRunner2D = () => {
         scoreRef.current = 0;
         frameRef.current = 0;
         setGameState('playing');
-        setWinner(null);
-
         requestRef.current = requestAnimationFrame(update);
     };
 
@@ -227,21 +262,7 @@ const OrbitRunner2D = () => {
         setGameState('gameover');
         cancelAnimationFrame(requestRef.current);
         setFinalScore(scoreRef.current);
-
-        // Determine Winner (who died LAST)
-        // Since update loop checks collision sequentially, if both die same frame it's draw.
-        // We can track death timestamps if strict precision needed, but for now:
-        // logic is usually handled inside the loop for who died first. 
-        // Simple logic: if p1 dead and p2 dead, draw. If one alive, they win.
-        // Wait, endGame is called when BOTH are dead.
-        // So we need to store who died first? 
-        // Let's rely on React state to tell us, or just call it a draw if simultaneous.
-        // Actually, let's look at remaining HP or distance. Same distance = draw.
-        setWinner('draw'); // Default to draw if crash same frame
     };
-
-    // Fix winning logic by tracking death order
-    // Modify update loop to check death
 
     useEffect(() => {
         const resize = () => {
@@ -255,46 +276,50 @@ const OrbitRunner2D = () => {
         return () => window.removeEventListener('resize', resize);
     }, []);
 
-    // Draw initial screen
+    // Initial Draw
     useEffect(() => {
         if (gameState === 'ready' && canvasRef.current) {
             const ctx = canvasRef.current.getContext('2d');
-            draw(ctx, canvasRef.current.width, canvasRef.current.height);
+            if (ctx) draw(ctx, canvasRef.current.width, canvasRef.current.height);
         }
     }, [gameState]);
 
-
     return (
-        <div className="w-full h-full relative bg-gray-950 font-sans overflow-hidden select-none">
+        <div className="w-full h-full relative bg-gray-950 font-sans overflow-hidden select-none touch-none">
             <canvas ref={canvasRef} className="block w-full h-full" />
 
             {/* UI LAYER */}
             <div className="absolute inset-0 pointer-events-none p-6 flex flex-col justify-center items-center z-50">
-
                 {gameState === 'ready' && (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="bg-black/80 backdrop-blur-xl p-12 border border-cyan-500/30 text-center rounded-2xl shadow-2xl pointer-events-auto max-w-lg w-full"
+                        className="bg-black/80 backdrop-blur-xl p-8 md:p-12 border border-cyan-500/30 text-center rounded-2xl shadow-2xl pointer-events-auto max-w-lg w-full"
                     >
-                        <h1 className="text-6xl font-black text-white mb-2 tracking-tighter italic">
-                            ORBIT<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-fuchsia-500">RELAY</span>
+                        <h1 className="text-5xl md:text-6xl font-black text-white mb-2 tracking-tighter italic">
+                            ORBIT<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-fuchsia-500">DUO</span>
                         </h1>
-                        <p className="text-gray-400 mb-8 font-mono text-sm">2-PLAYER CO-OP SURVIVAL</p>
+                        <p className="text-gray-400 mb-8 font-mono text-sm">UNIVERSAL 2-PLAYER CO-OP</p>
 
-                        <div className="grid grid-cols-2 gap-4 mb-8">
-                            <div className="p-4 bg-gray-900/50 rounded-xl border border-cyan-500/30">
-                                <h3 className="text-cyan-400 font-bold mb-2">PLAYER 1</h3>
-                                <div className="flex justify-center gap-2">
-                                    <Keyboard className="text-gray-500" />
-                                    <span className="font-mono text-white bg-gray-800 px-2 rounded">SPACE</span>
+                        <div className="grid grid-cols-2 gap-4 mb-8 text-sm md:text-base">
+                            <div className="p-4 bg-gray-900/50 rounded-xl border border-cyan-500/30 flex flex-col items-center gap-2">
+                                <h3 className="text-cyan-400 font-bold">PLAYER 1</h3>
+                                <div className="flex items-center gap-2 text-gray-400">
+                                    <MousePointer2 size={16} className="-scale-x-100" />
+                                    <span>LEFT TAP</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-gray-500 text-xs">
+                                    <Keyboard size={14} /> SPACE / W
                                 </div>
                             </div>
-                            <div className="p-4 bg-gray-900/50 rounded-xl border border-fuchsia-500/30">
-                                <h3 className="text-fuchsia-400 font-bold mb-2">PLAYER 2</h3>
-                                <div className="flex justify-center gap-2">
-                                    <Keyboard className="text-gray-500" />
-                                    <span className="font-mono text-white bg-gray-800 px-2 rounded">ENTER</span>
+                            <div className="p-4 bg-gray-900/50 rounded-xl border border-fuchsia-500/30 flex flex-col items-center gap-2">
+                                <h3 className="text-fuchsia-400 font-bold">PLAYER 2</h3>
+                                <div className="flex items-center gap-2 text-gray-400">
+                                    <span>RIGHT TAP</span>
+                                    <MousePointer2 size={16} />
+                                </div>
+                                <div className="flex items-center gap-2 text-gray-500 text-xs">
+                                    <Keyboard size={14} /> ENTER / UP
                                 </div>
                             </div>
                         </div>
@@ -314,18 +339,17 @@ const OrbitRunner2D = () => {
                         animate={{ opacity: 1, y: 0 }}
                         className="bg-black/90 backdrop-blur-xl p-10 border-y-2 border-red-500 text-center pointer-events-auto"
                     >
-                        <h2 className="text-red-500 text-5xl font-black mb-2 tracking-tighter">CRASHED</h2>
+                        <h2 className="text-red-500 text-4xl md:text-5xl font-black mb-2 tracking-tighter">MISSION FAILED</h2>
                         <div className="text-6xl font-mono text-white mb-8">{finalScore}</div>
 
                         <button
                             onClick={startGame}
                             className="px-8 py-3 bg-white text-black font-bold text-lg hover:bg-gray-200 transition-all rounded flex items-center gap-2 mx-auto"
                         >
-                            <RotateCcw size={20} /> RESTART
+                            <RotateCcw size={20} /> RESTART MISSION
                         </button>
                     </motion.div>
                 )}
-
             </div>
         </div>
     );

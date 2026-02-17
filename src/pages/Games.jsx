@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { motion } from 'framer-motion';
 import { Rocket, Gamepad2, Play, Grid as GridIcon } from 'lucide-react';
-import OrbitBird from '../components/games/flight/OrbitBird';
+
 import GridBattle from '../components/games/grid/GridBattle';
 import OrbitRunner2D from '../components/games/arcade/OrbitRunner2D';
 
@@ -12,28 +12,20 @@ const Games = () => {
 
     const games = [
         {
-            id: 'orbit-bird',
-            title: 'Orbit Bird',
-            description: 'Navigate through the asteroid belt! A 3D infinite runner.',
+            id: 'orbit-duo',
+            title: 'Orbit Duo',
+            description: '2-Player Co-op. Touch or Keys. Fly together!',
             icon: Rocket,
-            color: 'from-indigo-400 to-purple-500',
-            component: OrbitBird
+            color: 'from-cyan-500 to-fuchsia-500',
+            component: OrbitRunner2D
         },
         {
             id: 'grid-battle',
             title: 'Grid Battle',
             description: 'The ultimate classroom quiz showdown! Teams, bombs, and glory.',
-            icon: GridIcon, // Need to import GridIcon
+            icon: GridIcon,
             color: 'from-blue-600 to-indigo-600',
             component: GridBattle
-        },
-        {
-            id: 'orbit-runner-2d',
-            title: 'Orbit Runner 2D',
-            description: '2-Player Co-op Survival. Fly together, crash together.',
-            icon: Gamepad2,
-            color: 'from-cyan-500 to-fuchsia-500',
-            component: OrbitRunner2D
         }
     ];
 
