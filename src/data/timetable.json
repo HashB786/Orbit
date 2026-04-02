@@ -23,7 +23,7 @@
                     "Monday": [
                         {
                             "period": 1,
-                            "subject": "Ks (Class Hour)",
+                            "subject": "Ks",
                             "teacher": "Mr. G'olib",
                             "room": "205"
                         },
@@ -41,18 +41,24 @@
                         },
                         {
                             "period": 4,
+                            "subject": "Art ",
+                            "teacher": "Mr. G'olib",
+                            "room": "205"
+                        },
+                        {
+                            "period": 5,
                             "subject": "CS",
                             "teacher": "RS",
                             "room": "103"
                         },
                         {
-                            "period": 5,
+                            "period": 6,
                             "subject": "Eng",
                             "teacher": "Ms. Gulnoza / Ms. Haydee",
                             "room": "106"
                         },
                         {
-                            "period": 6,
+                            "period": 7,
                             "subject": "Math",
                             "teacher": "Mr. Sirojiddin / Ms. Lucy",
                             "room": "105"

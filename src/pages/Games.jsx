@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { motion } from 'framer-motion';
-import { Rocket, Gamepad2, Play, Grid as GridIcon } from 'lucide-react';
+import { Gamepad2, Play, Grid as GridIcon, Navigation, CircleDollarSign } from 'lucide-react';
 
 import GridBattle from '../components/games/grid/GridBattle';
-import OrbitRunner2D from '../components/games/arcade/OrbitRunner2D';
+import Millionaire from '../components/games/quiz/Millionaire';
 
 const Games = () => {
     const { t } = useLanguage();
@@ -12,12 +12,12 @@ const Games = () => {
 
     const games = [
         {
-            id: 'orbit-duo',
-            title: 'Orbit Duo',
-            description: '2-Player Co-op. Touch or Keys. Fly together!',
-            icon: Rocket,
-            color: 'from-cyan-500 to-fuchsia-500',
-            component: OrbitRunner2D
+            id: 'millionaire',
+            title: 'Who Wants to Be a Millionaire?',
+            description: 'Test your knowledge and climb the money tree!',
+            icon: CircleDollarSign,
+            color: 'from-blue-900 to-indigo-900',
+            component: Millionaire
         },
         {
             id: 'grid-battle',

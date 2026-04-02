@@ -82,26 +82,20 @@ const Timetable = () => {
     const currentDayIndex = now.getDay(); // 0 = Sunday
     const currentDayName = DAYS[currentDayIndex];
 
-    // Check if a lesson has passed
-    const isLessonPassed = (dayName, timeSlot) => {
-        const dayIndex = DAYS.indexOf(dayName);
-        // 0=Sun, 1=Mon... 
-        // Timetable usually Mon-Fri. 
-        // If currentDay is Mon(1), and lesson is Tue(2) -> Future.
-        // If currentDay is Mon(1), and lesson is Sun(0) -> Passed. (Assuming week starts Sunday? Or Monday?)
+    // Check if a lesson has passed using exact calendar date and time
+    const isLessonPassed = (columnDate, timeSlot) => {
+        if (!timeSlot) return false;
 
-        // Let's assume standard week wrap-around is tricky. 
-        // Simpler: Compare indexes. If we treat Sunday as 0, Mon as 1. 
-        // If today is Wed(3). Mon(1) is passed. Tue(2) is passed.
-        // But what about next week? The view is "Weekly Schedule". 
-        // Usually implies "This Week".
-
-        if (dayIndex < currentDayIndex) return true; // Previous day in this week
-        if (dayIndex > currentDayIndex) return false; // Future day in this week
-
-        // Same day
         const { end } = parseTime(timeSlot);
-        return end < currentMinutes;
+        const endHours = Math.floor(end / 60);
+        const endMins = end % 60;
+
+        // Create an exact Date object for the lesson's end time
+        const lessonEndTime = new Date(columnDate);
+        lessonEndTime.setHours(endHours, endMins, 0, 0);
+
+        // Compare exact lesson end time with current exact time
+        return lessonEndTime < now;
     };
 
     const gradeData = timetableData.grades[viewGrade];
@@ -365,7 +359,7 @@ const Timetable = () => {
                                 {schedule.map((lesson, i) => {
                                     const timeSlot = timetableData.time_slots[String(lesson.period)];
                                     const taskCount = getTaskCountOnDate(lesson.subject, columnDate);
-                                    const isPassed = isLessonPassed(day, timeSlot);
+                                    const isPassed = isLessonPassed(columnDate, timeSlot);
 
                                     return (
                                         <div key={i} className={`flex gap-3 items-start group relative transition-opacity ${isPassed ? 'opacity-50 grayscale-[0.5]' : ''}`}>
