@@ -890,8 +890,34 @@ const QuestionCreator = ({ onBack, onSave, onPublish, initialData, externalError
     };
 
     const handlePublish = async () => {
-        if (!name.trim() || !author.trim() || questions.length === 0) {
-            setError("Name, Author, and Questions are required.");
+        let finalQuestions = [];
+
+        // 1. Extract questions based on mode
+        if (inputMode === 'manual') {
+            finalQuestions = questions.filter(n => n.q && n.a);
+        } else {
+            try {
+                let parsed = JSON.parse(jsonInput);
+                if (Array.isArray(parsed)) {
+                    finalQuestions = parsed.map(p => ({ 
+                        q: p.q || p.question || p.ques || '', 
+                        a: p.a || p.answer || p.ans || '' 
+                    })).filter(q => q.q && q.a);
+                } else {
+                    finalQuestions = Object.values(parsed).map(p => ({
+                        q: p.q || p.question || p.ques || '',
+                        a: p.a || p.answer || p.ans || ''
+                    })).filter(q => q.q && q.a);
+                }
+            } catch (e) {
+                setError("Invalid JSON format.");
+                return;
+            }
+        }
+
+        // 2. Validate basic requirements
+        if (!name.trim() || !author.trim() || finalQuestions.length === 0) {
+            setError("Name, Author, and valid Questions are required.");
             return;
         }
 
@@ -899,28 +925,38 @@ const QuestionCreator = ({ onBack, onSave, onPublish, initialData, externalError
         setPublishStatus('validating');
         
         // Artificial short delay to make stages visible to human eye
-        // while performing actual validation and object filtering
-        const processedQs = questions.filter(n => n.q && n.a);
         await new Promise(r => setTimeout(r, 500)); 
 
         setPublishStatus('connecting');
         await new Promise(r => setTimeout(r, 400));
 
         setPublishStatus('uploading');
+        
         try {
-            const success = await onPublish(name, author, processedQs);
+            // 3. Add a Timeout (15 seconds) to prevent infinite hanging
+            const uploadPromise = onPublish(name, author, finalQuestions);
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error("Timeout")), 15000)
+            );
+
+            // Race the upload against the timeout
+            const success = await Promise.race([uploadPromise, timeoutPromise]);
+
             if (success) {
                 setPublishStatus('success');
-                // Auto-close after a delay to show success
-                setTimeout(() => {
-                    setPublishStatus('idle');
-                }, 2000);
+                setTimeout(() => setPublishStatus('idle'), 2000);
             } else {
                 setPublishStatus('error');
+                setError("Database rejected the upload. Check your connection.");
             }
         } catch (e) {
             setPublishStatus('error');
-            console.error(e);
+            if (e.message === "Timeout") {
+                setError("Upload timed out (15s). Did you add your Firebase keys to Netlify?");
+            } else {
+                setError("Upload failed. Check browser console for details.");
+                console.error(e);
+            }
         }
     };
 
