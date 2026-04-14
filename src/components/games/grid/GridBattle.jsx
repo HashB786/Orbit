@@ -827,6 +827,7 @@ const QuestionCreator = ({ onBack, onSave, onPublish, initialData, externalError
     const [name, setName] = useState(initialData?.name || '');
     const [author, setAuthor] = useState(initialData?.author || '');
     const [inputMode, setInputMode] = useState('manual'); // 'manual' | 'json'
+    const [publishStatus, setPublishStatus] = useState('idle'); // 'idle' | 'validating' | 'connecting' | 'uploading' | 'success' | 'error'
 
     // Manual State
     const [questions, setQuestions] = useState(initialData?.questions || []);
@@ -888,12 +889,39 @@ const QuestionCreator = ({ onBack, onSave, onPublish, initialData, externalError
         onSave(name, finalQuestions.filter(n => n.q && n.a));
     };
 
-    const handlePublish = () => {
+    const handlePublish = async () => {
         if (!name.trim() || !author.trim() || questions.length === 0) {
             setError("Name, Author, and Questions are required.");
             return;
         }
-        onPublish(name, author, questions.filter(n => n.q && n.a));
+
+        setError(null);
+        setPublishStatus('validating');
+        
+        // Artificial short delay to make stages visible to human eye
+        // while performing actual validation and object filtering
+        const processedQs = questions.filter(n => n.q && n.a);
+        await new Promise(r => setTimeout(r, 500)); 
+
+        setPublishStatus('connecting');
+        await new Promise(r => setTimeout(r, 400));
+
+        setPublishStatus('uploading');
+        try {
+            const success = await onPublish(name, author, processedQs);
+            if (success) {
+                setPublishStatus('success');
+                // Auto-close after a delay to show success
+                setTimeout(() => {
+                    setPublishStatus('idle');
+                }, 2000);
+            } else {
+                setPublishStatus('error');
+            }
+        } catch (e) {
+            setPublishStatus('error');
+            console.error(e);
+        }
     };
 
     return (
@@ -1063,9 +1091,59 @@ const QuestionCreator = ({ onBack, onSave, onPublish, initialData, externalError
                         </button>
                         <button
                             onClick={handlePublish}
-                            className="flex-1 py-4 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 text-xl shadow-lg mt-8 transition-transform hover:scale-[1.02]"
+                            disabled={publishStatus !== 'idle' && publishStatus !== 'error'}
+                            className={`flex-1 py-4 rounded-xl font-bold flex items-center justify-center gap-3 text-xl shadow-lg mt-8 transition-all duration-300 relative overflow-hidden ${
+                                publishStatus === 'idle' ? 'bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 hover:scale-[1.02]' :
+                                publishStatus === 'success' ? 'bg-green-500' :
+                                publishStatus === 'error' ? 'bg-red-500' :
+                                'bg-gray-700 cursor-wait'
+                            }`}
                         >
-                            <Globe /> Publish to World
+                            {/* Loading Bar Effect */}
+                            {(publishStatus === 'connecting' || publishStatus === 'uploading') && (
+                                <motion.div 
+                                    className="absolute bottom-0 left-0 h-1 bg-white/30"
+                                    initial={{ width: '0%' }}
+                                    animate={{ width: publishStatus === 'connecting' ? '30%' : '90%' }}
+                                    transition={{ duration: 1 }}
+                                />
+                            )}
+
+                            <AnimatePresence mode="wait">
+                                {publishStatus === 'idle' && (
+                                    <motion.div key="idle" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex items-center gap-2">
+                                        <Globe size={24} /> Publish to World
+                                    </motion.div>
+                                )}
+                                {publishStatus === 'validating' && (
+                                    <motion.div key="val" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex items-center gap-2">
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        Validating Data...
+                                    </motion.div>
+                                )}
+                                {publishStatus === 'connecting' && (
+                                    <motion.div key="conn" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex items-center gap-2 text-primary-200">
+                                        <div className="w-5 h-5 border-2 border-primary-400 border-t-white rounded-full animate-spin" />
+                                        Handshaking...
+                                    </motion.div>
+                                )}
+                                {publishStatus === 'uploading' && (
+                                    <motion.div key="up" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex items-center gap-2">
+                                        <Upload className="animate-bounce" size={24} />
+                                        Sending to Database...
+                                    </motion.div>
+                                )}
+                                {publishStatus === 'success' && (
+                                    <motion.div key="suc" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-2">
+                                        <Check size={28} /> Published Successfully!
+                                    </motion.div>
+                                )}
+                                {publishStatus === 'error' && (
+                                    <motion.div key="err" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2">
+                                        <AlertTriangle size={24} /> Upload Failed
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </button>
                     </div>
                 </div>
