@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        /* Default Green (Emerald) */
+        --color-primary-50: 236 253 245;
+        --color-primary-100: 209 250 229;
+        --color-primary-200: 167 243 208;
+        --color-primary-300: 110 231 183;
+        --color-primary-400: 52 211 153;
+        --color-primary-500: 16 185 129;
+        --color-primary-600: 5 150 105;
+        --color-primary-700: 4 120 87;
+        --color-primary-800: 6 95 70;
+        --color-primary-900: 6 78 59;
+        --color-primary-950: 2 44 34;
+    }
+
+    [data-theme="blue"] {
+        /* Blue Theme */
+        --color-primary-50: 239 246 255;
+        --color-primary-100: 219 234 254;
+        --color-primary-200: 191 219 254;
+        --color-primary-300: 147 197 253;
+        --color-primary-400: 96 165 250;
+        --color-primary-500: 59 130 246;
+        --color-primary-600: 37 99 235;
+        --color-primary-700: 29 78 216;
+        --color-primary-800: 30 64 175;
+        --color-primary-900: 30 58 138;
+        --color-primary-950: 23 37 84;
+    }
+
+    body {
+        @apply antialiased text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-dark-bg transition-colors duration-500 overflow-x-hidden;
+    }
+}
+
+@layer utilities {
+    .glass {
+        @apply bg-white/70 dark:bg-dark-surface/70 backdrop-blur-lg border border-white/20 dark:border-white/10 shadow-xl;
+    }
+
+    .no-blur .glass {
+        backdrop-filter: none !important;
+        @apply bg-white dark:bg-dark-surface;
+    }
+
+    .glass-card {
+        @apply bg-white dark:bg-dark-surface border border-gray-100 dark:border-gray-800 shadow-sm rounded-2xl transition-all;
+    }
+
+    .text-glow {
+        text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+    }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-gray-700 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary-500;
+}

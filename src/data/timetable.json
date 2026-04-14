@@ -1,0 +1,3036 @@
+{
+    "school_info": {
+        "name": "Karshi Presidential School",
+        "generated_date": "2025-09-07"
+    },
+    "time_slots": {
+        "1": "08:30 - 09:15",
+        "2": "09:20 - 10:05",
+        "3": "10:10 - 10:55",
+        "4": "11:15 - 12:00",
+        "5": "12:05 - 12:50",
+        "6": "13:45 - 14:30",
+        "7": "14:35 - 15:20",
+        "8": "15:25 - 16:10"
+    },
+    "grades": {
+        "5": {
+            "blue": {
+                "class_name": "5 Blue",
+                "class_teacher": "Tulaganov G'olib",
+                "room": "205",
+                "schedule": {
+                    "Monday": [
+                        {
+                            "period": 1,
+                            "subject": "Ks",
+                            "teacher": "Mr. G'olib",
+                            "room": "205"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Sci",
+                            "teacher": "Mr. Ulug'bek / Ms. LI",
+                            "room": "205"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Art",
+                            "teacher": "Mr. G'olib",
+                            "room": "205"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Art ",
+                            "teacher": "Mr. G'olib",
+                            "room": "205"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "CS",
+                            "teacher": "RS",
+                            "room": "103"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Eng",
+                            "teacher": "Ms. Gulnoza / Ms. Haydee",
+                            "room": "106"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Math",
+                            "teacher": "Mr. Sirojiddin / Ms. Lucy",
+                            "room": "105"
+                        }
+                    ],
+                    "Tuesday": [
+                        {
+                            "period": 1,
+                            "subject": "Math",
+                            "teacher": "Mr. Sirojiddin / Ms. Lucy",
+                            "room": "105"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Rus",
+                            "teacher": "SA",
+                            "room": "105"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "CS",
+                            "teacher": "RS",
+                            "room": "104"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Sci",
+                            "teacher": "Mr. Ulug'bek / Ms. LI",
+                            "room": "205"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Asadbek",
+                            "room": "109"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Eng",
+                            "teacher": "Ms. Gulnoza / Ms. Haydee",
+                            "room": "107"
+                        }
+                    ],
+                    "Wednesday": [
+                        {
+                            "period": 1,
+                            "subject": "Ona t",
+                            "teacher": "Ms. Xurshida",
+                            "room": "206"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Math",
+                            "teacher": "Mr. Sirojiddin / Ms. Lucy",
+                            "room": "M02"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Ona t",
+                            "teacher": "Ms. Xurshida",
+                            "room": "206"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Sci",
+                            "teacher": "Mr. Ulug'bek / Ms. LI",
+                            "room": "205"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Eng",
+                            "teacher": "Ms. Gulnoza / Ms. Haydee",
+                            "room": "106"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "History",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "106"
+                        }
+                    ],
+                    "Thursday": [
+                        {
+                            "period": 1,
+                            "subject": "Mus",
+                            "teacher": "Ms. Sarvinoz",
+                            "room": "105"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Math",
+                            "teacher": "Mr. Sirojiddin / Ms. Lucy",
+                            "room": "M02"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "History",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "206"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Rus",
+                            "teacher": "SA",
+                            "room": "205"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Adabiyot",
+                            "teacher": "Ms. Xurshida",
+                            "room": "206"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Ona t",
+                            "teacher": "Ms. Xurshida",
+                            "room": "206"
+                        }
+                    ],
+                    "Friday": [
+                        {
+                            "period": 1,
+                            "subject": "Eng",
+                            "teacher": "Ms. Gulnoza / Ms. Haydee",
+                            "room": "106"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "CE",
+                            "teacher": "Mr. Bobur",
+                            "room": "103"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Adabiyot",
+                            "teacher": "Ms. Xurshida",
+                            "room": "206"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "PE",
+                            "teacher": "Mr. Obid",
+                            "room": "Sports Hall"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Math",
+                            "teacher": "Mr. Sirojiddin / Ms. Lucy",
+                            "room": "M02"
+                        }
+                    ]
+                }
+            },
+            "green": {
+                "class_name": "5 Green",
+                "class_teacher": "Mr. Anvar",
+                "room": "104",
+                "schedule": {
+                    "Monday": [
+                        {
+                            "period": 1,
+                            "subject": "Ks",
+                            "teacher": "Mr. Anvar",
+                            "room": "104"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ulugbek T",
+                            "room": "103"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Math",
+                            "teacher": "Ms. Lucy / Ms. Shahnoza",
+                            "room": "103"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Asadbek",
+                            "room": "109"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Adabiyot",
+                            "teacher": "Mr. Ulugbek T",
+                            "room": "207"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Sci",
+                            "teacher": "Ms. LI",
+                            "room": "104"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Eng",
+                            "teacher": "Ms. Gulnoza / Ms. Haydee",
+                            "room": "106"
+                        }
+                    ],
+                    "Tuesday": [
+                        {
+                            "period": 1,
+                            "subject": "CS",
+                            "teacher": "RS",
+                            "room": "103"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Eng",
+                            "teacher": "Ms. Gulnoza / Ms. Haydee",
+                            "room": "107"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "CE",
+                            "teacher": "Mr. Bobur",
+                            "room": "103"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Math",
+                            "teacher": "Ms. Lucy / Ms. Shahnoza",
+                            "room": "106"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Sci",
+                            "teacher": "Ms. LI",
+                            "room": "108"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Rus",
+                            "teacher": "SA",
+                            "room": "105"
+                        }
+                    ],
+                    "Wednesday": [
+                        {
+                            "period": 1,
+                            "subject": "Eng",
+                            "teacher": "Ms. Gulnoza / Ms. Haydee",
+                            "room": "105"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "History",
+                            "teacher": "Mr. To'lqin",
+                            "room": "102"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Mus",
+                            "teacher": "Ms. Sarvinoz",
+                            "room": "103"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Adabiyot",
+                            "teacher": "Mr. Ulugbek T",
+                            "room": "206"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "PE",
+                            "teacher": "Mr. Obid",
+                            "room": "Sports Hall"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ulugbek T",
+                            "room": "206"
+                        }
+                    ],
+                    "Thursday": [
+                        {
+                            "period": 1,
+                            "subject": "Rus",
+                            "teacher": "SA",
+                            "room": "105"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Eng",
+                            "teacher": "Ms. Gulnoza / Ms. Haydee",
+                            "room": "106"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ulugbek T",
+                            "room": "206"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Math",
+                            "teacher": "Ms. Lucy / Ms. Shahnoza",
+                            "room": "103"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Math",
+                            "teacher": "Ms. Lucy / Ms. Shahnoza",
+                            "room": "103"
+                        }
+                    ],
+                    "Friday": [
+                        {
+                            "period": 1,
+                            "subject": "Math",
+                            "teacher": "Ms. Lucy / Ms. Shahnoza",
+                            "room": "102"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Art",
+                            "teacher": "Mr. G'olib",
+                            "room": "205"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "History",
+                            "teacher": "Mr. To'lqin",
+                            "room": "106"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "CS",
+                            "teacher": "RS",
+                            "room": "106"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Sci",
+                            "teacher": "Ms. LI",
+                            "room": "205"
+                        }
+                    ]
+                }
+            }
+        },
+        "6": {
+            "blue": {
+                "class_name": "6 Blue",
+                "class_teacher": "Ergashev Bobur",
+                "room": "109",
+                "schedule": {
+                    "Monday": [
+                        {
+                            "period": 1,
+                            "subject": "Ks",
+                            "teacher": "Mr. Bobur",
+                            "room": "109"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar / Mr. James",
+                            "room": "102"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar / Mr. James",
+                            "room": "102"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "History",
+                            "teacher": "Mr. To'lqin",
+                            "room": "108"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin / Ms. Haydee",
+                            "room": "105"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "CS",
+                            "teacher": "RS",
+                            "room": "103"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Sci",
+                            "teacher": "Ms. LI",
+                            "room": "205"
+                        }
+                    ],
+                    "Tuesday": [
+                        {
+                            "period": 1,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin / Ms. Haydee",
+                            "room": "107"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Asadbek",
+                            "room": "109"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Ona t",
+                            "teacher": "Ms. Xurshida",
+                            "room": "206"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Rus",
+                            "teacher": "SA",
+                            "room": "206"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Sci",
+                            "teacher": "Ms. LI",
+                            "room": "205"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Adabiyot",
+                            "teacher": "Ms. Xurshida",
+                            "room": "206"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar / Mr. James",
+                            "room": "101"
+                        }
+                    ],
+                    "Wednesday": [
+                        {
+                            "period": 2,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar / Mr. James",
+                            "room": "101"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Sci",
+                            "teacher": "Ms. LI",
+                            "room": "205"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin / Ms. Haydee",
+                            "room": "106"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "History",
+                            "teacher": "Mr. To'lqin",
+                            "room": "106"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Ona t",
+                            "teacher": "Ms. Xurshida",
+                            "room": "107"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar / Mr. James",
+                            "room": "101"
+                        }
+                    ],
+                    "Thursday": [
+                        {
+                            "period": 2,
+                            "subject": "Rus",
+                            "teacher": "SA",
+                            "room": "102"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "PE",
+                            "teacher": "Mr. Obid",
+                            "room": "Sports Hall"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Mus",
+                            "teacher": "Ms. Sarvinoz",
+                            "room": "105"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Art",
+                            "teacher": "Mr. G'olib",
+                            "room": "205"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Sci",
+                            "teacher": "Ms. LI",
+                            "room": "205"
+                        }
+                    ],
+                    "Friday": [
+                        {
+                            "period": 2,
+                            "subject": "CE",
+                            "teacher": "Mr. Bobur",
+                            "room": "205"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Adabiyot",
+                            "teacher": "Ms. Xurshida",
+                            "room": "206"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Asadbek",
+                            "room": "109"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "CS",
+                            "teacher": "RS",
+                            "room": "104"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin / Ms. Haydee",
+                            "room": "105"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Ona t",
+                            "teacher": "Ms. Xurshida",
+                            "room": "206"
+                        }
+                    ]
+                }
+            },
+            "green": {
+                "class_name": "6 Green",
+                "class_teacher": "Rahimov Baxtiyor",
+                "room": "108",
+                "schedule": {
+                    "Monday": [
+                        {
+                            "period": 1,
+                            "subject": "Ks",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "108"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "History",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "204"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin / Ms. Haydee",
+                            "room": "107"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar / Ms. Lucy",
+                            "room": "101"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar / Ms. Lucy",
+                            "room": "101"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Asadbek",
+                            "room": "109"
+                        }
+                    ],
+                    "Tuesday": [
+                        {
+                            "period": 1,
+                            "subject": "Sci",
+                            "teacher": "Ms. LI",
+                            "room": "205"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar / Ms. Lucy",
+                            "room": "101"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Sci",
+                            "teacher": "Ms. LI",
+                            "room": "205"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Asadbek",
+                            "room": "109"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "CS",
+                            "teacher": "RS",
+                            "room": "104"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Adabiyot",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        }
+                    ],
+                    "Wednesday": [
+                        {
+                            "period": 1,
+                            "subject": "History",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "105"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin / Ms. Haydee",
+                            "room": "107"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Sci",
+                            "teacher": "Ms. LI",
+                            "room": "205"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "PE",
+                            "teacher": "Mr. Obid",
+                            "room": "Sports Hall"
+                        }
+                    ],
+                    "Thursday": [
+                        {
+                            "period": 1,
+                            "subject": "Sci",
+                            "teacher": "Ms. LI",
+                            "room": "205"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Art",
+                            "teacher": "Mr. G'olib",
+                            "room": "205"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin / Ms. Haydee",
+                            "room": "106"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar / Ms. Lucy",
+                            "room": "101"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Adabiyot",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        }
+                    ],
+                    "Friday": [
+                        {
+                            "period": 1,
+                            "subject": "CS",
+                            "teacher": "RS",
+                            "room": "103"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Mus",
+                            "teacher": "Ms. Sarvinoz",
+                            "room": "105"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar / Ms. Lucy",
+                            "room": "101"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin / Ms. Haydee",
+                            "room": "107"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "CE",
+                            "teacher": "Mr. Bobur",
+                            "room": "204"
+                        }
+                    ]
+                }
+            }
+        },
+        "7": {
+            "blue": {
+                "class_name": "7 Blue",
+                "class_teacher": "O'razova Shahnoza",
+                "room": "102",
+                "schedule": {
+                    "Monday": [
+                        {
+                            "period": 1,
+                            "subject": "Ks",
+                            "teacher": "Ms. Shahnoza",
+                            "room": "102"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin / Ms. Haydee",
+                            "room": "107"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Sci",
+                            "teacher": "Mr. Ulug'bek / Ms. LI",
+                            "room": "108"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Geo",
+                            "teacher": "Mr. Ruslan A",
+                            "room": "107"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Math",
+                            "teacher": "Ms. Shahnoza / Ms. Lucy",
+                            "room": "107"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "History",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "107"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Adabiyot",
+                            "teacher": "Ms. Xurshida",
+                            "room": "206"
+                        },
+                        {
+                            "period": 8,
+                            "subject": "Math",
+                            "teacher": "Ms. Shahnoza / Ms. Lucy",
+                            "room": "103"
+                        }
+                    ],
+                    "Tuesday": [
+                        {
+                            "period": 1,
+                            "subject": "Geo",
+                            "teacher": "Mr. Ruslan A",
+                            "room": "105"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Sci",
+                            "teacher": "Mr. Ulug'bek / Ms. LI",
+                            "room": "105"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Math",
+                            "teacher": "Ms. Shahnoza / Ms. Lucy",
+                            "room": "102"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "PE",
+                            "teacher": "Mr. Obid",
+                            "room": "Sports Hall"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin / Ms. Haydee",
+                            "room": "107"
+                        }
+                    ],
+                    "Wednesday": [
+                        {
+                            "period": 1,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "CS",
+                            "teacher": "RS",
+                            "room": "103"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Sci",
+                            "teacher": "Mr. Ulug'bek / Ms. LI",
+                            "room": "205"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Math",
+                            "teacher": "Ms. Shahnoza / Ms. Lucy",
+                            "room": "102"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "History",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "103"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin / Ms. Haydee",
+                            "room": "107"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Asadbek",
+                            "room": "109"
+                        }
+                    ],
+                    "Thursday": [
+                        {
+                            "period": 1,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "CE",
+                            "teacher": "Mr. Bobur",
+                            "room": "108"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Sci",
+                            "teacher": "Mr. Ulug'bek / Ms. LI",
+                            "room": "205"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ruslan",
+                            "room": "101"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "History",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "204"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin / Ms. Haydee",
+                            "room": "107"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Asadbek",
+                            "room": "109"
+                        }
+                    ],
+                    "Friday": [
+                        {
+                            "period": 1,
+                            "subject": "Adabiyot",
+                            "teacher": "Ms. Xurshida",
+                            "room": "206"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Mus",
+                            "teacher": "Ms. Sarvinoz",
+                            "room": "105"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Math",
+                            "teacher": "Ms. Shahnoza / Ms. Lucy",
+                            "room": "102"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Art",
+                            "teacher": "Mr. G'olib",
+                            "room": "205"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "CS",
+                            "teacher": "RS",
+                            "room": "104"
+                        }
+                    ]
+                }
+            },
+            "green": {
+                "class_name": "7 Green",
+                "class_teacher": "Muhammadiyev Ruslan",
+                "room": "204",
+                "schedule": {
+                    "Monday": [
+                        {
+                            "period": 1,
+                            "subject": "Ks",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "History",
+                            "teacher": "Mr. To'lqin",
+                            "room": "207"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Geo",
+                            "teacher": "Mr. Ruslan A",
+                            "room": "105"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Sci",
+                            "teacher": "Mr. Ulug'bek / Ms. LI",
+                            "room": "108"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Art",
+                            "teacher": "Mr. G'olib",
+                            "room": "205"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        },
+                        {
+                            "period": 8,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin / Ms. Haydee",
+                            "room": "107"
+                        }
+                    ],
+                    "Tuesday": [
+                        {
+                            "period": 1,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Geo",
+                            "teacher": "Mr. Ruslan A",
+                            "room": "109"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin / Ms. Haydee",
+                            "room": "107"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Math",
+                            "teacher": "Ms. Shahnoza / Ms. Lucy",
+                            "room": "102"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "CS",
+                            "teacher": "RS",
+                            "room": "103"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Math",
+                            "teacher": "Ms. Shahnoza / Ms. Lucy",
+                            "room": "104"
+                        }
+                    ],
+                    "Wednesday": [
+                        {
+                            "period": 1,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Asadbek",
+                            "room": "109"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "History",
+                            "teacher": "Mr. To'lqin",
+                            "room": "108"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Math",
+                            "teacher": "Ms. Shahnoza / Ms. Lucy",
+                            "room": "103"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Adabiyot",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "CS",
+                            "teacher": "RS",
+                            "room": "104"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin / Ms. Haydee",
+                            "room": "107"
+                        }
+                    ],
+                    "Thursday": [
+                        {
+                            "period": 1,
+                            "subject": "History",
+                            "teacher": "Mr. To'lqin",
+                            "room": "107"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Asadbek",
+                            "room": "109"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Sci",
+                            "teacher": "Mr. Ulug'bek / Ms. LI",
+                            "room": "205"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "CE",
+                            "teacher": "Mr. Bobur",
+                            "room": "204"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "PE",
+                            "teacher": "Mr. Obid",
+                            "room": "Sports Hall"
+                        }
+                    ],
+                    "Friday": [
+                        {
+                            "period": 1,
+                            "subject": "Mus",
+                            "teacher": "Ms. Sarvinoz",
+                            "room": "105"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin / Ms. Haydee",
+                            "room": "107"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Sci",
+                            "teacher": "Mr. Ulug'bek / Ms. LI",
+                            "room": "108"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Sci",
+                            "teacher": "Mr. Ulug'bek / Ms. LI",
+                            "room": "205"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Math",
+                            "teacher": "Ms. Shahnoza / Ms. Lucy",
+                            "room": "103"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Adabiyot",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Math",
+                            "teacher": "Ms. Shahnoza / Ms. Lucy",
+                            "room": "102"
+                        }
+                    ]
+                }
+            }
+        },
+        "8": {
+            "blue": {
+                "class_name": "8 Blue",
+                "class_teacher": "Xusniddinova Shaxnoza",
+                "room": "105",
+                "schedule": {
+                    "Monday": [
+                        {
+                            "period": 1,
+                            "subject": "Ks",
+                            "teacher": "Ms. Shaxnoza",
+                            "room": "105"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Geo",
+                            "teacher": "Mr. Ruslan A",
+                            "room": "206"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ulugbek T",
+                            "room": "202"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Bio",
+                            "teacher": "Mr. George / Ms. Shaxnoza",
+                            "room": "206"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "History",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "107"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin",
+                            "room": "107"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "CE",
+                            "teacher": "Mr. Bobur",
+                            "room": "105"
+                        },
+                        {
+                            "period": 8,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror / Mr. James",
+                            "room": "101"
+                        }
+                    ],
+                    "Tuesday": [
+                        {
+                            "period": 1,
+                            "subject": "Chem",
+                            "teacher": "Ms. Anna",
+                            "room": "203"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ulugbek T",
+                            "room": "206"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Phys",
+                            "teacher": "Mr. Otabek",
+                            "room": "201"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Geo",
+                            "teacher": "Mr. Ruslan A",
+                            "room": "108"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Akmal",
+                            "room": "104"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror / Mr. James",
+                            "room": "101"
+                        }
+                    ],
+                    "Wednesday": [
+                        {
+                            "period": 1,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror / Mr. James",
+                            "room": "101"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Phys",
+                            "teacher": "Mr. Otabek",
+                            "room": "202"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Bio",
+                            "teacher": "Mr. George / Ms. Shaxnoza",
+                            "room": "202"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Bio",
+                            "teacher": "Mr. George / Ms. Shaxnoza",
+                            "room": "202"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Phys",
+                            "teacher": "Mr. Otabek",
+                            "room": "201"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "History",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "206"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Chem",
+                            "teacher": "Ms. Anna",
+                            "room": "203"
+                        },
+                        {
+                            "period": 8,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror / Mr. James",
+                            "room": "101"
+                        }
+                    ],
+                    "Thursday": [
+                        {
+                            "period": 3,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin",
+                            "room": "107"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin",
+                            "room": "107"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "CS",
+                            "teacher": "RS",
+                            "room": "103"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Adabiyot",
+                            "teacher": "Mr. Ulugbek T",
+                            "room": "105"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 8,
+                            "subject": "CS",
+                            "teacher": "RS",
+                            "room": "103"
+                        }
+                    ],
+                    "Friday": [
+                        {
+                            "period": 1,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin",
+                            "room": "107"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "History",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "109"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "CS",
+                            "teacher": "RS",
+                            "room": "104"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror / Mr. James",
+                            "room": "101"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Chem",
+                            "teacher": "Ms. Anna",
+                            "room": "203"
+                        },
+                        {
+                            "period": 8,
+                            "subject": "PE",
+                            "teacher": "Mr. Obid",
+                            "room": "Sports Hall"
+                        }
+                    ]
+                }
+            },
+            "green": {
+                "class_name": "8 Green",
+                "class_teacher": "Shukurov Obid",
+                "room": "105",
+                "schedule": {
+                    "Monday": [
+                        {
+                            "period": 1,
+                            "subject": "Ks",
+                            "teacher": "Mr. Obid",
+                            "room": "105"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Akmal",
+                            "room": "109"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Eng",
+                            "teacher": "Ms. Gulnoza",
+                            "room": "106"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Geo",
+                            "teacher": "Mr. Ruslan A",
+                            "room": "105"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror / Mr. James",
+                            "room": "101"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Chem",
+                            "teacher": "Ms. Anna",
+                            "room": "203"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror / Mr. James",
+                            "room": "101"
+                        },
+                        {
+                            "period": 8,
+                            "subject": "Adabiyot",
+                            "teacher": "Mr. Ulugbek T",
+                            "room": "206"
+                        }
+                    ],
+                    "Tuesday": [
+                        {
+                            "period": 1,
+                            "subject": "Eng",
+                            "teacher": "Ms. Gulnoza",
+                            "room": "106"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Chem",
+                            "teacher": "Ms. Anna",
+                            "room": "203"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Geo",
+                            "teacher": "Mr. Ruslan A",
+                            "room": "107"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ulugbek T",
+                            "room": "206"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "History",
+                            "teacher": "Mr. To'lqin",
+                            "room": "207"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "CS",
+                            "teacher": "Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Eng",
+                            "teacher": "Ms. Gulnoza",
+                            "room": "106"
+                        }
+                    ],
+                    "Wednesday": [
+                        {
+                            "period": 1,
+                            "subject": "Phys",
+                            "teacher": "Mr. Otabek",
+                            "room": "201"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Phys",
+                            "teacher": "Mr. Otabek",
+                            "room": "201"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Chem",
+                            "teacher": "Ms. Anna",
+                            "room": "203"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Bio",
+                            "teacher": "Mr. George / Ms. Shaxnoza",
+                            "room": "202"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "CS",
+                            "teacher": "Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Eng",
+                            "teacher": "Ms. Gulnoza",
+                            "room": "106"
+                        }
+                    ],
+                    "Thursday": [
+                        {
+                            "period": 1,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ulugbek T",
+                            "room": "207"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Bio",
+                            "teacher": "Mr. George / Ms. Shaxnoza",
+                            "room": "202"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "CE",
+                            "teacher": "Mr. Bobur",
+                            "room": "109"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "PE",
+                            "teacher": "Mr. Obid",
+                            "room": "Sports Hall"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "CS",
+                            "teacher": "Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror / Mr. James",
+                            "room": "101"
+                        }
+                    ],
+                    "Friday": [
+                        {
+                            "period": 1,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror / Mr. James",
+                            "room": "101"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "History",
+                            "teacher": "Mr. To'lqin",
+                            "room": "202"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Bio",
+                            "teacher": "Mr. George / Ms. Shaxnoza",
+                            "room": "106"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror / Mr. James",
+                            "room": "101"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Phys",
+                            "teacher": "Mr. Otabek",
+                            "room": "201"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "History",
+                            "teacher": "Mr. To'lqin",
+                            "room": "106"
+                        }
+                    ]
+                }
+            }
+        },
+        "9": {
+            "blue": {
+                "class_name": "9 Blue",
+                "class_teacher": "Ubaydullayeva Gulnoza",
+                "room": "201",
+                "schedule": {
+                    "Monday": [
+                        {
+                            "period": 1,
+                            "subject": "Ks",
+                            "teacher": "Ms. Gulnoza",
+                            "room": "201"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "CE",
+                            "teacher": "Mr. Bobur",
+                            "room": "207"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Math",
+                            "teacher": "Mr. Sirojiddin / Mr. James",
+                            "room": "101"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Eng",
+                            "teacher": "Mr. Asadbek",
+                            "room": "106"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Math",
+                            "teacher": "Mr. Sirojiddin / Mr. James",
+                            "room": "109"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "CS",
+                            "teacher": "Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        },
+                        {
+                            "period": 8,
+                            "subject": "Chem",
+                            "teacher": "Ms. Anna",
+                            "room": "203"
+                        }
+                    ],
+                    "Tuesday": [
+                        {
+                            "period": 1,
+                            "subject": "Adabiyot",
+                            "teacher": "Ms. Xurshida",
+                            "room": "206"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "PE",
+                            "teacher": "Mr. Obid",
+                            "room": "Sports Hall"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Phys",
+                            "teacher": "Mr. Frank",
+                            "room": "201"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Asadbek",
+                            "room": "109"
+                        },
+                        {
+                            "period": 8,
+                            "subject": "History",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "102"
+                        }
+                    ],
+                    "Wednesday": [
+                        {
+                            "period": 1,
+                            "subject": "Phys",
+                            "teacher": "Mr. Frank",
+                            "room": "203"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Ona t",
+                            "teacher": "Ms. Xurshida",
+                            "room": "206"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Eng",
+                            "teacher": "Mr. Asadbek",
+                            "room": "105"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "CS",
+                            "teacher": "Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Math",
+                            "teacher": "Mr. Sirojiddin / Mr. James",
+                            "room": "103"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Asadbek",
+                            "room": "109"
+                        },
+                        {
+                            "period": 8,
+                            "subject": "Bio",
+                            "teacher": "Ms. Shaxnoza / Mr. George",
+                            "room": "202"
+                        }
+                    ],
+                    "Thursday": [
+                        {
+                            "period": 1,
+                            "subject": "Phys",
+                            "teacher": "Mr. Frank",
+                            "room": "201"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Math",
+                            "teacher": "Mr. Sirojiddin / Mr. James",
+                            "room": "101"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "History",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "102"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Eng",
+                            "teacher": "Mr. Asadbek",
+                            "room": "107"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Bio",
+                            "teacher": "Ms. Shaxnoza / Mr. George",
+                            "room": "202"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "CS",
+                            "teacher": "Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        },
+                        {
+                            "period": 8,
+                            "subject": "Bio",
+                            "teacher": "Ms. Shaxnoza / Mr. George",
+                            "room": "202"
+                        }
+                    ],
+                    "Friday": [
+                        {
+                            "period": 1,
+                            "subject": "History",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "204"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Math",
+                            "teacher": "Mr. Sirojiddin / Mr. James",
+                            "room": "102"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Math",
+                            "teacher": "Mr. Sirojiddin / Mr. James",
+                            "room": "101"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Ona t",
+                            "teacher": "Ms. Xurshida",
+                            "room": "206"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "CS",
+                            "teacher": "Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Chem",
+                            "teacher": "Ms. Anna",
+                            "room": "203"
+                        },
+                        {
+                            "period": 8,
+                            "subject": "Chem",
+                            "teacher": "Ms. Anna",
+                            "room": "203"
+                        }
+                    ]
+                }
+            },
+            "green": {
+                "class_name": "9 Green",
+                "class_teacher": "Asadov Asror",
+                "room": "101",
+                "schedule": {
+                    "Monday": [
+                        {
+                            "period": 1,
+                            "subject": "Ks",
+                            "teacher": "Mr. Asror",
+                            "room": "101"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Eng",
+                            "teacher": "Mr. Asadbek",
+                            "room": "106"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Chem",
+                            "teacher": "Ms. Anna",
+                            "room": "203"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "PE",
+                            "teacher": "Mr. Obid",
+                            "room": "Sports Hall"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Phys",
+                            "teacher": "Mr. Frank",
+                            "room": "202"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "CS",
+                            "teacher": "Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        }
+                    ],
+                    "Tuesday": [
+                        {
+                            "period": 1,
+                            "subject": "CS",
+                            "teacher": "Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Math",
+                            "teacher": "Mr. Sirojiddin / Mr. James",
+                            "room": "101"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Math",
+                            "teacher": "Mr. Sirojiddin / Mr. James",
+                            "room": "103"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Adabiyot",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Bio",
+                            "teacher": "Ms. Shaxnoza / Mr. George",
+                            "room": "205"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Eng",
+                            "teacher": "Mr. Asadbek",
+                            "room": "202"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Bio",
+                            "teacher": "Ms. Shaxnoza / Mr. George",
+                            "room": "202"
+                        }
+                    ],
+                    "Wednesday": [
+                        {
+                            "period": 1,
+                            "subject": "Bio",
+                            "teacher": "Ms. Shaxnoza / Mr. George",
+                            "room": "202"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Eng",
+                            "teacher": "Mr. Asadbek",
+                            "room": "106"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Math",
+                            "teacher": "Mr. Sirojiddin / Mr. James",
+                            "room": "102"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Math",
+                            "teacher": "Mr. Sirojiddin / Mr. James",
+                            "room": "102"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "CS",
+                            "teacher": "Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        }
+                    ],
+                    "Thursday": [
+                        {
+                            "period": 1,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Asadbek",
+                            "room": "109"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Chem",
+                            "teacher": "Ms. Anna",
+                            "room": "203"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Math",
+                            "teacher": "Mr. Sirojiddin / Mr. James",
+                            "room": "102"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "History",
+                            "teacher": "Mr. To'lqin",
+                            "room": "101"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Math",
+                            "teacher": "Mr. Sirojiddin / Mr. James",
+                            "room": "108"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Phys",
+                            "teacher": "Mr. Frank",
+                            "room": "201"
+                        }
+                    ],
+                    "Friday": [
+                        {
+                            "period": 1,
+                            "subject": "History",
+                            "teacher": "Mr. To'lqin",
+                            "room": "207"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Chem",
+                            "teacher": "Ms. Anna",
+                            "room": "203"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "CE",
+                            "teacher": "Mr. Bobur",
+                            "room": "207"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Asadbek",
+                            "room": "109"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "History",
+                            "teacher": "Mr. To'lqin",
+                            "room": "104"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "CS",
+                            "teacher": "Mr. Jahongir / Mr. Evans",
+                            "room": "107"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Phys",
+                            "teacher": "Mr. Frank",
+                            "room": "201"
+                        }
+                    ]
+                }
+            }
+        },
+        "10": {
+            "blue": {
+                "class_name": "10 Blue",
+                "class_teacher": "Amirov Kamoliddin",
+                "room": "106",
+                "schedule": {
+                    "Monday": [
+                        {
+                            "period": 1,
+                            "subject": "OB(CS, PHYS, BIO)",
+                            "teacher": "Mr. Jahongir / Mr. Otabek / Ms. Shaxnoza / Mr. George / Mr. Evans / Mr. Frank",
+                            "room": "104"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "OB(CS, PHYS, BIO)",
+                            "teacher": "Mr. Jahongir / Mr. Otabek / Ms. Shaxnoza / Mr. George / Mr. Evans / Mr. Frank",
+                            "room": "104"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "OB(CS, PHYS, BIO)",
+                            "teacher": "Mr. Jahongir / Mr. Otabek / Ms. Shaxnoza / Mr. George / Mr. Evans / Mr. Frank",
+                            "room": "104"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin",
+                            "room": "107"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Ks",
+                            "teacher": "Mr. Kamoliddin",
+                            "room": "106"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Asadbek",
+                            "room": "108"
+                        },
+                        {
+                            "period": 8,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar",
+                            "room": "102"
+                        }
+                    ],
+                    "Tuesday": [
+                        {
+                            "period": 1,
+                            "subject": "OA(Chem, Eco, Comp)",
+                            "teacher": "Ms. Anna / Mr. Peter / Mr. Abror / Mr. Jahongir / Mr. Evans",
+                            "room": "103"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "OA(Chem, Eco, Comp)",
+                            "teacher": "Ms. Anna / Mr. Peter / Mr. Abror / Mr. Jahongir / Mr. Evans",
+                            "room": "103"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "History",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "205"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar",
+                            "room": "102"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin",
+                            "room": "107"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "History",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "207"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "PE",
+                            "teacher": "Mr. Obid",
+                            "room": "Sports Hall"
+                        },
+                        {
+                            "period": 8,
+                            "subject": "CO",
+                            "teacher": "Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        }
+                    ],
+                    "Wednesday": [
+                        {
+                            "period": 1,
+                            "subject": "OA(Chem, Eco, Comp)",
+                            "teacher": "Ms. Anna / Mr. Peter / Mr. Abror / Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "OA(Chem, Eco, Comp)",
+                            "teacher": "Ms. Anna / Mr. Peter / Mr. Abror / Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar",
+                            "room": "101"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "History",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "207"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin",
+                            "room": "107"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Adabiyot",
+                            "teacher": "Ms. Xurshida",
+                            "room": "206"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Ona t",
+                            "teacher": "Ms. Xurshida",
+                            "room": "206"
+                        },
+                        {
+                            "period": 8,
+                            "subject": "MP",
+                            "teacher": "Mr. Furqat",
+                            "room": "207"
+                        }
+                    ],
+                    "Thursday": [
+                        {
+                            "period": 1,
+                            "subject": "OB(CS, PHYS, BIO)",
+                            "teacher": "Mr. Jahongir / Mr. Otabek / Ms. Shaxnoza / Mr. George / Mr. Evans / Mr. Frank",
+                            "room": "104"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "OB(CS, PHYS, BIO)",
+                            "teacher": "Mr. Jahongir / Mr. Otabek / Ms. Shaxnoza / Mr. George / Mr. Evans / Mr. Frank",
+                            "room": "104"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "OA(Chem, Eco, Comp)",
+                            "teacher": "Ms. Anna / Mr. Peter / Mr. Abror / Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "OA(Chem, Eco, Comp)",
+                            "teacher": "Ms. Anna / Mr. Peter / Mr. Abror / Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Eng",
+                            "teacher": "Mr. Kamoliddin",
+                            "room": "107"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar",
+                            "room": "102"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "CO",
+                            "teacher": "Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        }
+                    ],
+                    "Friday": [
+                        {
+                            "period": 1,
+                            "subject": "OB(CS, PHYS, BIO)",
+                            "teacher": "Mr. Jahongir / Mr. Otabek / Ms. Shaxnoza / Mr. George / Mr. Evans / Mr. Frank",
+                            "room": "104"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "OB(CS, PHYS, BIO)",
+                            "teacher": "Mr. Jahongir / Mr. Otabek / Ms. Shaxnoza / Mr. George / Mr. Evans / Mr. Frank",
+                            "room": "104"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar",
+                            "room": "102"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar",
+                            "room": "103"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "MP",
+                            "teacher": "Mr. Furqat",
+                            "room": "207"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "CE",
+                            "teacher": "Mr. Bobur",
+                            "room": "204"
+                        }
+                    ]
+                }
+            },
+            "green": {
+                "class_name": "10 Green",
+                "class_teacher": "Norqobilov Jahongir",
+                "room": "103",
+                "schedule": {
+                    "Monday": [
+                        {
+                            "period": 1,
+                            "subject": "OB(CS, PHYS, BIO)",
+                            "teacher": "Mr. Jahongir / Mr. Otabek / Ms. Shaxnoza / Mr. George / Mr. Evans / Mr. Frank",
+                            "room": "104"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "OB(CS, PHYS, BIO)",
+                            "teacher": "Mr. Jahongir / Mr. Otabek / Ms. Shaxnoza / Mr. George / Mr. Evans / Mr. Frank",
+                            "room": "104"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "OB(CS, PHYS, BIO)",
+                            "teacher": "Mr. Jahongir / Mr. Otabek / Ms. Shaxnoza / Mr. George / Mr. Evans / Mr. Frank",
+                            "room": "104"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar",
+                            "room": "102"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Eng",
+                            "teacher": "Mr. Ralph / Ms. Gulnoza",
+                            "room": "106"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Ks",
+                            "teacher": "Mr. Jahongir",
+                            "room": "103"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "MP",
+                            "teacher": "Mr. Furqat",
+                            "room": "207"
+                        },
+                        {
+                            "period": 8,
+                            "subject": "PE",
+                            "teacher": "Mr. Obid",
+                            "room": "Sports Hall"
+                        }
+                    ],
+                    "Tuesday": [
+                        {
+                            "period": 1,
+                            "subject": "OA(Chem, Eco, Comp)",
+                            "teacher": "Ms. Anna / Mr. Peter / Mr. Abror / Mr. Jahongir / Mr. Evans",
+                            "room": "103"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "OA(Chem, Eco, Comp)",
+                            "teacher": "Ms. Anna / Mr. Peter / Mr. Abror / Mr. Jahongir / Mr. Evans",
+                            "room": "103"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "History",
+                            "teacher": "Mr. To'lqin",
+                            "room": "204"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Adabiyot",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar",
+                            "room": "101"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar",
+                            "room": "101"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 8,
+                            "subject": "CO",
+                            "teacher": "Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        }
+                    ],
+                    "Wednesday": [
+                        {
+                            "period": 1,
+                            "subject": "OA(Chem, Eco, Comp)",
+                            "teacher": "Ms. Anna / Mr. Peter / Mr. Abror / Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "OA(Chem, Eco, Comp)",
+                            "teacher": "Ms. Anna / Mr. Peter / Mr. Abror / Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "History",
+                            "teacher": "Mr. To'lqin",
+                            "room": "105"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Asadbek",
+                            "room": "109"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar",
+                            "room": "105"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "MP",
+                            "teacher": "Mr. Furqat",
+                            "room": "207"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar",
+                            "room": "102"
+                        },
+                        {
+                            "period": 8,
+                            "subject": "Eng",
+                            "teacher": "Mr. Ralph / Ms. Gulnoza",
+                            "room": "106"
+                        }
+                    ],
+                    "Thursday": [
+                        {
+                            "period": 1,
+                            "subject": "OB(CS, PHYS, BIO)",
+                            "teacher": "Mr. Jahongir / Mr. Otabek / Ms. Shaxnoza / Mr. George / Mr. Evans / Mr. Frank",
+                            "room": "104"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "OB(CS, PHYS, BIO)",
+                            "teacher": "Mr. Jahongir / Mr. Otabek / Ms. Shaxnoza / Mr. George / Mr. Evans / Mr. Frank",
+                            "room": "104"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "OA(Chem, Eco, Comp)",
+                            "teacher": "Ms. Anna / Mr. Peter / Mr. Abror / Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "OA(Chem, Eco, Comp)",
+                            "teacher": "Ms. Anna / Mr. Peter / Mr. Abror / Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Asadbek",
+                            "room": "109"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Eng",
+                            "teacher": "Mr. Ralph / Ms. Gulnoza",
+                            "room": "106"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "CO",
+                            "teacher": "Mr. Jahongir / Mr. Evans",
+                            "room": "104"
+                        }
+                    ],
+                    "Friday": [
+                        {
+                            "period": 1,
+                            "subject": "OB(CS, PHYS, BIO)",
+                            "teacher": "Mr. Jahongir / Mr. Otabek / Ms. Shaxnoza / Mr. George / Mr. Evans / Mr. Frank",
+                            "room": "104"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "OB(CS, PHYS, BIO)",
+                            "teacher": "Mr. Jahongir / Mr. Otabek / Ms. Shaxnoza / Mr. George / Mr. Evans / Mr. Frank",
+                            "room": "104"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Math",
+                            "teacher": "Mr. Anvar",
+                            "room": "102"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "CE",
+                            "teacher": "Mr. Bobur",
+                            "room": "204"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Eng",
+                            "teacher": "Mr. Ralph / Ms. Gulnoza",
+                            "room": "106"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        }
+                    ]
+                }
+            }
+        },
+        "11": {
+            "blue": {
+                "class_name": "11 Blue",
+                "class_teacher": "Haydarova Xurshida",
+                "room": "206",
+                "schedule": {
+                    "Monday": [
+                        {
+                            "period": 1,
+                            "subject": "Adabiyot / Ks",
+                            "teacher": "Ms. Xurshida",
+                            "room": "206"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "PE",
+                            "teacher": "Mr. Obid",
+                            "room": "Sports Hall"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "CE",
+                            "teacher": "Mr. Bobur",
+                            "room": "103"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror",
+                            "room": "101"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Chem, Phys, Econ",
+                            "teacher": "Ms. Anna / Mr. Otabek / Mr. Frank / Mr. Abror / Mr. Peter",
+                            "room": "203/201"
+                        }
+                    ],
+                    "Tuesday": [
+                        {
+                            "period": 1,
+                            "subject": "Bio, Phys, Econ",
+                            "teacher": "Mr. Otabek / Mr. George / Ms. Shaxnoza / Mr. Frank / Mr. Peter",
+                            "room": "201"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "MP",
+                            "teacher": "Mr. Furqat",
+                            "room": "105"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "History",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "207"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror",
+                            "room": "101"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Chem, Phys, Econ",
+                            "teacher": "Ms. Anna / Mr. Otabek / Mr. Frank / Mr. Abror / Mr. Peter",
+                            "room": "203"
+                        }
+                    ],
+                    "Wednesday": [
+                        {
+                            "period": 1,
+                            "subject": "History",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "108"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "207"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror",
+                            "room": "101"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Ona t",
+                            "teacher": "Ms. Xurshida",
+                            "room": "206"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Bio, Phys, Econ",
+                            "teacher": "Mr. Otabek / Mr. George / Ms. Shaxnoza / Mr. Frank / Mr. Peter",
+                            "room": "202"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "MP",
+                            "teacher": "Mr. Furqat",
+                            "room": "207"
+                        }
+                    ],
+                    "Thursday": [
+                        {
+                            "period": 1,
+                            "subject": "History",
+                            "teacher": "Mr. Baxtiyor",
+                            "room": "206"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Eng",
+                            "teacher": "Ms. Gulnoza / Ms. Haydee",
+                            "room": "106"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror",
+                            "room": "101"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Eng",
+                            "teacher": "Ms. Gulnoza / Ms. Haydee",
+                            "room": "106"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Chem, Phys, Econ",
+                            "teacher": "Ms. Anna / Mr. Otabek / Mr. Frank / Mr. Abror / Mr. Peter",
+                            "room": "203"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror",
+                            "room": "101"
+                        }
+                    ],
+                    "Friday": [
+                        {
+                            "period": 1,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Akmal",
+                            "room": "109"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Eng",
+                            "teacher": "Ms. Gulnoza / Ms. Haydee",
+                            "room": "106"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Ona t",
+                            "teacher": "Ms. Xurshida",
+                            "room": "206"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror",
+                            "room": "101"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "Bio, Phys, Econ",
+                            "teacher": "Mr. Otabek / Mr. George / Ms. Shaxnoza / Mr. Frank / Mr. Peter",
+                            "room": "201"
+                        }
+                    ]
+                }
+            },
+            "green": {
+                "class_name": "11 Green",
+                "class_teacher": "Dovurov Sirojiddin",
+                "room": "101",
+                "schedule": {
+                    "Monday": [
+                        {
+                            "period": 1,
+                            "subject": "Ks",
+                            "teacher": "Mr. Sirojiddin",
+                            "room": "101"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror",
+                            "room": "101"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror",
+                            "room": "101"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Chem, Phys, Econ",
+                            "teacher": "Ms. Anna / Mr. Otabek / Mr. Frank / Mr. Abror / Mr. Peter",
+                            "room": "203/201"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "MP",
+                            "teacher": "Mr. Furqat",
+                            "room": "207"
+                        },
+                        {
+                            "period": 7,
+                            "subject": "Bio, Phys, Econ",
+                            "teacher": "Mr. Otabek / Mr. George / Ms. Shaxnoza / Mr. Frank / Mr. Peter",
+                            "room": "201"
+                        }
+                    ],
+                    "Tuesday": [
+                        {
+                            "period": 1,
+                            "subject": "History",
+                            "teacher": "Mr. To'lqin",
+                            "room": "109"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Eng",
+                            "teacher": "Ms. Gulnoza",
+                            "room": "107"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror",
+                            "room": "101"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Ona t",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Chem, Phys, Econ",
+                            "teacher": "Ms. Anna / Mr. Otabek / Mr. Frank / Mr. Abror / Mr. Peter",
+                            "room": "203"
+                        }
+                    ],
+                    "Wednesday": [
+                        {
+                            "period": 1,
+                            "subject": "Eng",
+                            "teacher": "Ms. Gulnoza",
+                            "room": "107"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror",
+                            "room": "101"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Bio, Phys, Econ",
+                            "teacher": "Mr. Otabek / Mr. George / Ms. Shaxnoza / Mr. Frank / Mr. Peter",
+                            "room": "202"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "History",
+                            "teacher": "Mr. To'lqin",
+                            "room": "103"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "Math",
+                            "teacher": "Mr. Asror",
+                            "room": "101"
+                        }
+                    ],
+                    "Thursday": [
+                        {
+                            "period": 1,
+                            "subject": "History",
+                            "teacher": "Mr. To'lqin",
+                            "room": "106"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Eng",
+                            "teacher": "Ms. Gulnoza",
+                            "room": "108"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "Chem, Phys, Econ",
+                            "teacher": "Ms. Anna / Mr. Otabek / Mr. Frank / Mr. Abror / Mr. Peter",
+                            "room": "203"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "MP",
+                            "teacher": "Mr. Furqat",
+                            "room": "207"
+                        },
+                        {
+                            "period": 6,
+                            "subject": "PE",
+                            "teacher": "Mr. Obid",
+                            "room": "Sports Hall"
+                        }
+                    ],
+                    "Friday": [
+                        {
+                            "period": 1,
+                            "subject": "Adabiyot",
+                            "teacher": "Mr. Ruslan",
+                            "room": "204"
+                        },
+                        {
+                            "period": 2,
+                            "subject": "Rus",
+                            "teacher": "Mr. Azamat",
+                            "room": "108"
+                        },
+                        {
+                            "period": 3,
+                            "subject": "Bio, Phys, Econ",
+                            "teacher": "Mr. Otabek / Mr. George / Ms. Shaxnoza / Mr. Frank / Mr. Peter",
+                            "room": "201"
+                        },
+                        {
+                            "period": 4,
+                            "subject": "CE",
+                            "teacher": "Mr. Bobur",
+                            "room": "107"
+                        },
+                        {
+                            "period": 5,
+                            "subject": "GP",
+                            "teacher": "Mr. Ralph / Mr. Akmal",
+                            "room": "104"
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}
