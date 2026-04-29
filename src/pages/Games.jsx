@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { motion } from 'framer-motion';
-import { Gamepad2, Play, Grid as GridIcon, Navigation, CircleDollarSign } from 'lucide-react';
+import { Gamepad2, Play, Grid as GridIcon, Navigation, CircleDollarSign, Shield } from 'lucide-react';
 
 import GridBattle from '../components/games/grid/GridBattle';
 import Millionaire from '../components/games/quiz/Millionaire';
+import BunkerGame from '../components/games/bunker/BunkerGame';
 
 const Games = () => {
     const { t } = useLanguage();
@@ -26,6 +27,14 @@ const Games = () => {
             icon: GridIcon,
             color: 'from-blue-600 to-indigo-600',
             component: GridBattle
+        },
+        {
+            id: 'bunker',
+            title: 'Bunker',
+            description: 'Apocalypse is coming. Argue for your right to survive. Social deduction for 2–10 players.',
+            icon: Shield,
+            color: 'from-green-900 to-gray-900',
+            component: BunkerGame
         }
     ];
 
