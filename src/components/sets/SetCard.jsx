@@ -18,14 +18,16 @@ const SetCard = ({ set, to, onClick, badge, actions, selected = false }) => {
     const wrapperProps = to ? { to } : { type: 'button', onClick };
 
     return (
-        <div className={cx(cardClass, 'relative group flex flex-col min-w-0 transition-shadow hover:shadow-md', selected && 'ring-2 ring-primary-500')}>
+        <div className={cx(cardClass, 'orbit-card-hover relative group flex flex-col min-w-0', selected && 'ring-2 ring-primary-500')}>
             <Wrapper {...wrapperProps} className="flex-1 text-left p-4 flex gap-3 min-w-0 rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500">
-                <span className="w-12 h-12 shrink-0 rounded-xl bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center text-2xl" aria-hidden>
-                    {subjectEmoji(set.subject)}
+                <span className="relative w-12 h-12 shrink-0 flex items-center justify-center text-2xl" aria-hidden>
+                    <span className="absolute inset-0 rounded-full bg-gradient-to-br from-primary-100 to-violet-200 dark:from-primary-500/25 dark:to-violet-600/30" />
+                    <span className="absolute -inset-x-2 top-1/2 h-3 -translate-y-1/2 rounded-[50%] border border-primary-300/60 dark:border-primary-300/30 -rotate-[24deg]" />
+                    <span className="relative">{subjectEmoji(set.subject)}</span>
                 </span>
                 <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
-                        <span className="font-bold text-gray-900 dark:text-white truncate">{set.title}</span>
+                        <span className="font-display font-bold text-gray-900 dark:text-white truncate">{set.title}</span>
                         {badge === 'featured' && <Sparkles size={14} className="text-amber-500 shrink-0" aria-label="Featured" />}
                         {badge === 'public' && <Globe size={14} className="text-sky-500 shrink-0" aria-label="Public" />}
                         {badge === 'private' && <Lock size={13} className="text-gray-400 shrink-0" aria-label="Private" />}
@@ -49,7 +51,7 @@ const SetCard = ({ set, to, onClick, badge, actions, selected = false }) => {
 };
 
 export const HostButton = ({ setId, className = '' }) => (
-    <Link to={`/host/${setId}`} className={cx('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-500 text-white text-sm font-bold transition-colors', className)}>
+    <Link to={`/host/${setId}`} className={cx('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-b from-primary-500 to-primary-600 hover:from-primary-400 hover:to-primary-500 text-white text-sm font-bold shadow-[0_6px_16px_-8px_rgb(var(--color-primary-500))] transition-colors', className)}>
         <Play size={14} className="fill-current" /> Host
     </Link>
 );

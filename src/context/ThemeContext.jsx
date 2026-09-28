@@ -4,14 +4,15 @@ const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
     // 1. Saved Preferences (Persistent)
-    const [savedTheme, setSavedTheme] = useState(() => localStorage.getItem('theme') || 'light');
+    // Space (dark) is Orbit's default look
+    const [savedTheme, setSavedTheme] = useState(() => localStorage.getItem('theme') || 'dark');
     const [savedColorTheme, setSavedColorTheme] = useState(() => localStorage.getItem('colorTheme') || 'green');
 
     // 2. Active Session State (Temporary)
     // Initialize from SessionOptions OR SavedOptions
     const [theme, setTheme] = useState(() => {
         const session = sessionStorage.getItem('session_theme');
-        return session || localStorage.getItem('theme') || 'light';
+        return session || localStorage.getItem('theme') || 'dark';
     });
 
     const [colorTheme, setColorTheme] = useState(() => {
@@ -34,6 +35,8 @@ export const ThemeProvider = ({ children }) => {
         root.classList.remove('light', 'dark');
         root.classList.add(theme);
         sessionStorage.setItem('session_theme', theme);
+        // Phone browser bar matches the sky
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#050816' : '#eef1ff');
     }, [theme]);
 
     useEffect(() => {
@@ -61,28 +64,29 @@ export const ThemeProvider = ({ children }) => {
     };
 
     const toggleColorTheme = (permanent = false) => {
-        setAccent(colorTheme === 'green' ? 'blue' : 'green', permanent);
+        const order = ['green', 'blue', 'violet'];
+        setAccent(order[(order.indexOf(colorTheme) + 1) % order.length], permanent);
     };
 
     // Performance Settings
     const [performance, setPerformance] = useState(() => {
-        const saved = localStorage.getItem('perfSettings');
-        return saved ? JSON.parse(saved) : {
-            blur: true, // Glassmorphism enabled
-            reducedMotion: false,
-            particles: true // Confetti/Background blobs
-        };
+        const defaults = { blur: true, reducedMotion: false, particles: true };
+        try {
+            return { ...defaults, ...JSON.parse(localStorage.getItem('perfSettings') || '{}') };
+        } catch {
+            return defaults;
+        }
     });
 
     useEffect(() => {
         localStorage.setItem('perfSettings', JSON.stringify(performance));
 
         // Apply global classes for performance tweaking
-        if (!performance.blur) {
-            document.documentElement.classList.add('no-blur');
-        } else {
-            document.documentElement.classList.remove('no-blur');
-        }
+        const root = document.documentElement;
+        root.classList.toggle('no-blur', !performance.blur);
+        // Stops Orbit's CSS animations (twinkling stars, orbiting moons...)
+        root.classList.toggle('reduce-motion', !!performance.reducedMotion);
+        root.classList.toggle('no-fx', !performance.particles);
     }, [performance]);
 
     const updatePerformance = (key, value) => {

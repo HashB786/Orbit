@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Globe, Lock, ClipboardPaste, Plus, Play, AlertTriangle } from 'lucide-react';
+import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
+import { ArrowLeft, Save, Globe, Lock, Plus, Play, AlertTriangle, Sparkles, Wand2 } from 'lucide-react';
 import QuestionCard from '../components/editor/QuestionCard';
+import ImportModal from '../components/editor/ImportModal';
 import { Modal, ConfirmDialog, EmptyState, btn, inputClass, cx, TYPE_ICONS } from '../components/ui';
 import { toast } from '../components/ui/toast';
 import { QUESTION_TYPES, TYPE_IDS, createQuestion, convertQuestion, isValidQuestion, uid } from '../platform/questions/types';
-import { parseImport } from '../platform/questions/normalize';
+import { demoQuestion } from '../platform/questions/demos';
 import { saveSet, findLocalSet } from '../platform/sets/store';
 import { publishSet, unpublishSet } from '../platform/sets/publicSets';
 import { SUBJECTS } from '../platform/sets/search';
@@ -25,6 +26,7 @@ const draftKey = (id) => `orbit.editorDraft.${id || 'new'}`;
 
 const SetEditor = () => {
     const { setId } = useParams();
+    const [params] = useSearchParams();
     const navigate = useNavigate();
     const { userData, updateUserData } = useUser();
 
@@ -49,8 +51,8 @@ const SetEditor = () => {
         }
     });
     const [showErrors, setShowErrors] = useState(false);
-    const [importOpen, setImportOpen] = useState(false);
-    const [importText, setImportText] = useState('');
+    // /create/new?import=1 opens straight into "Import from ChatGPT"
+    const [importOpen, setImportOpen] = useState(() => params.get('import') === '1');
     const [leaveOpen, setLeaveOpen] = useState(false);
     const [publishOpen, setPublishOpen] = useState(false);
     const [authorName, setAuthorName] = useState(userData.name || '');
@@ -110,9 +112,25 @@ const SetEditor = () => {
     }), [update]);
     const onRemove = useCallback((id) => update(d => ({ ...d, questions: d.questions.filter(q => q.id !== id) })), [update]);
 
+    // The blank starter question is replaced instead of left behind as an empty card
+    const isUntouched = (q) => !q.prompt.trim() && !isValidQuestion(q)
+        && !(q.options || []).some(o => o.text.trim()) && !(q.accepted || []).some(a => a.trim()) && !(q.items || []).some(i => i.trim());
+    const append = (d, added) => ({
+        ...d,
+        questions: [...(d.questions.length === 1 && isUntouched(d.questions[0]) ? [] : d.questions), ...added]
+    });
+
+    const scrollToEnd = () => setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 50);
+
     const addQuestion = (type) => {
         update(d => ({ ...d, questions: [...d.questions, createQuestion(type)] }));
-        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 50);
+        scrollToEnd();
+    };
+
+    const addExamples = (typeList) => {
+        update(d => append(d, typeList.map(demoQuestion)));
+        toast(typeList.length === 1 ? `Example added (${QUESTION_TYPES[typeList[0]].label}). Edit it to make it yours.` : 'One example of each type added. Edit them to make them yours.');
+        scrollToEnd();
     };
 
     const stats = useMemo(() => {
@@ -206,20 +224,20 @@ const SetEditor = () => {
         }
     };
 
-    const runImport = () => {
-        const imported = parseImport(importText);
-        if (!imported.length) {
-            toast('Nothing to import. Use one "question | answer" per line, or paste JSON.', 'error');
-            return;
-        }
-        update(d => ({
-            ...d,
-            // Replace the untouched starter question instead of keeping an empty card
-            questions: [...d.questions.filter(q => q.prompt.trim() || isValidQuestion(q)), ...imported]
-        }));
+    const handleImport = (imported, meta = {}) => {
+        update(d => {
+            const next = append(d, imported);
+            if (meta.title && !d.title.trim()) next.title = meta.title;
+            if (meta.description && !d.description.trim()) next.description = meta.description;
+            if (meta.subject && !d.subject) {
+                const match = SUBJECTS.find(sub => sub.toLowerCase() === meta.subject.toLowerCase());
+                if (match) next.subject = match;
+            }
+            return next;
+        });
         setImportOpen(false);
-        setImportText('');
-        toast(`Imported ${imported.length} question${imported.length === 1 ? '' : 's'}.`);
+        toast(`Imported ${imported.length} question${imported.length === 1 ? '' : 's'}. Check them, then Save.`);
+        scrollToEnd();
     };
 
     const goBack = () => (dirty ? setLeaveOpen(true) : navigate(draft.id ? `/set/${draft.id}` : '/create'));
@@ -235,18 +253,20 @@ const SetEditor = () => {
     return (
         <div className="max-w-3xl mx-auto md:pb-16">
             {/* Sticky toolbar */}
-            <div className="sticky -top-4 md:-top-8 z-20 -mt-4 md:-mt-8 -mx-4 md:-mx-2 px-4 md:px-2 pt-4 md:pt-8 pb-3 bg-gray-50 dark:bg-dark-bg border-b border-gray-200/70 dark:border-gray-800 flex items-center gap-2">
+            <div className="sticky -top-4 md:-top-8 z-20 pb-3">
+                <div className="flex items-center gap-2 rounded-2xl border border-gray-200/80 dark:border-white/10 bg-white/95 dark:bg-[#0b1230]/95 shadow-[0_12px_30px_-18px_rgba(5,8,22,0.7)] p-2 pl-1">
                 <button onClick={goBack} className={btn.icon} aria-label="Back"><ArrowLeft size={20} /></button>
-                <span className="flex-1 min-w-0 font-bold truncate">{draft.title || 'New set'}</span>
+                <span className="flex-1 min-w-0 font-display font-bold text-lg truncate">{draft.title || 'New set'}</span>
                 {dirty && <span className="hidden sm:inline text-xs text-amber-600 dark:text-amber-400 font-semibold">Unsaved</span>}
                 {draft.id && !dirty && (
                     <Link to={`/host/${draft.id}`} className={cx(btn.secondary, 'px-3')}><Play size={16} /> <span className="hidden sm:inline">Host</span></Link>
                 )}
                 <button onClick={() => save()} disabled={busy} className={btn.primary}><Save size={18} /> Save</button>
+                </div>
             </div>
 
             {/* Details */}
-            <section className="bg-white dark:bg-dark-surface border border-gray-100 dark:border-gray-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4 mt-2">
+            <section className="orbit-card p-4 sm:p-5 space-y-4 mt-2">
                 <div>
                     <label htmlFor="set-title" className="block text-sm font-semibold mb-1.5">Title</label>
                     <input
@@ -278,7 +298,7 @@ const SetEditor = () => {
                             : <span className="inline-flex items-center gap-1.5 font-semibold text-gray-500"><Lock size={15} /> Private</span>}
                     </div>
                     <div className="flex gap-2">
-                        <button onClick={() => setImportOpen(true)} className={btn.secondary}><ClipboardPaste size={16} /> Import</button>
+                        <button onClick={() => setImportOpen(true)} className={btn.secondary}><Sparkles size={16} className="text-violet-400" /> Import</button>
                         {draft.visibility === 'public'
                             ? <button onClick={unpublish} disabled={busy} className={btn.secondary}><Lock size={16} /> Unpublish</button>
                             : <button onClick={() => setPublishOpen(true)} disabled={busy || stats.valid === 0} className={btn.secondary}><Globe size={16} /> Publish</button>}
@@ -288,7 +308,7 @@ const SetEditor = () => {
 
             {/* Questions */}
             <div className="flex items-center justify-between mt-6 mb-3">
-                <h2 className="text-lg font-bold">Questions <span className="text-gray-400 font-semibold">({draft.questions.length})</span></h2>
+                <h2 className="font-display text-xl font-bold">Questions <span className="text-gray-400 font-semibold">({draft.questions.length})</span></h2>
                 {stats.incomplete > 0 && draft.questions.length > 0 && (
                     <button onClick={() => setShowErrors(true)} className="text-xs font-semibold text-amber-600 dark:text-amber-400">
                         {stats.incomplete} incomplete
@@ -317,39 +337,35 @@ const SetEditor = () => {
             </div>
 
             {/* Add question */}
-            <div ref={bottomRef} className="mt-4 bg-white dark:bg-dark-surface border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl p-4">
-                <p className="text-sm font-semibold text-gray-500 mb-3 flex items-center gap-1.5"><Plus size={16} /> Add a question</p>
+            <div ref={bottomRef} className="mt-4 rounded-3xl border-2 border-dashed border-gray-300/80 dark:border-white/10 bg-white/50 dark:bg-white/[0.02] p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1.5"><Plus size={16} /> Add a question</p>
+                    <div className="flex flex-wrap gap-1.5">
+                        <button onClick={() => addExamples(TYPE_IDS)} className={cx(btn.ghost, 'text-sm py-1.5')}><Wand2 size={15} className="text-violet-400" /> One example of each</button>
+                        <button onClick={() => setImportOpen(true)} className={cx(btn.ghost, 'text-sm py-1.5')}><Sparkles size={15} className="text-violet-400" /> From ChatGPT</button>
+                    </div>
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                     {TYPE_IDS.map(t => {
                         const Icon = TYPE_ICONS[t];
                         return (
-                            <button key={t} onClick={() => addQuestion(t)} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
-                                <Icon size={20} />
-                                <span className="text-xs font-bold text-center leading-tight">{QUESTION_TYPES[t].label}</span>
-                            </button>
+                            <div key={t} className="flex flex-col rounded-2xl bg-white dark:bg-white/[0.04] border border-gray-200/80 dark:border-white/[0.07] overflow-hidden">
+                                <button onClick={() => addQuestion(t)} title={`Add an empty ${QUESTION_TYPES[t].label.toLowerCase()} question`} className="flex-1 flex flex-col items-center gap-1.5 px-2 pt-3 pb-2 hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:text-primary-700 dark:hover:text-primary-200 transition-colors">
+                                    <Icon size={20} />
+                                    <span className="text-xs font-bold text-center leading-tight">{QUESTION_TYPES[t].label}</span>
+                                </button>
+                                <button onClick={() => addExamples([t])} className="text-[11px] font-semibold py-1.5 border-t border-gray-200/80 dark:border-white/[0.07] text-gray-500 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors">
+                                    + Example
+                                </button>
+                            </div>
                         );
                     })}
                 </div>
             </div>
 
-            {/* Import */}
-            <Modal
-                open={importOpen}
-                onClose={() => setImportOpen(false)}
-                title="Import questions"
-                footer={<><button className={btn.secondary} onClick={() => setImportOpen(false)}>Cancel</button><button className={btn.primary} onClick={runImport}>Import</button></>}
-            >
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                    One question per line as <code className="px-1 rounded bg-gray-100 dark:bg-gray-800">question | answer</code>. They become written-answer questions you can change later. JSON exports also work.
-                </p>
-                <textarea
-                    value={importText}
-                    onChange={e => setImportText(e.target.value)}
-                    rows={8}
-                    placeholder={'Capital of France | Paris\n7 × 8 | 56\nLargest planet | Jupiter'}
-                    className={cx(inputClass, 'font-mono text-sm')}
-                />
-            </Modal>
+            {importOpen && (
+                <ImportModal open onClose={() => setImportOpen(false)} onImport={handleImport} currentTitle={draft.title} />
+            )}
 
             {/* Publish */}
             <Modal

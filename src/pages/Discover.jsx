@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Compass, Search, RotateCcw, SlidersHorizontal, X } from 'lucide-react';
 import SetCard, { HostButton } from '../components/sets/SetCard';
-import { EmptyState, Spinner, TypeBadge, btn, inputClass, cx } from '../components/ui';
+import { EmptyState, Spinner, TypeBadge, PageHeader, btn, inputClass, cx } from '../components/ui';
 import { FEATURED_SETS } from '../platform/sets/featured';
 import { usePublicSets, refreshPublicSets } from '../platform/sets/publicSets';
 import { matchesSearch, SUBJECTS } from '../platform/sets/search';
@@ -39,12 +39,7 @@ const Discover = () => {
 
     return (
         <div className="space-y-6 md:pb-16">
-            <header>
-                <h1 className="text-3xl md:text-4xl font-extrabold flex items-center gap-3">
-                    <Compass className="text-primary-500 shrink-0" size={32} /> Discover
-                </h1>
-                <p className="text-gray-500 dark:text-gray-400 mt-1">Find a set, preview it, and host it in seconds.</p>
-            </header>
+            <PageHeader icon={Compass} tone="violet" title="Discover" subtitle="Find a set, preview it, and host it in seconds." />
 
             <div className="flex gap-2">
                 <div className="relative flex-1 min-w-0">
@@ -70,7 +65,7 @@ const Discover = () => {
             </div>
 
             {showFilters && (
-                <div className="bg-white dark:bg-dark-surface border border-gray-100 dark:border-gray-800 rounded-2xl p-4 space-y-4">
+                <div className="orbit-card p-4 space-y-4">
                     <div>
                         <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Subject</h3>
                         <div className="flex flex-wrap gap-2">
@@ -100,7 +95,7 @@ const Discover = () => {
 
             {featured.length > 0 && (
                 <section>
-                    <h2 className="text-lg font-bold mb-3">Featured by Orbit</h2>
+                    <h2 className="font-display text-xl font-bold mb-3 text-gray-900 dark:text-white">Featured by Orbit</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                         {featured.map(set => <SetCard key={set.id} set={set} to={`/set/${set.id}`} badge="featured" actions={<HostButton setId={set.id} />} />)}
                     </div>
@@ -109,9 +104,9 @@ const Discover = () => {
 
             <section>
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                    <h2 className="text-lg font-bold">Community sets</h2>
+                    <h2 className="font-display text-xl font-bold text-gray-900 dark:text-white">Community sets</h2>
                     <div className="flex items-center gap-2">
-                        <select value={sort} onChange={e => setSort(e.target.value)} aria-label="Sort" className="bg-white dark:bg-dark-surface border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm font-semibold outline-none">
+                        <select value={sort} onChange={e => setSort(e.target.value)} aria-label="Sort" className="bg-white dark:bg-[#070c21] border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm font-semibold outline-none">
                             <option value="new">Newest</option>
                             <option value="popular">Most played</option>
                         </select>
@@ -129,7 +124,7 @@ const Discover = () => {
                         {community.map(set => <SetCard key={set.id} set={set} to={`/set/${set.id}`} badge="public" actions={<HostButton setId={set.id} />} />)}
                     </div>
                 ) : (
-                    <EmptyState icon={Compass} title={query || activeFilters ? 'No sets match your search' : 'No community sets yet'}>
+                    <EmptyState icon={Compass} tone="violet" title={query || activeFilters ? 'No sets match your search' : 'No community sets yet'}>
                         {query || activeFilters ? 'Try other words or clear the filters.' : 'Publish one of your sets from the Create tab and it will show up here.'}
                     </EmptyState>
                 )}

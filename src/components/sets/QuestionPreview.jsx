@@ -7,9 +7,9 @@ import { answerLabel, isValidQuestion } from '../../platform/questions/types';
 const QuestionPreview = ({ q, index, showAnswers }) => {
     const valid = isValidQuestion(q);
     return (
-        <li className="bg-white dark:bg-dark-surface border border-gray-100 dark:border-gray-800 rounded-2xl p-4">
+        <li className="orbit-card p-4">
             <div className="flex items-start gap-3">
-                <span className="w-7 h-7 shrink-0 rounded-lg bg-gray-100 dark:bg-gray-800 text-xs font-black flex items-center justify-center">{index + 1}</span>
+                <span className="w-7 h-7 shrink-0 rounded-lg bg-gray-100 dark:bg-white/[0.07] text-xs font-black flex items-center justify-center">{index + 1}</span>
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                         <TypeBadge type={q.type} />

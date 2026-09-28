@@ -18,6 +18,21 @@
         --color-primary-950: 2 44 34;
     }
 
+    [data-theme="violet"] {
+        /* Nebula (violet) theme */
+        --color-primary-50: 245 243 255;
+        --color-primary-100: 237 233 254;
+        --color-primary-200: 221 214 254;
+        --color-primary-300: 196 181 253;
+        --color-primary-400: 167 139 250;
+        --color-primary-500: 139 92 246;
+        --color-primary-600: 124 58 237;
+        --color-primary-700: 109 40 217;
+        --color-primary-800: 91 33 182;
+        --color-primary-900: 76 29 149;
+        --color-primary-950: 46 16 101;
+    }
+
     [data-theme="blue"] {
         /* Blue Theme */
         --color-primary-50: 239 246 255;
@@ -49,6 +64,122 @@
             animation-iteration-count: 1 !important;
             transition-duration: 0.01ms !important;
         }
+    }
+
+    /* Orbit's own "Reduced motion" setting (Settings → Performance) */
+    .reduce-motion *, .reduce-motion *::before, .reduce-motion *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+
+    h1, h2, h3 {
+        letter-spacing: -0.01em;
+    }
+}
+
+@layer components {
+    /* The sky behind every page. Pure gradients: painted once, nothing moves, so scrolling stays cheap. */
+    .orbit-sky {
+        background-color: #eef1ff;
+        background-image:
+            radial-gradient(ellipse 60% 45% at 85% -5%, rgb(var(--color-primary-300) / 0.35), transparent 70%),
+            radial-gradient(ellipse 55% 40% at 0% 100%, rgba(167, 139, 250, 0.22), transparent 70%),
+            radial-gradient(ellipse 40% 30% at 50% 50%, rgba(125, 211, 252, 0.12), transparent 70%),
+            radial-gradient(1.2px 1.2px at 30px 40px, rgba(79, 70, 229, 0.25), transparent),
+            radial-gradient(1px 1px at 140px 110px, rgba(79, 70, 229, 0.18), transparent),
+            radial-gradient(1.4px 1.4px at 220px 20px, rgba(124, 58, 237, 0.2), transparent);
+        background-size: 100% 100%, 100% 100%, 100% 100%, 260px 260px, 260px 260px, 260px 260px;
+    }
+
+    .dark .orbit-sky {
+        background-color: #050816;
+        background-image:
+            radial-gradient(ellipse 55% 45% at 90% -10%, rgb(var(--color-primary-500) / 0.16), transparent 70%),
+            radial-gradient(ellipse 60% 50% at -5% 105%, rgba(124, 58, 237, 0.2), transparent 70%),
+            radial-gradient(ellipse 45% 35% at 55% 55%, rgba(56, 189, 248, 0.06), transparent 70%),
+            radial-gradient(1px 1px at 25px 35px, rgba(255, 255, 255, 0.75), transparent),
+            radial-gradient(1px 1px at 120px 150px, rgba(255, 255, 255, 0.5), transparent),
+            radial-gradient(1.5px 1.5px at 190px 60px, rgba(199, 210, 254, 0.8), transparent),
+            radial-gradient(1px 1px at 240px 210px, rgba(255, 255, 255, 0.45), transparent),
+            radial-gradient(1.2px 1.2px at 80px 240px, rgba(167, 243, 208, 0.55), transparent);
+        background-size: 100% 100%, 100% 100%, 100% 100%, 270px 270px, 270px 270px, 270px 270px, 270px 270px, 270px 270px;
+    }
+
+    /* Cards: white glass on the light sky, deep-navy panels with a faint top highlight in space */
+    .orbit-card {
+        @apply bg-white/85 border border-gray-200/80 rounded-2xl shadow-[0_1px_2px_rgba(20,24,60,0.04),0_8px_24px_-12px_rgba(20,24,60,0.12)];
+    }
+
+    .dark .orbit-card {
+        background-color: rgb(15 23 53 / 0.72);
+        background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0) 45%);
+        border-color: rgba(148, 163, 214, 0.13);
+        box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.8);
+    }
+
+    .orbit-card-hover {
+        @apply transition-[border-color,box-shadow,transform] duration-200;
+    }
+
+    .orbit-card-hover:hover {
+        border-color: rgb(var(--color-primary-400) / 0.55);
+        box-shadow: 0 12px 30px -14px rgb(var(--color-primary-500) / 0.35);
+    }
+
+    /* A few twinkling stars + an occasional shooting star over the sky (opacity/transform only) */
+    .sky-star {
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        border-radius: 9999px;
+        background: rgba(79, 70, 229, 0.45);
+        animation: sky-twinkle 3.5s ease-in-out infinite;
+    }
+
+    .dark .sky-star {
+        background: #ffffff;
+        box-shadow: 0 0 6px rgba(255, 255, 255, 0.7);
+    }
+
+    .shooting-star {
+        position: absolute;
+        top: 8%;
+        left: 78%;
+        width: 140px;
+        height: 1.5px;
+        border-radius: 9999px;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9));
+        opacity: 0;
+        transform: rotate(155deg) translateX(0);
+        animation: shooting-star 13s ease-in 4s infinite;
+    }
+
+    @keyframes sky-twinkle {
+        0%, 100% { opacity: 0.2; }
+        50% { opacity: 1; }
+    }
+
+    @keyframes shooting-star {
+        0% { opacity: 0; transform: rotate(155deg) translateX(0); }
+        2% { opacity: 1; }
+        8% { opacity: 0; transform: rotate(155deg) translateX(520px); }
+        100% { opacity: 0; transform: rotate(155deg) translateX(520px); }
+    }
+
+    .no-fx .sky-star,
+    .no-fx .shooting-star,
+    .reduce-motion .shooting-star {
+        display: none;
+    }
+
+    /* Gradient headline text */
+    .orbit-title {
+        @apply font-display font-bold tracking-tight bg-clip-text text-transparent;
+        background-image: linear-gradient(100deg, #151b3d 20%, rgb(var(--color-primary-600)) 75%, #7c3aed 110%);
+    }
+
+    .dark .orbit-title {
+        background-image: linear-gradient(100deg, #ffffff 25%, rgb(var(--color-primary-300)) 75%, #c4b5fd 110%);
     }
 }
 

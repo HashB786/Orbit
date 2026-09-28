@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { PenSquare, Plus, Pencil, Copy, Trash2, Search } from 'lucide-react';
+import { PenSquare, Plus, Pencil, Copy, Trash2, Search, Sparkles } from 'lucide-react';
 import SetCard, { HostButton } from '../components/sets/SetCard';
-import { EmptyState, ConfirmDialog, btn, inputClass } from '../components/ui';
+import { EmptyState, ConfirmDialog, PageHeader, btn, inputClass } from '../components/ui';
 import { toast } from '../components/ui/toast';
 import { useMySets, deleteSet, duplicateSet } from '../platform/sets/store';
 import { unpublishSet } from '../platform/sets/publicSets';
@@ -30,19 +30,22 @@ const Create = () => {
         }
     };
 
-    const iconBtn = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors';
+    const iconBtn = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors';
 
     return (
         <div className="space-y-6 md:pb-16">
-            <header className="flex flex-wrap items-end justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl md:text-4xl font-extrabold flex items-center gap-3">
-                        <PenSquare className="text-primary-500 shrink-0" size={32} /> Create
-                    </h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1">Your question sets. Private until you publish them.</p>
-                </div>
-                <Link to="/create/new" className={btn.primary}><Plus size={18} /> New set</Link>
-            </header>
+            <PageHeader
+                icon={PenSquare}
+                tone="sky"
+                title="Create"
+                subtitle="Your question sets. Private until you publish them."
+                actions={(
+                    <>
+                        <Link to="/create/new?import=1" className={btn.secondary}><Sparkles size={18} className="text-violet-400" /> Import from ChatGPT</Link>
+                        <Link to="/create/new" className={btn.primary}><Plus size={18} /> New set</Link>
+                    </>
+                )}
+            />
 
             {mySets.length > 3 && (
                 <div className="relative">
@@ -52,8 +55,18 @@ const Create = () => {
             )}
 
             {mySets.length === 0 ? (
-                <EmptyState icon={PenSquare} title="No sets yet" action={<Link to="/create/new" className={btn.primary}><Plus size={18} /> Create your first set</Link>}>
-                    Mix multiple choice, true/false, written answers, multi-select and put-in-order questions. Every game shows which ones it can play.
+                <EmptyState
+                    icon={PenSquare}
+                    tone="sky"
+                    title="No sets yet"
+                    action={(
+                        <div className="flex flex-wrap justify-center gap-2">
+                            <Link to="/create/new" className={btn.primary}><Plus size={18} /> Create your first set</Link>
+                            <Link to="/create/new?import=1" className={btn.secondary}><Sparkles size={18} className="text-violet-400" /> Import from ChatGPT</Link>
+                        </div>
+                    )}
+                >
+                    Write questions yourself, or ask ChatGPT for a quiz and paste it in. Mix multiple choice, true/false, written answers, multi-select and put-in-order.
                 </EmptyState>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

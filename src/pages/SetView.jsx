@@ -66,10 +66,14 @@ const SetView = () => {
             {/* Opened from a shared link there is no history to go back to */}
             <button onClick={() => (window.history.state?.idx > 0 ? navigate(-1) : navigate('/discover'))} className={cx(btn.ghost, '-ml-3')}><ArrowLeft size={18} /> Back</button>
 
-            <header className="flex flex-col sm:flex-row gap-4 sm:items-center">
-                <span className="w-16 h-16 shrink-0 rounded-2xl bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center text-4xl" aria-hidden>{subjectEmoji(set.subject)}</span>
+            <header className="orbit-card p-5 sm:p-6 flex flex-col sm:flex-row gap-5 sm:items-center">
+                <span className="relative w-20 h-20 shrink-0 flex items-center justify-center text-4xl" aria-hidden>
+                    <span className="absolute inset-0 rounded-full bg-gradient-to-br from-primary-200 to-violet-300 dark:from-primary-500/30 dark:to-violet-600/35 shadow-[0_0_30px_-8px_rgb(var(--color-primary-400))]" />
+                    <span className="absolute -inset-x-3 top-1/2 h-5 -translate-y-1/2 rounded-[50%] border-2 border-primary-300/60 dark:border-primary-300/30 -rotate-[24deg]" />
+                    <span className="relative">{subjectEmoji(set.subject)}</span>
+                </span>
                 <div className="min-w-0">
-                    <h1 className="text-2xl md:text-3xl font-extrabold break-words">{set.title}</h1>
+                    <h1 className="orbit-title text-2xl md:text-4xl break-words pb-0.5">{set.title}</h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                         {featured && <span className="inline-flex items-center gap-1 text-amber-600 font-semibold"><Sparkles size={14} /> Featured</span>}
                         {isMine && (set.visibility === 'public'
@@ -100,7 +104,7 @@ const SetView = () => {
 
             <section>
                 <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-bold">Questions</h2>
+                    <h2 className="font-display text-xl font-bold">Questions</h2>
                     <button onClick={() => setShowAnswers(v => !v)} className={btn.ghost}>
                         {showAnswers ? <EyeOff size={16} /> : <Eye size={16} />} {showAnswers ? 'Hide answers' : 'Show answers'}
                     </button>

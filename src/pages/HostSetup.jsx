@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Rocket, Smartphone, Presentation, AlertTriangle, RotateCcw } from 'lucide-react';
 import SettingsForm from '../components/host/SettingsForm';
+import GameArt from '../components/art/GameArt';
 import CompatPanel from '../components/host/CompatPanel';
 import { useSet } from '../components/sets/useSet';
 import { PageSpinner, EmptyState, btn, cx, cardClass } from '../components/ui';
@@ -123,12 +124,12 @@ const HostSetup = () => {
     return (
         <div className="max-w-5xl mx-auto md:pb-16">
             <button onClick={() => navigate(`/set/${set.id}`)} className={cx(btn.ghost, '-ml-3 mb-2')}><ArrowLeft size={18} /> {set.title}</button>
-            <h1 className="text-3xl md:text-4xl font-extrabold">Host a game</h1>
+            <h1 className="orbit-title text-3xl md:text-4xl pb-0.5">Host a game</h1>
             <p className="text-gray-500 dark:text-gray-400 mt-1 mb-6">with <b className="text-gray-700 dark:text-gray-200">{set.title}</b> · {set.questions.length} questions</p>
 
             {/* 1. Game */}
             <section className="mb-6">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-2">1 · Game</h2>
+                <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400 mb-2">1 · Game</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {GAMES.map(g => {
                         const a = analyzeSet(g, set.questions);
@@ -138,14 +139,17 @@ const HostSetup = () => {
                                 key={g.id}
                                 onClick={() => setGameId(g.id)}
                                 aria-pressed={g.id === gameId}
-                                className={cx(cardClass, 'text-left p-3 flex items-center gap-3 transition-colors min-w-0', g.id === gameId ? 'ring-2 ring-primary-500' : 'hover:border-gray-300 dark:hover:border-gray-600')}
+                                className={cx(cardClass, 'orbit-card-hover text-left p-2.5 flex items-center gap-3 min-w-0', g.id === gameId && 'ring-2 ring-primary-400 shadow-[0_0_24px_-8px_rgb(var(--color-primary-400))]')}
                             >
-                                <span className={`w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br ${g.accent} flex items-center justify-center text-white`}>
-                                    {g.kind === 'live' ? <Smartphone size={20} /> : <Presentation size={20} />}
+                                <span className="relative w-20 h-12 shrink-0 rounded-xl overflow-hidden">
+                                    <GameArt gameId={g.id} className="absolute inset-0 w-full h-full" />
                                 </span>
                                 <span className="min-w-0">
-                                    <span className="block font-bold truncate">{g.name}</span>
-                                    <span className="block text-xs text-gray-500">{usable} of {set.questions.length} questions playable</span>
+                                    <span className="block font-display font-bold truncate text-gray-900 dark:text-white">{g.name}</span>
+                                    <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                                        {g.kind === 'live' ? <Smartphone size={12} /> : <Presentation size={12} />}
+                                        {usable} of {set.questions.length} playable
+                                    </span>
                                 </span>
                             </button>
                         );
@@ -156,7 +160,7 @@ const HostSetup = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* 2. Questions */}
                 <section>
-                    <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-2">2 · Questions in this round</h2>
+                    <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400 mb-2">2 · Questions in this round</h2>
                     <div className={cx(cardClass, 'p-4')}>
                         {analysis && Object.keys(analysis.byType).length > 0 ? (
                             <CompatPanel game={game} analysis={analysis} enabled={enabled} onToggle={toggleType} />
@@ -191,7 +195,7 @@ const HostSetup = () => {
                 <button
                     onClick={start}
                     disabled={!canStart}
-                    className="w-full py-4 rounded-2xl bg-primary-600 hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black text-lg shadow-xl shadow-primary-600/20 flex items-center justify-center gap-2 transition-colors"
+                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary-500 via-primary-600 to-violet-600 hover:from-primary-400 hover:via-primary-500 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black text-lg shadow-[0_16px_40px_-16px_rgb(var(--color-primary-500))] flex items-center justify-center gap-2 transition-colors"
                 >
                     <Rocket size={22} />
                     {starting ? 'Starting…' : game.kind === 'live' ? 'Create game room' : 'Start on this screen'}

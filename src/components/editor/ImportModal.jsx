@@ -1,0 +1,266 @@
+import React, { useMemo, useState } from 'react';
+import { Sparkles, Copy, ClipboardPaste, ChevronDown, CheckCircle2, AlertTriangle, FileJson, List, Wand2 } from 'lucide-react';
+import { Modal, Segmented, Stepper, TypeBadge, TYPE_ICONS, btn, inputClass, cx } from '../ui';
+import { toast } from '../ui/toast';
+import { QUESTION_TYPES, TYPE_IDS } from '../../platform/questions/types';
+import { AI_LANGUAGES, EXAMPLE_JSON, buildAiPrompt, parseQuestionsJson, typeCounts } from '../../platform/questions/jsonImport';
+import { parseImport } from '../../platform/questions/normalize';
+
+const copyText = async (text) => {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch {
+        // Older browsers / insecure pages
+        const area = document.createElement('textarea');
+        area.value = text;
+        area.style.position = 'fixed';
+        area.style.opacity = '0';
+        document.body.appendChild(area);
+        area.select();
+        const ok = document.execCommand('copy');
+        area.remove();
+        return ok;
+    }
+};
+
+const Step = ({ n, title, hint, children }) => (
+    <section className="rounded-2xl border border-gray-200 dark:border-white/10 bg-gray-50/70 dark:bg-white/[0.03] p-4">
+        <div className="flex items-baseline gap-2 mb-3">
+            <span className="w-6 h-6 shrink-0 rounded-full bg-gradient-to-br from-primary-400 to-violet-600 text-white text-xs font-black flex items-center justify-center self-center">{n}</span>
+            <h3 className="font-display font-bold text-gray-900 dark:text-white">{title}</h3>
+            {hint && <span className="text-xs text-gray-500 dark:text-gray-400">{hint}</span>}
+        </div>
+        {children}
+    </section>
+);
+
+const Preview = ({ questions, max = 5 }) => (
+    <ul className="mt-2 space-y-1.5">
+        {questions.slice(0, max).map(q => (
+            <li key={q.id} className="flex items-center gap-2 text-sm min-w-0">
+                <TypeBadge type={q.type} />
+                <span className="truncate text-gray-700 dark:text-gray-200">{q.prompt}</span>
+            </li>
+        ))}
+        {questions.length > max && <li className="text-xs text-gray-500">+{questions.length - max} more</li>}
+    </ul>
+);
+
+// "Import questions" dialog of the set editor
+const ImportModal = ({ open, onClose, onImport, currentTitle = '' }) => {
+    const [tab, setTab] = useState('ai');
+    const [topic, setTopic] = useState(currentTitle);
+    const [count, setCount] = useState(10);
+    const [level, setLevel] = useState('');
+    const [language, setLanguage] = useState('English');
+    const [types, setTypes] = useState(TYPE_IDS);
+    const [showPrompt, setShowPrompt] = useState(false);
+    const [showExample, setShowExample] = useState(false);
+    const [json, setJson] = useState('');
+    const [lines, setLines] = useState('');
+    const [useTitle, setUseTitle] = useState(!currentTitle.trim());
+
+    const prompt = useMemo(() => buildAiPrompt({ topic, count, level, language, types }), [topic, count, level, language, types]);
+    const parsed = useMemo(() => parseQuestionsJson(json), [json]);
+    const lineQuestions = useMemo(() => parseImport(lines), [lines]);
+    const [problemsOpen, setProblemsOpen] = useState(false);
+
+    const ready = tab === 'ai' ? parsed.questions : lineQuestions;
+
+    const toggleType = (t) => setTypes(prev => (prev.includes(t) ? (prev.length > 1 ? prev.filter(x => x !== t) : prev) : [...prev, t]));
+
+    const copyPrompt = async () => {
+        if (await copyText(prompt)) toast('Prompt copied. Paste it into ChatGPT, then copy its answer back here.');
+        else {
+            setShowPrompt(true);
+            toast('Copy the prompt below by hand.', 'info');
+        }
+    };
+
+    const pasteFromClipboard = async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (text) setJson(text);
+            else toast('The clipboard is empty.', 'info');
+        } catch {
+            toast('Click the box below and press Ctrl+V (or long-press → Paste on a phone).', 'info');
+        }
+    };
+
+    const submit = () => {
+        if (!ready.length) return;
+        onImport(ready, tab === 'ai' && useTitle ? parsed.meta : {});
+        setJson('');
+        setLines('');
+    };
+
+    return (
+        <Modal
+            open={open}
+            onClose={onClose}
+            title="Import questions"
+            size="lg"
+            footer={(
+                <>
+                    <button className={btn.secondary} onClick={onClose}>Cancel</button>
+                    <button className={btn.primary} onClick={submit} disabled={!ready.length}>
+                        <CheckCircle2 size={18} /> {ready.length ? `Import ${ready.length} question${ready.length === 1 ? '' : 's'}` : 'Import'}
+                    </button>
+                </>
+            )}
+        >
+            <Segmented
+                value={tab}
+                onChange={setTab}
+                options={[{ value: 'ai', label: 'From ChatGPT', icon: Sparkles }, { value: 'lines', label: 'Simple list', icon: List }]}
+            />
+
+            {tab === 'ai' ? (
+                <div className="mt-4 space-y-3">
+                    <Step n={1} title="Ask ChatGPT" hint="or Gemini, Copilot, any AI chat">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label className="sm:col-span-2 block">
+                                <span className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Topic</span>
+                                <input value={topic} onChange={e => setTopic(e.target.value.slice(0, 120))} placeholder="e.g. Photosynthesis, Past Simple, Fractions" className={inputClass} />
+                            </label>
+                            <label className="block">
+                                <span className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">For whom (optional)</span>
+                                <input value={level} onChange={e => setLevel(e.target.value.slice(0, 60))} placeholder="e.g. grade 7 students" className={inputClass} />
+                            </label>
+                            <div>
+                                <span className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Language</span>
+                                <Segmented value={language} onChange={setLanguage} options={AI_LANGUAGES.map(l => ({ value: l, label: l }))} size="sm" />
+                            </div>
+                        </div>
+                        <div className="mt-3">
+                            <Stepper label="Number of questions" value={count} min={3} max={40} onChange={setCount} />
+                        </div>
+                        <div className="mt-3">
+                            <span className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Question types</span>
+                            <div className="flex flex-wrap gap-1.5">
+                                {TYPE_IDS.map(t => {
+                                    const Icon = TYPE_ICONS[t];
+                                    const on = types.includes(t);
+                                    return (
+                                        <button
+                                            key={t}
+                                            type="button"
+                                            onClick={() => toggleType(t)}
+                                            aria-pressed={on}
+                                            className={cx('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors',
+                                                on ? 'border-primary-400 bg-primary-500/15 text-primary-700 dark:text-primary-200' : 'border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400')}
+                                        >
+                                            <Icon size={13} /> {QUESTION_TYPES[t].label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            <button type="button" onClick={copyPrompt} className={btn.primary}><Copy size={16} /> Copy prompt</button>
+                            <button type="button" onClick={() => setShowPrompt(v => !v)} className={btn.ghost}>
+                                <ChevronDown size={16} className={cx('transition-transform', showPrompt && 'rotate-180')} /> {showPrompt ? 'Hide prompt' : 'See prompt'}
+                            </button>
+                        </div>
+                        {showPrompt && (
+                            <pre className="mt-3 max-h-56 overflow-auto rounded-xl bg-white dark:bg-[#050918] border border-gray-200 dark:border-white/10 p-3 text-xs whitespace-pre-wrap break-words text-gray-700 dark:text-gray-300">{prompt}</pre>
+                        )}
+                    </Step>
+
+                    <Step n={2} title="Paste the answer here">
+                        <div className="flex flex-wrap gap-2 mb-2">
+                            <button type="button" onClick={pasteFromClipboard} className={btn.secondary}><ClipboardPaste size={16} /> Paste from clipboard</button>
+                            <button type="button" onClick={() => setShowExample(v => !v)} className={btn.ghost}><FileJson size={16} /> {showExample ? 'Hide example' : 'See the format'}</button>
+                        </div>
+                        {showExample && (
+                            <div className="mb-3 rounded-xl bg-white dark:bg-[#050918] border border-gray-200 dark:border-white/10">
+                                <pre className="max-h-56 overflow-auto p-3 text-xs text-gray-700 dark:text-gray-300">{EXAMPLE_JSON}</pre>
+                                <div className="px-3 pb-3">
+                                    <button type="button" onClick={() => setJson(EXAMPLE_JSON)} className={cx(btn.ghost, 'text-sm')}><Wand2 size={15} /> Try this example</button>
+                                </div>
+                            </div>
+                        )}
+                        <textarea
+                            value={json}
+                            onChange={e => setJson(e.target.value)}
+                            rows={7}
+                            spellCheck={false}
+                            placeholder={'{\n  "title": "…",\n  "questions": [ … ]\n}'}
+                            className={cx(inputClass, 'font-mono text-xs leading-relaxed')}
+                            aria-label="Paste JSON"
+                        />
+
+                        {parsed.error && (
+                            <p className="mt-2 flex items-start gap-2 text-sm text-rose-600 dark:text-rose-300" role="alert">
+                                <AlertTriangle size={16} className="shrink-0 mt-0.5" /> {parsed.error}
+                            </p>
+                        )}
+                        {!parsed.error && parsed.total > 0 && (
+                            <div className="mt-3">
+                                {parsed.questions.length > 0 && (
+                                    <>
+                                        <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                                            <CheckCircle2 size={16} /> {parsed.questions.length} question{parsed.questions.length === 1 ? '' : 's'} ready
+                                            <span className="flex flex-wrap gap-1">
+                                                {typeCounts(parsed.questions).map(t => (
+                                                    <span key={t.type} className="text-xs font-bold text-gray-500 dark:text-gray-400">· {t.count} {t.label}</span>
+                                                ))}
+                                            </span>
+                                        </p>
+                                        <Preview questions={parsed.questions} />
+                                    </>
+                                )}
+                                {parsed.problems.length > 0 && (
+                                    <div className="mt-3 rounded-xl border border-amber-300/70 dark:border-amber-400/25 bg-amber-50 dark:bg-amber-400/[0.06]">
+                                        <button type="button" onClick={() => setProblemsOpen(v => !v)} className="w-full flex items-center gap-2 px-3 py-2 text-sm font-semibold text-amber-800 dark:text-amber-200">
+                                            <AlertTriangle size={16} /> {parsed.problems.length} question{parsed.problems.length === 1 ? '' : 's'} will be skipped
+                                            <ChevronDown size={16} className={cx('ml-auto transition-transform', problemsOpen && 'rotate-180')} />
+                                        </button>
+                                        {problemsOpen && (
+                                            <ul className="px-3 pb-3 space-y-1 text-xs text-amber-900 dark:text-amber-100/90">
+                                                {parsed.problems.map(p => (
+                                                    <li key={p.n} className="break-words"><b>#{p.n}</b>{p.prompt ? ` "${p.prompt.slice(0, 60)}${p.prompt.length > 60 ? '…' : ''}"` : ''}: {p.message}</li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+                                )}
+                                {parsed.meta.title && parsed.questions.length > 0 && (
+                                    <label className="mt-3 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                                        <input type="checkbox" checked={useTitle} onChange={e => setUseTitle(e.target.checked)} className="w-4 h-4 accent-[rgb(var(--color-primary-600))]" />
+                                        Use “{parsed.meta.title}” as the set title
+                                    </label>
+                                )}
+                            </div>
+                        )}
+                    </Step>
+                </div>
+            ) : (
+                <div className="mt-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                        One question per line as <code className="px-1 rounded bg-gray-100 dark:bg-white/10">question | answer</code>. They become written-answer questions you can change later.
+                    </p>
+                    <textarea
+                        value={lines}
+                        onChange={e => setLines(e.target.value)}
+                        rows={9}
+                        placeholder={'Capital of France | Paris\n7 × 8 | 56\nLargest planet | Jupiter'}
+                        className={cx(inputClass, 'font-mono text-sm')}
+                        aria-label="Questions, one per line"
+                    />
+                    {lineQuestions.length > 0 && (
+                        <>
+                            <p className="mt-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+                                <CheckCircle2 size={16} /> {lineQuestions.length} question{lineQuestions.length === 1 ? '' : 's'} ready
+                            </p>
+                            <Preview questions={lineQuestions} />
+                        </>
+                    )}
+                </div>
+            )}
+        </Modal>
+    );
+};
+
+export default ImportModal;

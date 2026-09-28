@@ -6,7 +6,7 @@ import { TYPE_ICONS, cx } from '../ui';
 const SUPPORT = {
     native: { label: 'Supported', icon: Check, className: 'text-emerald-700 bg-emerald-50 dark:text-emerald-300 dark:bg-emerald-900/20' },
     adapted: { label: 'Converted', icon: RefreshCw, className: 'text-sky-700 bg-sky-50 dark:text-sky-300 dark:bg-sky-900/20' },
-    unsupported: { label: 'Not supported', icon: Ban, className: 'text-gray-500 bg-gray-100 dark:text-gray-400 dark:bg-gray-800' }
+    unsupported: { label: 'Not supported', icon: Ban, className: 'text-gray-500 bg-gray-100 dark:text-gray-400 dark:bg-white/[0.06]' }
 };
 
 // "Which of your questions can this game play?" with a checkbox per question type

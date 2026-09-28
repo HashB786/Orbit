@@ -4,7 +4,10 @@ Orbit is an interactive quiz-game platform for classrooms, in the spirit of Kaho
 
 ## Features
 
-- **Create:** a question editor with five types: multiple choice, true/false, written answer, multi-select and put-in-order. You can also bulk-import `question | answer` lines or JSON.
+- **Create:** a question editor with five types: multiple choice, true/false, written answer, multi-select and put-in-order.
+  - **Import from ChatGPT:** Orbit writes a ready prompt (topic, number of questions, grade, language, question types). Paste the AI's JSON answer back and a live preview shows what will be imported and why any question is skipped. The importer tolerates code fences, trailing commas, curly quotes and different key names.
+  - **Examples:** every question type has a "+ Example" button, plus "One example of each".
+  - Simple `question | answer` lines still work too.
 - **Discover:** search the public library by topic, subject or question type. Any set can be copied and edited.
 - **Games:** every game declares which question types it supports. Host setup shows which questions of your set will be used, which will be converted, and which aren't supported.
   - **Comet Clash** (live): blast the asteroid with the right answer on students' phones or laptops, in 1v1 **Duels** or an everyone-at-once **Meteor Shower**. See [Comet Clash rules](#comet-clash-rules).

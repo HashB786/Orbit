@@ -1,115 +1,148 @@
 import React, { useEffect, useState, useSyncExternalStore } from 'react';
+import { User, Palette, Globe, Zap, Trash2, Volume2, VolumeX, Music, Play, Check, Settings as SettingsIcon, Battery, Gauge, Sparkles } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
-import { motion, AnimatePresence } from 'framer-motion';
-import { User, Palette, Globe, Monitor, Zap, Trash2, Battery, Volume2, VolumeX, Music, Play } from 'lucide-react';
+import { PageHeader, Toggle, ConfirmDialog, IconOrb, btn, inputClass, cx } from '../components/ui';
+import Flag from '../components/art/Flag';
+import { Stars } from '../components/art/shapes';
 import { audio } from '../platform/audio/audio';
 
-const Settings = () => {
-    const [activeTab, setActiveTab] = useState('profile');
-    const { t } = useLanguage();
+const TABS = [
+    { id: 'profile', label: 'Profile', icon: User },
+    { id: 'appearance', label: 'Appearance', icon: Palette },
+    { id: 'sound', label: 'Sound', icon: Volume2 },
+    { id: 'performance', label: 'Performance', icon: Zap },
+    { id: 'language', label: 'Language', icon: Globe },
+    { id: 'data', label: 'Your data', icon: Trash2 }
+];
 
-    const tabs = [
-        { id: 'profile', label: 'Profile', icon: User, color: 'text-blue-500' },
-        { id: 'appearance', label: 'Appearance', icon: Palette, color: 'text-purple-500' },
-        { id: 'sound', label: 'Sound', icon: Volume2, color: 'text-emerald-500' },
-        { id: 'animations', label: 'Animations', icon: Zap, color: 'text-amber-500' },
-        { id: 'language', label: 'Language', icon: Globe, color: 'text-orange-500' },
-        { id: 'danger', label: 'Danger Zone', icon: Trash2, color: 'text-red-500' }
-    ];
+const Panel = ({ title, subtitle, children, className = '' }) => (
+    <section className={cx('orbit-card p-5 sm:p-6', className)}>
+        {title && <h2 className="font-display text-xl font-bold text-gray-900 dark:text-white">{title}</h2>}
+        {subtitle && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{subtitle}</p>}
+        <div className={title || subtitle ? 'mt-5' : ''}>{children}</div>
+    </section>
+);
 
-    return (
-        <div className="flex flex-col md:flex-row gap-4 md:gap-6 md:h-[calc(100vh-140px)] md:min-h-[600px]">
-            {/* Sidebar Navigation (horizontal tab strip on phones) */}
-            <div className="w-full md:w-64 flex-shrink-0 min-w-0">
-                <div className="md:sticky top-0 space-y-2">
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-teal-500 mb-4 md:mb-6 px-2">
-                        {t('settings')}
-                    </h1>
+// Card-style choice with a check badge when selected
+const Choice = ({ selected, onClick, children, className = '' }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={selected}
+        className={cx(
+            'relative text-left rounded-2xl border-2 p-3 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500',
+            selected
+                ? 'border-primary-400 bg-primary-500/10 dark:bg-primary-500/10'
+                : 'border-gray-200 dark:border-white/10 bg-white/60 dark:bg-white/[0.03] hover:border-gray-300 dark:hover:border-white/20',
+            className
+        )}
+    >
+        {selected && (
+            <span className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-primary-500 text-white flex items-center justify-center shadow">
+                <Check size={14} strokeWidth={3} />
+            </span>
+        )}
+        {children}
+    </button>
+);
 
-                    <nav className="flex md:flex-col gap-1 overflow-x-auto pb-1 md:pb-0 -mx-1 px-1">
-                        {tabs.map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`shrink-0 md:w-full flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-xl transition-all font-medium whitespace-nowrap ${activeTab === tab.id
-                                    ? 'bg-white dark:bg-dark-surface shadow-md text-primary-600 dark:text-primary-400 md:scale-[1.02]'
-                                    : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-surface/50 dark:text-gray-400'
-                                    }`}
-                            >
-                                <div className={`p-1.5 rounded-lg ${activeTab === tab.id ? 'bg-primary-50 dark:bg-primary-900/20' : ''}`}>
-                                    <tab.icon size={20} className={activeTab === tab.id ? tab.color : 'opacity-70'} />
-                                </div>
-                                {tab.label}
-                            </button>
-                        ))}
-                    </nav>
-                </div>
-            </div>
-
-            {/* Content Area */}
-            <div className="flex-1 min-w-0 md:overflow-y-auto custom-scrollbar md:pr-4">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={activeTab}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.2 }}
-                        className="space-y-6"
-                    >
-                        {activeTab === 'profile' && <ProfileSettings />}
-                        {activeTab === 'appearance' && <AppearanceSettings />}
-                        {activeTab === 'sound' && <SoundSettings />}
-                        {activeTab === 'animations' && <AnimationSettings />}
-                        {activeTab === 'language' && <LanguageSettings />}
-                        {activeTab === 'danger' && <DangerZone />}
-                    </motion.div>
-                </AnimatePresence>
-            </div>
-        </div>
-    );
-};
-
-// --- Sub-components ---
+// ---------- Profile ----------
 
 const ProfileSettings = () => {
     const { userData, updateUserData } = useUser();
-
     return (
-        <div className="space-y-6">
-            <div className="bg-white dark:bg-dark-surface p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
-                <div className="flex items-center gap-4 mb-6">
-                    <div className="w-16 h-16 shrink-0 bg-gradient-to-br from-primary-400 to-teal-400 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+        <div className="space-y-4">
+            <Panel title="Your name" subtitle="Shown as the author of sets you publish, and filled in as your nickname when you join a game.">
+                <div className="flex items-center gap-4">
+                    <span className="w-14 h-14 shrink-0 rounded-full bg-gradient-to-br from-primary-400 to-violet-600 text-white text-2xl font-display font-bold flex items-center justify-center shadow-[0_0_24px_-6px_rgb(var(--color-primary-400))]">
                         {userData.name.charAt(0).toUpperCase() || '?'}
-                    </div>
-                    <div className="min-w-0">
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Your name</h2>
-                        <p className="text-sm text-gray-500">Shown as the author of sets you publish, and filled in as your nickname when you join a game.</p>
-                    </div>
+                    </span>
+                    <input
+                        id="display-name"
+                        aria-label="Display name"
+                        value={userData.name}
+                        onChange={(e) => updateUserData({ name: e.target.value.slice(0, 40) })}
+                        className={inputClass}
+                        placeholder="Enter your name"
+                    />
                 </div>
-                <label htmlFor="display-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Display name</label>
-                <input
-                    id="display-name"
-                    value={userData.name}
-                    onChange={(e) => updateUserData({ name: e.target.value.slice(0, 40) })}
-                    className="w-full bg-gray-50 dark:bg-dark-bg border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
-                    placeholder="Enter your name"
-                />
-            </div>
-
-            <div className="bg-primary-50/60 dark:bg-primary-900/10 p-5 rounded-2xl border border-primary-100 dark:border-primary-900/30 text-sm text-gray-600 dark:text-gray-300">
+            </Panel>
+            <div className="rounded-2xl border border-primary-300/50 dark:border-primary-400/20 bg-primary-500/[0.07] p-4 text-sm text-gray-600 dark:text-gray-300">
                 <b className="text-gray-900 dark:text-white">No account needed.</b> Your sets are saved in this browser. Teacher sign-in with Google is coming, so sets can follow you to any device. Students never need an account to join a game.
             </div>
         </div>
     );
 };
 
+// ---------- Appearance ----------
+
+const ThemePreview = ({ dark }) => (
+    <svg viewBox="0 0 160 90" className="w-full rounded-xl" aria-hidden="true">
+        <rect width="160" height="90" fill={dark ? '#050816' : '#eef1ff'} />
+        <circle cx="130" cy="-6" r="50" fill={dark ? '#10b981' : '#a7f3d0'} opacity={dark ? 0.16 : 0.35} />
+        <circle cx="-10" cy="95" r="50" fill={dark ? '#7c3aed' : '#c4b5fd'} opacity={dark ? 0.25 : 0.35} />
+        <Stars seed={dark ? 5 : 9} count={dark ? 24 : 12} width={160} height={90} color={dark ? '#ffffff' : '#6366f1'} />
+        <rect x="8" y="8" width="26" height="74" rx="6" fill={dark ? '#0b1230' : '#ffffff'} opacity="0.9" />
+        <rect x="42" y="12" width="70" height="8" rx="4" fill={dark ? '#e0e7ff' : '#151b3d'} opacity="0.85" />
+        <rect x="42" y="30" width="50" height="36" rx="7" fill={dark ? '#0f1735' : '#ffffff'} stroke={dark ? '#26305a' : '#dde2f4'} />
+        <rect x="98" y="30" width="50" height="36" rx="7" fill={dark ? '#0f1735' : '#ffffff'} stroke={dark ? '#26305a' : '#dde2f4'} />
+        <circle cx="67" cy="46" r="8" fill="#10b981" />
+        <ellipse cx="67" cy="46" rx="13" ry="4" fill="none" stroke="#a7f3d0" transform="rotate(-20 67 46)" />
+        <circle cx="123" cy="46" r="8" fill="#8b5cf6" />
+    </svg>
+);
+
+const ACCENTS = [
+    { id: 'green', label: 'Emerald', from: '#6ee7b7', to: '#047857' },
+    { id: 'blue', label: 'Ocean', from: '#93c5fd', to: '#1d4ed8' },
+    { id: 'violet', label: 'Nebula', from: '#c4b5fd', to: '#6d28d9' }
+];
+
+const AppearanceSettings = () => {
+    const { theme, setTheme, colorTheme, setColorTheme } = useTheme();
+    return (
+        <div className="space-y-4">
+            <Panel title="Theme" subtitle="Space is Orbit's home. Daylight is easier to read in a bright room.">
+                <div className="grid grid-cols-2 gap-3">
+                    {[{ id: 'dark', label: 'Space' }, { id: 'light', label: 'Daylight' }].map(opt => (
+                        <Choice key={opt.id} selected={theme === opt.id} onClick={() => setTheme(opt.id, true)}>
+                            <ThemePreview dark={opt.id === 'dark'} />
+                            <span className="block font-bold mt-2 text-gray-900 dark:text-white">{opt.label}</span>
+                        </Choice>
+                    ))}
+                </div>
+            </Panel>
+            <Panel title="Accent colour" subtitle="Used for buttons, highlights and your planet.">
+                <div className="grid grid-cols-3 gap-3">
+                    {ACCENTS.map(a => (
+                        <Choice key={a.id} selected={colorTheme === a.id} onClick={() => setColorTheme(a.id, true)} className="flex flex-col items-center gap-2 py-4">
+                            <svg viewBox="0 0 48 48" className="w-12 h-12 overflow-visible" aria-hidden="true">
+                                <defs>
+                                    <radialGradient id={`accent-${a.id}`} cx="0.32" cy="0.28" r="0.85">
+                                        <stop offset="0" stopColor={a.from} />
+                                        <stop offset="1" stopColor={a.to} />
+                                    </radialGradient>
+                                </defs>
+                                <circle cx="24" cy="24" r="18" fill={`url(#accent-${a.id})`} />
+                                <ellipse cx="24" cy="24" rx="27" ry="7" fill="none" stroke={a.from} strokeWidth="2" opacity="0.7" transform="rotate(-24 24 24)" />
+                            </svg>
+                            <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{a.label}</span>
+                        </Choice>
+                    ))}
+                </div>
+            </Panel>
+        </div>
+    );
+};
+
+// ---------- Sound ----------
+
 const Slider = ({ label, icon: Icon, value, onChange }) => (
     <div>
         <div className="flex items-center justify-between mb-2">
-            <label className="font-semibold text-sm flex items-center gap-2"><Icon size={16} className="text-gray-400" /> {label}</label>
+            <label className="font-semibold text-sm flex items-center gap-2 text-gray-800 dark:text-gray-100"><Icon size={16} className="text-gray-400" /> {label}</label>
             <span className="text-sm font-bold tabular-nums text-gray-500">{Math.round(value * 100)}%</span>
         </div>
         <input
@@ -118,7 +151,7 @@ const Slider = ({ label, icon: Icon, value, onChange }) => (
             max="100"
             value={Math.round(value * 100)}
             onChange={e => onChange(Number(e.target.value) / 100)}
-            className="w-full accent-[rgb(var(--color-primary-600))]"
+            className="w-full accent-[rgb(var(--color-primary-500))]"
             aria-label={label}
         />
     </div>
@@ -143,399 +176,174 @@ const SoundSettings = () => {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="bg-white dark:bg-dark-surface p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 space-y-6">
-                <div className="flex items-center justify-between gap-4">
-                    <div>
-                        <h3 className="font-bold text-lg">Sound</h3>
-                        <p className="text-sm text-gray-500">All music and effects are generated live by Orbit, nothing to download.</p>
-                    </div>
+        <div className="space-y-4">
+            <Panel title="Sound" subtitle="All music and effects are generated live by Orbit, so there's nothing to download.">
+                <div className="space-y-6">
                     <button
                         onClick={() => { audio.unlock(); audio.updateSettings({ muted: !settings.muted }); }}
-                        className={`shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-colors ${settings.muted ? 'bg-red-50 text-red-600 dark:bg-red-900/20' : 'bg-gray-100 dark:bg-gray-800'}`}
+                        className={cx(btn.secondary, settings.muted && '!text-rose-600 dark:!text-rose-300')}
                     >
-                        {settings.muted ? <VolumeX size={18} /> : <Volume2 size={18} />} {settings.muted ? 'Muted' : 'On'}
+                        {settings.muted ? <VolumeX size={18} /> : <Volume2 size={18} />} {settings.muted ? 'Sound is off' : 'Sound is on'}
+                    </button>
+                    <Slider label="Music" icon={Music} value={settings.music} onChange={v => audio.updateSettings({ music: v })} />
+                    <Slider label="Sound effects" icon={Zap} value={settings.sfx} onChange={v => { audio.updateSettings({ sfx: v }); audio.unlock(); audio.sfx('hit'); }} />
+                    <button onClick={preview} className={btn.primary}>
+                        <Play size={16} className="fill-current" /> {playing ? 'Stop preview' : 'Preview battle music'}
                     </button>
                 </div>
-                <Slider label="Music" icon={Music} value={settings.music} onChange={v => audio.updateSettings({ music: v })} />
-                <Slider label="Sound effects" icon={Zap} value={settings.sfx} onChange={v => { audio.updateSettings({ sfx: v }); audio.unlock(); audio.sfx('hit'); }} />
-                <button onClick={preview} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-500 text-white font-bold transition-colors">
-                    <Play size={16} className="fill-current" /> {playing ? 'Stop preview' : 'Preview battle music'}
-                </button>
-            </div>
-            <p className="text-sm text-gray-500 px-1">In live games, the teacher's screen plays the music. Students' devices only play short sound effects, so a class of phones stays calm.</p>
+            </Panel>
+            <p className="text-sm text-gray-500 dark:text-gray-400 px-1">In live games the teacher's screen plays the music. Student devices play softer music (a host setting) and each student can mute their own device.</p>
         </div>
     );
 };
 
-const AppearanceSettings = () => {
-    const { theme, toggleTheme, colorTheme, toggleColorTheme } = useTheme();
+// ---------- Performance ----------
 
-    return (
-        <div className="space-y-6">
-            <div className="bg-white dark:bg-dark-surface p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
-                <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                    <Monitor className="text-purple-500" size={20} /> Interface Theme
-                </h3>
+const PRESETS = [
+    { id: 'saver', label: 'Battery saver', text: 'No moving stars, calm animations', icon: Battery, particles: false, reducedMotion: true },
+    { id: 'balanced', label: 'Balanced', text: 'Smooth, without background effects', icon: Gauge, particles: false, reducedMotion: false },
+    { id: 'full', label: 'Full effects', text: 'Twinkling stars and confetti', icon: Sparkles, particles: true, reducedMotion: false }
+];
 
-                <div className="grid grid-cols-2 gap-4">
-                    <button
-                        onClick={() => theme === 'dark' && toggleTheme(true)}
-                        className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${theme === 'light'
-                            ? 'border-primary-500 bg-primary-50/50 text-primary-700'
-                            : 'border-transparent bg-gray-50 text-gray-500 hover:bg-gray-100'
-                            }`}
-                    >
-                        <div className="w-full h-20 bg-white rounded-lg shadow-sm mb-2 border border-gray-200" />
-                        <span className="font-medium">Light Mode</span>
-                    </button>
-                    <button
-                        onClick={() => theme === 'light' && toggleTheme(true)}
-                        className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${theme === 'dark'
-                            ? 'border-primary-500 bg-dark-bg text-primary-400'
-                            : 'border-transparent bg-gray-50 text-gray-500 hover:bg-gray-100'
-                            }`}
-                    >
-                        <div className="w-full h-20 bg-gray-900 rounded-lg shadow-sm mb-2 border border-gray-700" />
-                        <span className="font-medium">Dark Mode</span>
-                    </button>
-                </div>
-            </div>
-
-            <div className="bg-white dark:bg-dark-surface p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
-                <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                    <Palette className="text-pink-500" size={20} /> Accent Color
-                </h3>
-                <div className="flex gap-3">
-                    <button
-                        onClick={() => colorTheme !== 'green' && toggleColorTheme(true)}
-                        className={`flex-1 p-3 rounded-xl border transition-all flex items-center justify-center gap-2 font-medium ${colorTheme === 'green'
-                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                            : 'border-gray-200 text-gray-500 hover:bg-gray-50'
-                            }`}
-                    >
-                        <div className="w-4 h-4 rounded-full bg-emerald-500" /> Green
-                    </button>
-                    <button
-                        onClick={() => colorTheme !== 'blue' && toggleColorTheme(true)}
-                        className={`flex-1 p-3 rounded-xl border transition-all flex items-center justify-center gap-2 font-medium ${colorTheme === 'blue'
-                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                            : 'border-gray-200 text-gray-500 hover:bg-gray-50'
-                            }`}
-                    >
-                        <div className="w-4 h-4 rounded-full bg-blue-500" /> Blue
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const AnimationPreview = ({ type, enabled }) => {
-    return (
-        <div className="w-full h-32 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden relative border border-gray-200 dark:border-gray-700 mb-4 flex items-center justify-center">
-
-            {/* Disabled Overlay/State */}
-            {!enabled && type !== 'reduced' && (
-                <div className="absolute inset-0 z-30 bg-gray-100/80 dark:bg-gray-900/80 backdrop-blur-[1px] flex items-center justify-center text-gray-400 font-mono text-xs uppercase tracking-widest">
-                    <span>Disabled</span>
-                </div>
-            )}
-
-            {/* Glassmorphism Preview */}
-            {type === 'blur' && (
-                <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-                    {/* Background Shapes */}
-                    <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                        className="absolute w-32 h-32 bg-gradient-to-tr from-purple-500 to-pink-500 rounded-full blur-xl -top-10 -left-10 opacity-70"
-                    />
-                    <motion.div
-                        animate={{ rotate: -360 }}
-                        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                        className="absolute w-40 h-40 bg-gradient-to-tr from-blue-500 to-teal-500 rounded-full blur-xl -bottom-10 -right-10 opacity-70"
-                    />
-
-                    {/* The Card */}
-                    <div className="relative z-10 w-2/3 h-2/3 flex items-center justify-center">
-                        <div className={`absolute inset-0 border border-white/20 rounded-xl shadow-lg transition-all duration-300 ${enabled ? 'bg-white/10 dark:bg-black/10 backdrop-blur-md' : 'bg-white dark:bg-gray-900'}`}></div>
-                        <span className="relative z-20 font-bold text-gray-800 dark:text-white drop-shadow-md">
-                            {enabled ? 'Frosted Glass' : 'Solid Opaque'}
-                        </span>
-                    </div>
-                </div>
-            )}
-
-            {/* Particles Preview */}
-            {type === 'particles' && (
-                <div className="relative w-full h-full overflow-hidden bg-gray-900">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <span className={`font-bold z-10 transition-colors ${enabled ? 'text-white' : 'text-gray-600'}`}>
-                            {enabled ? 'Celebration Effects' : 'No Effects'}
-                        </span>
-                    </div>
-
-                    {enabled && (
-                        <>
-                            {[...Array(8)].map((_, i) => (
-                                <motion.div
-                                    key={i}
-                                    className="absolute w-2 h-2 bg-yellow-400 rounded-full"
-                                    initial={{ y: 140, x: Math.random() * 300, opacity: 0 }}
-                                    animate={{ y: -20, opacity: [0, 1, 0] }}
-                                    transition={{
-                                        duration: 2 + Math.random() * 2,
-                                        repeat: Infinity,
-                                        delay: Math.random() * 2,
-                                        ease: "easeOut"
-                                    }}
-                                />
-                            ))}
-                            {[...Array(5)].map((_, i) => (
-                                <motion.div
-                                    key={i + 10}
-                                    className="absolute w-3 h-3 border-2 border-primary-400 rounded-sm"
-                                    initial={{ y: 140, x: Math.random() * 300, rotate: 0, opacity: 0 }}
-                                    animate={{ y: -20, rotate: 360, opacity: [0, 1, 0] }}
-                                    transition={{
-                                        duration: 3 + Math.random() * 2,
-                                        repeat: Infinity,
-                                        delay: Math.random() * 3,
-                                        ease: "easeOut"
-                                    }}
-                                />
-                            ))}
-                        </>
-                    )}
-                </div>
-            )}
-
-            {/* Reduced Motion Preview */}
-            {type === 'reduced' && (
-                <div className="flex gap-8 items-center justify-center w-full h-full bg-white dark:bg-gray-900">
-                    {/* Bouncy (Normal) */}
-                    <div className={`text-center transition-opacity ${enabled ? 'opacity-30 grayscale' : 'opacity-100'}`}>
-                        <motion.div
-                            animate={!enabled ? { y: [0, -20, 0] } : {}}
-                            transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 1 }}
-                            className="w-10 h-10 bg-green-500 rounded-full mb-2 mx-auto shadow-lg"
-                        />
-                        <p className="text-[10px] text-gray-500 uppercase font-bold">Standard</p>
-                    </div>
-
-                    <div className="h-12 w-px bg-gray-200 dark:bg-gray-700 mx-2" />
-
-                    {/* Fade (Reduced) */}
-                    <div className={`text-center transition-opacity ${!enabled ? 'opacity-30 grayscale' : 'opacity-100'}`}>
-                        <motion.div
-                            animate={enabled ? { opacity: [1, 0.2, 1] } : {}}
-                            transition={{ duration: 1.5, repeat: Infinity }}
-                            className="w-10 h-10 bg-gray-400 rounded-full mb-2 mx-auto"
-                        />
-                        <p className="text-[10px] text-gray-500 uppercase font-bold">Reduced</p>
-                    </div>
-                </div>
-            )}
-
-        </div>
-    );
-};
-
-const Meter = ({ value, label, color }) => (
-    <div className="mt-2">
-        <div className="flex justify-between text-xs mb-1">
-            <span className="text-gray-500 font-medium">{label}</span>
-            <span className={`font-bold ${color.replace('bg-', 'text-')}`}>{value}%</span>
-        </div>
-        <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-            <div className={`h-full ${color}`} style={{ width: `${value}%` }} />
-        </div>
-    </div>
-);
-
-const AnimationSettings = () => {
+const PerformanceSettings = () => {
     const { performance, updatePerformance } = useTheme();
-
-    // Preset Handlers
-    const setPreset = (mode) => {
-        if (mode === 'save') {
-            updatePerformance('blur', false);
-            updatePerformance('particles', false);
-            updatePerformance('reducedMotion', true);
-        } else if (mode === 'balanced') {
-            updatePerformance('blur', true);
-            updatePerformance('particles', false);
-            updatePerformance('reducedMotion', false);
-        } else if (mode === 'max') {
-            updatePerformance('blur', true);
-            updatePerformance('particles', true);
-            updatePerformance('reducedMotion', false);
-        }
+    const current = PRESETS.find(p => p.particles === !!performance.particles && p.reducedMotion === !!performance.reducedMotion)?.id;
+    const apply = (p) => {
+        updatePerformance('particles', p.particles);
+        updatePerformance('reducedMotion', p.reducedMotion);
     };
-
     return (
-        <div className="space-y-6">
-            <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 p-6 rounded-2xl border border-amber-500/20">
-                <div className="flex items-start gap-4 mb-6">
-                    <div className="p-3 bg-amber-100 dark:bg-amber-900/30 text-amber-600 rounded-xl">
-                        <Battery size={24} />
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-bold text-amber-700 dark:text-amber-500">Performance Monitor</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            Customize visual effects to balance aesthetics and battery life.
-                        </p>
-                    </div>
+        <div className="space-y-4">
+            <Panel title="Performance" subtitle="On older school computers, fewer effects keep games smooth. Games also lower their quality automatically when a device is slow.">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {PRESETS.map(p => (
+                        <Choice key={p.id} selected={current === p.id} onClick={() => apply(p)} className="p-4">
+                            <p.icon size={22} className="text-primary-500" />
+                            <span className="block font-bold mt-2 text-gray-900 dark:text-white">{p.label}</span>
+                            <span className="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">{p.text}</span>
+                        </Choice>
+                    ))}
                 </div>
-
-                {/* Presets */}
-                <div className="grid grid-cols-3 gap-3">
-                    <button onClick={() => setPreset('save')} className="p-3 bg-white dark:bg-black/20 rounded-xl border border-amber-500/20 hover:border-amber-500/50 transition-colors text-center group">
-                        <div className="font-bold text-amber-700 dark:text-amber-500 text-sm mb-1 group-hover:scale-105 transition-transform">Power Saver</div>
-                        <div className="text-[10px] opacity-70">Minimal FX</div>
-                    </button>
-                    <button onClick={() => setPreset('balanced')} className="p-3 bg-white dark:bg-black/20 rounded-xl border border-amber-500/20 hover:border-amber-500/50 transition-colors text-center group">
-                        <div className="font-bold text-amber-700 dark:text-amber-500 text-sm mb-1 group-hover:scale-105 transition-transform">Balanced</div>
-                        <div className="text-[10px] opacity-70">Standard</div>
-                    </button>
-                    <button onClick={() => setPreset('max')} className="p-3 bg-white dark:bg-black/20 rounded-xl border border-amber-500/20 hover:border-amber-500/50 transition-colors text-center group">
-                        <div className="font-bold text-amber-700 dark:text-amber-500 text-sm mb-1 group-hover:scale-105 transition-transform">High Fidelity</div>
-                        <div className="text-[10px] opacity-70">All Effects</div>
-                    </button>
+            </Panel>
+            <Panel>
+                <div className="space-y-5">
+                    <Toggle
+                        label="Background stars and celebrations"
+                        help="Twinkling stars, shooting stars and confetti."
+                        checked={!!performance.particles}
+                        onChange={v => updatePerformance('particles', v)}
+                    />
+                    <div className="h-px bg-gray-200/70 dark:bg-white/[0.07]" />
+                    <Toggle
+                        label="Reduced motion"
+                        help="Stops orbiting moons and softens page transitions. Game play itself is not affected."
+                        checked={!!performance.reducedMotion}
+                        onChange={v => updatePerformance('reducedMotion', v)}
+                    />
                 </div>
-            </div>
-
-            <div className="bg-white dark:bg-dark-surface p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 space-y-6">
-                {/* Glassmorphism Toggle */}
-                <div className="flex items-start justify-between">
-                    <div className="flex-1 mr-4">
-                        <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-bold text-gray-900 dark:text-white">Glassmorphism (Blur)</h4>
-                            <span className="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold rounded uppercase">High Cost</span>
-                        </div>
-                        <p className="text-sm text-gray-500 mb-3">Enables frosted glass blur effects on cards and modals.</p>
-                        <AnimationPreview type="blur" enabled={performance.blur} />
-                        <Meter value={80} label="GPU Usage" color="bg-red-500" />
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                            type="checkbox"
-                            className="sr-only peer"
-                            checked={performance.blur}
-                            onChange={(e) => updatePerformance('blur', e.target.checked)}
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
-                    </label>
-                </div>
-
-                <div className="h-px bg-gray-100 dark:bg-gray-800" />
-
-                {/* Particles Toggle */}
-                <div className="flex items-start justify-between">
-                    <div className="flex-1 mr-4">
-                        <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-bold text-gray-900 dark:text-white">Particle Effects</h4>
-                            <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[10px] font-bold rounded uppercase">Medium Cost</span>
-                        </div>
-                        <p className="text-sm text-gray-500 mb-3">Floating blobs and confetti celebrations.</p>
-                        <AnimationPreview type="particles" enabled={performance.particles} />
-                        <Meter value={45} label="CPU Usage" color="bg-orange-500" />
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                            type="checkbox"
-                            className="sr-only peer"
-                            checked={performance.particles}
-                            onChange={(e) => updatePerformance('particles', e.target.checked)}
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
-                    </label>
-                </div>
-
-                <div className="h-px bg-gray-100 dark:bg-gray-800" />
-
-                {/* Reduced Motion Toggle */}
-                <div className="flex items-start justify-between">
-                    <div className="flex-1 mr-4">
-                        <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-bold text-gray-900 dark:text-white">Reduced Motion</h4>
-                            <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded uppercase">Saves Battery</span>
-                        </div>
-                        <p className="text-sm text-gray-500 mb-3">Simplifies transitions and disables smooth scaling/movement.</p>
-                        <AnimationPreview type="reduced" enabled={performance.reducedMotion} />
-                        <Meter value={10} label="Impact" color="bg-green-500" />
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                            type="checkbox"
-                            className="sr-only peer"
-                            checked={performance.reducedMotion}
-                            onChange={(e) => updatePerformance('reducedMotion', e.target.checked)}
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"></div>
-                    </label>
-                </div>
-            </div>
+            </Panel>
         </div>
     );
 };
+
+// ---------- Language ----------
+
+const LANGUAGES = [
+    { code: 'en', native: 'English', label: 'English' },
+    { code: 'uz', native: "O'zbekcha", label: 'Uzbek' },
+    { code: 'ru', native: 'Русский', label: 'Russian' }
+];
 
 const LanguageSettings = () => {
     const { lang, setLang } = useLanguage();
-
     return (
-        <div className="bg-white dark:bg-dark-surface p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
-            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                <Globe className="text-orange-500" size={20} /> Application Language
-            </h3>
+        <Panel title="Application language" subtitle="Menus and navigation switch language right away. Game screens are in English for now.">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {[
-                    { code: 'en', label: 'English', native: 'English' },
-                    { code: 'uz', label: 'Uzbek', native: 'O\'zbekcha' },
-                    { code: 'ru', label: 'Russian', native: 'Русский' }
-                ].map((l) => (
-                    <button
-                        key={l.code}
-                        onClick={() => setLang(l.code)}
-                        className={`p-4 rounded-xl border-2 text-left transition-all ${lang === l.code
-                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/10'
-                            : 'border-transparent bg-gray-50 hover:bg-gray-100'
-                            }`}
-                    >
-                        <div className="font-bold text-gray-900 dark:text-white">{l.native}</div>
-                        <div className="text-xs text-gray-500">{l.label}</div>
-                    </button>
+                {LANGUAGES.map(l => (
+                    <Choice key={l.code} selected={lang === l.code} onClick={() => setLang(l.code)} className="flex items-center gap-3 p-4">
+                        <Flag code={l.code} className="w-12 h-8 rounded-md shadow-sm" />
+                        <span className="min-w-0">
+                            <span className="block font-bold text-gray-900 dark:text-white">{l.native}</span>
+                            <span className="block text-xs text-gray-500 dark:text-gray-400">{l.label}</span>
+                        </span>
+                    </Choice>
                 ))}
             </div>
-        </div>
+        </Panel>
     );
 };
 
-const DangerZone = () => {
-    return (
-        <div className="bg-red-50 dark:bg-red-900/10 p-6 rounded-2xl border border-red-100 dark:border-red-900/30">
-            <h3 className="font-bold text-red-700 dark:text-red-400 text-lg mb-2">Danger Zone</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                Destructive actions that cannot be undone. Please be certain.
-            </p>
+// ---------- Data ----------
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-dark-surface p-4 rounded-xl border border-red-100 dark:border-red-900/20">
-                <div>
-                    <h4 className="font-bold text-gray-900 dark:text-gray-200">Delete all Orbit data in this browser</h4>
-                    <p className="text-xs text-gray-500">Removes your sets, settings and saved scores from this browser. Published sets stay public.</p>
+const DataSettings = () => {
+    const [confirm, setConfirm] = useState(false);
+    return (
+        <Panel title="Your data" subtitle="Everything you make is saved in this browser.">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-rose-300/60 dark:border-rose-400/20 bg-rose-50 dark:bg-rose-500/[0.06] p-4">
+                <div className="flex items-start gap-3">
+                    <IconOrb icon={Trash2} tone="rose" size={40} moon={false} />
+                    <div>
+                        <h3 className="font-bold text-gray-900 dark:text-white">Delete all Orbit data in this browser</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Removes your sets, settings and saved scores. Published sets stay public.</p>
+                    </div>
                 </div>
-                <button
-                    onClick={() => {
-                        if (window.confirm('Delete all your sets and settings from this browser? This cannot be undone.')) {
-                            localStorage.clear();
-                            window.location.reload();
-                        }
-                    }}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-sm hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
-                >
-                    Delete Everything
-                </button>
+                <button onClick={() => setConfirm(true)} className={cx(btn.danger, 'shrink-0')}>Delete everything</button>
+            </div>
+            <ConfirmDialog
+                open={confirm}
+                title="Delete everything?"
+                message="All your sets and settings will be removed from this browser. This cannot be undone."
+                confirmLabel="Delete everything"
+                danger
+                onCancel={() => setConfirm(false)}
+                onConfirm={() => {
+                    localStorage.clear();
+                    window.location.reload();
+                }}
+            />
+        </Panel>
+    );
+};
+
+const PANELS = {
+    profile: ProfileSettings,
+    appearance: AppearanceSettings,
+    sound: SoundSettings,
+    performance: PerformanceSettings,
+    language: LanguageSettings,
+    data: DataSettings
+};
+
+const Settings = () => {
+    const [active, setActive] = useState('profile');
+    const { t } = useLanguage();
+    const Current = PANELS[active];
+
+    return (
+        <div className="space-y-6 md:pb-16">
+            <PageHeader icon={SettingsIcon} tone="slate" title={t('settings')} subtitle="Make Orbit yours." />
+            <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+                <nav className="md:w-56 shrink-0 flex md:flex-col gap-1 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 pb-1 md:pb-0" aria-label="Settings sections">
+                    {TABS.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActive(tab.id)}
+                            aria-current={active === tab.id ? 'page' : undefined}
+                            className={cx(
+                                'shrink-0 flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl font-semibold whitespace-nowrap transition-colors',
+                                active === tab.id
+                                    ? 'bg-gradient-to-r from-primary-500/15 to-transparent text-primary-700 dark:text-primary-200 ring-1 ring-primary-400/30'
+                                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04] hover:text-gray-900 dark:hover:text-white'
+                            )}
+                        >
+                            <tab.icon size={18} className={tab.id === 'data' && active !== 'data' ? 'text-rose-400' : ''} />
+                            {tab.label}
+                        </button>
+                    ))}
+                </nav>
+                <div className="flex-1 min-w-0">
+                    <Current />
+                </div>
             </div>
         </div>
     );

@@ -5,7 +5,7 @@ export const SPACE_BG = {
     backgroundColor: '#050816',
     backgroundImage: [
         'radial-gradient(ellipse at top, rgba(56,189,248,0.10), transparent 55%)',
-        'radial-gradient(ellipse at bottom right, rgba(129,140,248,0.12), transparent 50%)',
+        'radial-gradient(ellipse at bottom left, rgba(124,58,237,0.18), transparent 55%)',
         'radial-gradient(1px 1px at 20px 30px, rgba(255,255,255,0.7), transparent)',
         'radial-gradient(1px 1px at 90px 120px, rgba(255,255,255,0.5), transparent)',
         'radial-gradient(1.5px 1.5px at 160px 60px, rgba(255,255,255,0.6), transparent)',

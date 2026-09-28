@@ -3,7 +3,7 @@ import { ArrowUp, ArrowDown, Copy, Trash2, Plus, X, Check, AlertTriangle, Chevro
 import { QUESTION_TYPES, TYPE_IDS, LIMITS, validateQuestion, uid } from '../../platform/questions/types';
 import { TYPE_ICONS, cx, btn } from '../ui';
 
-const optionInput = 'flex-1 min-w-0 bg-gray-50 dark:bg-dark-bg border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors text-sm';
+const optionInput = 'flex-1 min-w-0 bg-gray-50 dark:bg-[#070c21] border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2.5 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors text-sm';
 
 const TypePicker = ({ value, onChange }) => {
     const [open, setOpen] = useState(false);
@@ -15,7 +15,7 @@ const TypePicker = ({ value, onChange }) => {
                 onClick={() => setOpen(o => !o)}
                 aria-haspopup="listbox"
                 aria-expanded={open}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap bg-gray-100 dark:bg-white/[0.07] hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
                 {Icon && <Icon size={14} className="shrink-0" />}
                 <span className="sm:hidden">{QUESTION_TYPES[value].short}</span>
@@ -25,7 +25,7 @@ const TypePicker = ({ value, onChange }) => {
             {open && (
                 <>
                     <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-                    <ul role="listbox" className="absolute z-20 left-0 top-full mt-1 w-56 bg-white dark:bg-dark-surface border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-1">
+                    <ul role="listbox" className="absolute z-20 left-0 top-full mt-1 w-56 bg-white dark:bg-[#0e1638] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl p-1">
                         {TYPE_IDS.map(t => {
                             const TIcon = TYPE_ICONS[t];
                             return (
@@ -196,7 +196,7 @@ const QuestionCard = memo(({ q, index, total, showErrors, onChange, onType, onMo
     const change = (next) => onChange(q.id, next);
 
     return (
-        <article className={cx('bg-white dark:bg-dark-surface border rounded-2xl p-4 sm:p-5 shadow-sm', showErrors && errors.length ? 'border-amber-300 dark:border-amber-800' : 'border-gray-100 dark:border-gray-800')}>
+        <article className={cx('orbit-card p-4 sm:p-5', showErrors && errors.length ? 'border-amber-300 dark:border-amber-800' : '')}>
             <div className="flex items-center justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2 min-w-0">
                     <span className="w-8 h-8 shrink-0 rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-black flex items-center justify-center">{index + 1}</span>

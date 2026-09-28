@@ -32,7 +32,7 @@ const SettingsForm = ({ game, value, onChange }) => {
                                         <select
                                             value={String(value[s.key])}
                                             onChange={e => set(s.key, s.options.find(o => String(o.value) === e.target.value)?.value ?? s.default)}
-                                            className="sm:w-72 bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2 text-sm font-semibold outline-none focus:ring-2 focus:ring-primary-500/30"
+                                            className="sm:w-72 bg-gray-100 dark:bg-white/[0.06] rounded-xl px-3 py-2 text-sm font-semibold outline-none focus:ring-2 focus:ring-primary-500/30"
                                             aria-label={s.label}
                                         >
                                             {s.options.map(o => <option key={String(o.value)} value={String(o.value)}>{o.label}</option>)}
