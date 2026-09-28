@@ -160,6 +160,8 @@ export class Playfield {
 
     startRound({ kind = 'single', options, timeLimitMs, seed, speed = 'normal', penalty = { stun: 1.5, timeCost: 0 } }) {
         const rand = createRng(seed);
+        // A pending "fade the answers" from the previous round must never hit the new asteroids
+        this.revealUntil = 0;
         this.rocks.length = 0;
         this.debris.length = 0;
         this.bullets.length = 0;
@@ -247,6 +249,7 @@ export class Playfield {
     }
 
     clear() {
+        this.revealUntil = 0;
         this.dissolveRocks();
         this.bullets.length = 0;
         this.round = null;

@@ -6,6 +6,8 @@ import { MemoryRealtime } from './memory';
 import { splitPath, toStored, setAt } from './tree';
 
 const PREFIX = 'orbit.ldb:';
+// Outside PREFIX on purpose, so it never becomes part of the data tree
+const COMMIT_KEY = 'orbit.ldbcommit';
 
 const flatten = (parts, stored, out) => {
     if (stored !== null && typeof stored === 'object') {
@@ -29,8 +31,12 @@ export class LocalRealtime extends MemoryRealtime {
                 this.hub.changedAll();
                 return;
             }
+            // Another tab finished one write: apply everything it changed at once (like Firebase does)
+            if (e.key === COMMIT_KEY) {
+                this.flushPending();
+                return;
+            }
             if (!e.key.startsWith(PREFIX)) return;
-            const parts = splitPath(e.key.slice(PREFIX.length));
             let value = null;
             if (e.newValue !== null) {
                 try {
@@ -39,14 +45,27 @@ export class LocalRealtime extends MemoryRealtime {
                     value = null;
                 }
             }
-            this.store.tree = setAt(this.store.tree, parts, value);
-            this.hub.changed([parts]);
+            // Hold leaf changes until the writer's commit marker, so nobody ever sees half a write
+            this.pending.push([splitPath(e.key.slice(PREFIX.length)), value]);
+            clearTimeout(this.pendingTimer);
+            this.pendingTimer = setTimeout(() => this.flushPending(), 300); // safety net
         };
+        this.pending = [];
+        this.pendingTimer = 0;
         window.addEventListener('storage', this.onStorage);
 
         // Best effort "onDisconnect": run the registered writes when the tab goes away
         this.onPageHide = () => this.simulateDisconnect();
         window.addEventListener('pagehide', this.onPageHide);
+    }
+
+    flushPending() {
+        clearTimeout(this.pendingTimer);
+        if (!this.pending.length) return;
+        const batch = this.pending;
+        this.pending = [];
+        for (const [parts, value] of batch) this.store.tree = setAt(this.store.tree, parts, value);
+        this.hub.changed(batch.map(([parts]) => parts));
     }
 
     loadAll() {
@@ -86,6 +105,12 @@ export class LocalRealtime extends MemoryRealtime {
                 }
             }
             this.store.tree = setAt(this.store.tree, parts, stored);
+        }
+        // Tells other tabs this write is complete (see onStorage)
+        try {
+            localStorage.setItem(COMMIT_KEY, `${Date.now()}.${Math.random()}`);
+        } catch {
+            /* storage full: other tabs fall back to the timer */
         }
         this.hub.changed(writes.map(([parts]) => parts));
     }

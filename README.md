@@ -7,8 +7,8 @@ Orbit is an interactive quiz-game platform for classrooms, in the spirit of Kaho
 - **Create:** a question editor with five types: multiple choice, true/false, written answer, multi-select and put-in-order. You can also bulk-import `question | answer` lines or JSON.
 - **Discover:** search the public library by topic, subject or question type. Any set can be copied and edited.
 - **Games:** every game declares which question types it supports. Host setup shows which questions of your set will be used, which will be converted, and which aren't supported.
-  - **Comet Clash** (live): 1v1 space duels on students' phones or laptops. See [Comet Clash rules](#comet-clash-rules).
-  - **Grid Battle** (smart board): teams pick tiles that hide questions, bombs, bonuses and grenades.
+  - **Comet Clash** (live): blast the asteroid with the right answer on students' phones or laptops, in 1v1 **Duels** or an everyone-at-once **Meteor Shower**. See [Comet Clash rules](#comet-clash-rules).
+  - **Grid Battle** (smart board): space teams pick tiles that hide questions, black holes, solar winds, shooting stars, meteor strikes and wormholes.
   - **Who Wants to Be a Millionaire?** (smart board): the money tree, with lifelines.
 - **Practice:** solo Comet Clash with any set, for revising at home.
 - **Sound:** all music and sound effects are synthesized in the browser, so there are no audio files.
@@ -49,13 +49,15 @@ Limits to know about:
 
 ## Comet Clash rules
 
+### Duels
+
 Everything below is a teacher setting, shown here with its default:
 
 | Situation | What happens |
 | --- | --- |
 | One student blasts the right answer | They get **+1**, the rival 0 |
 | Both students find it | The faster one gets **+1**. Each device times its own player, so slow Wi-Fi doesn't lose rounds |
-| Both students miss | **−1 each** (scores can be set to never drop below 0) |
+| Both students miss | **−1 each**. Total scores can go below zero (a setting) |
 | End of the duel (**5 rounds**) | The winner gets **+3**. On a tie, one sudden-death round; still tied, both get half |
 | No free opponent | After **8 s**, a bot rival steps in. Beating it gives half the bonus, and bots never appear on the leaderboard |
 | Duel finished | Players are re-paired, avoiding an immediate rematch, until the **timer** runs out |
@@ -63,6 +65,28 @@ Everything below is a teacher setting, shown here with its default:
 | The timer runs out mid-duel | Points from finished rounds count; nobody gets the win bonus |
 | Written answers | Shown as asteroids: the answer plus decoys from the rest of the set |
 | Multi-select / put-in-order | Blast every correct asteroid, or blast them in order. A wrong hit stuns you for 1.5 s |
+
+### Meteor Shower
+
+Everyone answers every question at the same time; there are no duels.
+
+| Situation | What happens |
+| --- | --- |
+| The fastest student to find the answer | **100** points |
+| Any other student who finds it | **100 × fastest time ÷ their time** (twice as slow = 50), at least 1 |
+| A student who doesn't find it in time | **−100** (or −50 / 0) |
+| A student offline for the whole question | Skipped, no penalty |
+| After each question | The answer, how many found it, the fastest student and the leaderboard with each student's points |
+| Game length | A set number of questions (default **10**) |
+
+### Both modes
+
+| Situation | What happens |
+| --- | --- |
+| The teacher's screen goes offline | The game pauses. By default, if the screen is back within **3 min** it continues and no playing time is lost; after that the game ends. "Wait for me" never ends it |
+| A nickname is already in the room | The student is asked to pick another one |
+| The teacher presses **Play again** | A new room opens with the same set and settings, and students still on the results screen join it automatically with the same nickname |
+| Music | The teacher's screen plays the music. Student devices play soft music too (a setting), and each student can mute their own device |
 
 Teachers can also:
 

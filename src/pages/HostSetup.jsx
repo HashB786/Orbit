@@ -14,7 +14,8 @@ import { audio } from '../platform/audio/audio';
 import { useUser } from '../context/UserContext';
 import { saveBoardSession } from '../platform/games/boardSession';
 
-const SETTINGS_KEY = (gameId) => `orbit.gameSettings.${gameId}`;
+// v2: settings saved before negative scores became the default are discarded once
+const SETTINGS_KEY = (gameId) => `orbit.gameSettings.v2.${gameId}`;
 
 const loadSettings = (game) => {
     try {

@@ -48,7 +48,7 @@ const HostRoom = () => {
     const Host = game.Host;
     return (
         <Suspense fallback={<SpaceScreen center><Spinner size={36} className="text-emerald-400" /></SpaceScreen>}>
-            <Host code={code} onExit={() => navigate('/games')} />
+            <Host key={code} code={code} onExit={() => navigate('/games')} />
         </Suspense>
     );
 };

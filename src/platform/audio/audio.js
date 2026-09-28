@@ -67,6 +67,52 @@ const TRACKS = {
                 a.tone({ midi: note, type: 'square', start: t, dur: stepDur * 0.7, gain: 0.018, attack: 0.002, release: 0.05, bus: a.musicBus, filter: 2600 });
             }
         }
+    },
+    // Grid Battle: bouncy space-arcade loop in F major (F - Dm - Bb - C), plucky and game-show bright
+    board: {
+        tempo: 112,
+        bars: [
+            { bass: 41, chord: [65, 69, 72] },
+            { bass: 38, chord: [62, 65, 69] },
+            { bass: 46, chord: [62, 65, 70] },
+            { bass: 48, chord: [64, 67, 72] }
+        ],
+        play(a, step, bar, t, stepDur) {
+            const s = step % 16;
+            // Walking bass on the beats, octave pop on the off-beats
+            if (s % 4 === 0) a.tone({ midi: bar.bass, type: 'triangle', start: t, dur: stepDur * 1.8, gain: 0.08, attack: 0.004, release: 0.08, bus: a.musicBus, filter: 700 });
+            if (s % 4 === 2) a.tone({ midi: bar.bass + 12, type: 'triangle', start: t, dur: stepDur * 0.9, gain: 0.05, attack: 0.004, release: 0.05, bus: a.musicBus, filter: 900 });
+            if (s % 8 === 0) a.kick(t, 0.13);
+            if (s === 4 || s === 12) a.noise({ start: t, dur: 0.06, gain: 0.035, type: 'highpass', freq: 3500, bus: a.musicBus });
+            // Twinkly marimba-ish melody from the chord
+            const melody = [2, null, 1, 0, null, 1, 2, null, 0, null, 2, 1, null, 0, 1, null];
+            const idx = melody[s];
+            if (idx !== null) a.tone({ midi: bar.chord[idx] + 12, type: 'sine', start: t, dur: stepDur * 0.5, gain: 0.05, attack: 0.002, release: 0.18, bus: a.musicBus });
+        }
+    },
+    // Millionaire: slow, suspenseful pulse in C minor with a heartbeat bass and shimmering pad
+    tension: {
+        tempo: 76,
+        bars: [
+            { bass: 36, chord: [60, 63, 67] },
+            { bass: 32, chord: [56, 60, 63] },
+            { bass: 34, chord: [58, 62, 65] },
+            { bass: 31, chord: [55, 59, 62] }
+        ],
+        play(a, step, bar, t, stepDur) {
+            const s = step % 16;
+            if (s === 0) {
+                bar.chord.forEach(n => a.tone({ midi: n, type: 'sawtooth', start: t, dur: stepDur * 15, gain: 0.012, attack: 0.9, release: 0.9, bus: a.musicBus, filter: 1100 }));
+            }
+            // Heartbeat: lub-dub
+            if (s === 0 || s === 8) {
+                a.tone({ midi: bar.bass, type: 'sine', start: t, dur: stepDur * 0.9, gain: 0.12, attack: 0.005, release: 0.12, bus: a.musicBus });
+                a.tone({ midi: bar.bass, type: 'sine', start: t + stepDur * 1.2, dur: stepDur * 0.7, gain: 0.07, attack: 0.005, release: 0.1, bus: a.musicBus });
+            }
+            // Clock-like tick and a high shimmer
+            if (s % 2 === 0) a.noise({ start: t, dur: 0.02, gain: 0.012, type: 'highpass', freq: 8000, bus: a.musicBus });
+            if (s === 6 || s === 14) a.tone({ midi: bar.chord[2] + 24, type: 'sine', start: t, dur: stepDur * 2, gain: 0.02, attack: 0.05, release: 0.6, bus: a.musicBus });
+        }
     }
 };
 
@@ -312,6 +358,45 @@ const SFX = {
     matchLose: (a, t) => arp(a, t, [69, 65, 62], { gap: 0.13, dur: 0.14, gain: 0.08 }),
     join: (a, t) => a.tone({ freq: 520, slideTo: 1040, type: 'sine', start: t, dur: 0.09, gain: 0.09, release: 0.06 }),
     whoosh: (a, t) => a.noise({ start: t, dur: 0.5, gain: 0.12, type: 'bandpass', freq: 400, freqEnd: 3200, q: 1.2 }),
+    // ---- Grid Battle tiles ----
+    reveal: (a, t) => {
+        a.noise({ start: t, dur: 0.25, gain: 0.07, type: 'bandpass', freq: 900, freqEnd: 4000, q: 2 });
+        a.tone({ freq: 700, slideTo: 1400, type: 'sine', start: t, dur: 0.18, gain: 0.06, release: 0.1 });
+    },
+    question: (a, t) => arp(a, t, [72, 79, 84], { type: 'sine', gap: 0.05, dur: 0.12, gain: 0.08, release: 0.3 }),
+    bomb: (a, t) => {
+        a.tone({ freq: 1200, slideTo: 150, type: 'square', start: t, dur: 0.45, gain: 0.04, release: 0.05, filter: 2000 });
+        a.noise({ start: t + 0.45, dur: 0.7, gain: 0.35, type: 'lowpass', freq: 2000, freqEnd: 80 });
+        a.tone({ freq: 90, slideTo: 35, type: 'sine', start: t + 0.45, dur: 0.5, gain: 0.25, release: 0.2 });
+    },
+    bonus: (a, t) => {
+        arp(a, t, [76, 81, 84, 88, 93], { type: 'triangle', gap: 0.05, dur: 0.08, gain: 0.1 });
+        a.noise({ start: t + 0.2, dur: 0.4, gain: 0.05, type: 'highpass', freq: 7000 });
+    },
+    wind: (a, t) => {
+        a.noise({ start: t, dur: 1.1, gain: 0.16, type: 'bandpass', freq: 300, freqEnd: 1800, q: 0.8 });
+        a.noise({ start: t + 0.3, dur: 0.9, gain: 0.1, type: 'bandpass', freq: 1500, freqEnd: 250, q: 0.8 });
+    },
+    grenade: (a, t) => {
+        a.tone({ freq: 2000, type: 'sine', start: t, dur: 0.04, gain: 0.08, release: 0.02 });
+        a.tone({ freq: 2000, type: 'sine', start: t + 0.25, dur: 0.04, gain: 0.08, release: 0.02 });
+        a.noise({ start: t + 0.5, dur: 0.6, gain: 0.3, type: 'lowpass', freq: 2500, freqEnd: 100 });
+    },
+    skip: (a, t) => arp(a, t, [67, 64, 60, 55], { type: 'square', gap: 0.08, dur: 0.07, gain: 0.04 }),
+    blank: (a, t) => a.tone({ freq: 330, slideTo: 300, type: 'triangle', start: t, dur: 0.15, gain: 0.07, release: 0.15 }),
+    // ---- Millionaire ----
+    lockIn: (a, t) => {
+        a.tone({ freq: 110, type: 'sawtooth', start: t, dur: 1.2, gain: 0.05, attack: 0.3, release: 0.4, filter: 500 });
+        a.noise({ start: t, dur: 1.3, gain: 0.05, type: 'bandpass', freq: 200, freqEnd: 2500, q: 1.5 });
+    },
+    lifeline: (a, t) => {
+        a.tone({ freq: 440, slideTo: 880, type: 'triangle', start: t, dur: 0.25, gain: 0.09, release: 0.1 });
+        a.tone({ freq: 660, slideTo: 1320, type: 'sine', start: t + 0.05, dur: 0.25, gain: 0.05, release: 0.1 });
+    },
+    milestone: (a, t) => {
+        arp(a, t, [72, 76, 79, 84, 88], { type: 'square', gap: 0.07, dur: 0.07, gain: 0.04 });
+        [72, 79, 84].forEach(m => a.tone({ midi: m, type: 'triangle', start: t + 0.36, dur: 0.6, gain: 0.07, release: 0.5 }));
+    },
     podium: (a, t) => {
         arp(a, t, [67, 72, 76, 79, 84], { type: 'square', gap: 0.11, dur: 0.1, gain: 0.05 });
         [60, 64, 67, 72, 76].forEach(m => a.tone({ midi: m, type: 'triangle', start: t + 0.6, dur: 1.1, gain: 0.06, attack: 0.02, release: 0.8 }));

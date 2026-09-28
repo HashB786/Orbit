@@ -40,6 +40,16 @@
           }
         },
 
+        "shower": {
+          "results": {
+            "$round": {
+              "$playerId": {
+                ".write": "auth != null && $playerId.beginsWith(auth.uid + '_') && !data.exists() && !root.child('rooms').child($code).child('players').child($playerId).child('kicked').exists()"
+              }
+            }
+          }
+        },
+
         "matches": {
           "$matchId": {
             "results": {

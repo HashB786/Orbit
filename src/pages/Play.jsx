@@ -24,8 +24,7 @@ const ErrorScreen = ({ message }) => (
 );
 
 // Student flow: check the code -> nickname -> the game's player screen
-const Play = () => {
-    const { code } = useParams();
+const PlayRoom = ({ code }) => {
     const navigate = useNavigate();
     const { userData } = useUser();
 
@@ -39,6 +38,7 @@ const Play = () => {
             return userData.name || '';
         }
     });
+    const [nameError, setNameError] = useState('');
     const [resumeCandidate, setResumeCandidate] = useState(null);
     const [player, setPlayer] = useState(null);
 
@@ -62,7 +62,8 @@ const Play = () => {
             setPlayer({ playerId: result.playerId, name: result.name });
             setPhase('playing');
         } catch (err) {
-            if (err instanceof RoomError && err.reason === 'bad-name') {
+            if (err instanceof RoomError && (err.reason === 'bad-name' || err.reason === 'name-taken')) {
+                setNameError(err.reason === 'name-taken' ? err.message : '');
                 setPhase('name');
                 return;
             }
@@ -176,13 +177,16 @@ const Play = () => {
                         <input
                             id="nickname"
                             value={name}
-                            onChange={e => setName(e.target.value.slice(0, MAX_NAME))}
+                            onChange={e => { setName(e.target.value.slice(0, MAX_NAME)); setNameError(''); }}
+                            aria-invalid={!!nameError}
+                            aria-describedby={nameError ? 'nickname-error' : undefined}
                             autoFocus
                             autoComplete="off"
                             maxLength={MAX_NAME}
                             placeholder="Your nickname"
-                            className="w-full text-center text-xl font-bold bg-white/10 border-2 border-white/15 focus:border-emerald-400 rounded-2xl px-4 py-3.5 outline-none placeholder:text-white/40"
+                            className={`w-full text-center text-xl font-bold bg-white/10 border-2 ${nameError ? 'border-rose-400' : 'border-white/15'} focus:border-emerald-400 rounded-2xl px-4 py-3.5 outline-none placeholder:text-white/40`}
                         />
+                        {nameError && <p id="nickname-error" role="alert" className="text-sm font-semibold text-rose-300">{nameError}</p>}
                         <button type="submit" disabled={!name.trim()} className="w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-gray-950 font-black text-lg transition-colors">
                             Join game
                         </button>
@@ -191,6 +195,12 @@ const Play = () => {
             </div>
         </SpaceScreen>
     );
+};
+
+// Keyed by code: moving to a new room (teacher pressed "Play again") starts completely fresh
+const Play = () => {
+    const { code } = useParams();
+    return <PlayRoom key={code} code={code} />;
 };
 
 export default Play;

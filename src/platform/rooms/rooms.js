@@ -10,7 +10,7 @@
 //             written by the host:   score, status, matchId, kicked, stats...
 
 import { getRealtime, getTabId } from '../realtime';
-import { cleanName, uniqueName, randomName, colorFor } from './names';
+import { cleanName, randomName, colorFor } from './names';
 import { roomPath, HEARTBEAT_MS } from './shared';
 
 export { roomPath, isOnline, OFFLINE_AFTER_MS, HEARTBEAT_MS } from './shared';
@@ -31,7 +31,8 @@ const ROOM_ERRORS = {
     started: 'This game has already started and is not accepting new players.',
     full: 'This game is full.',
     kicked: 'You were removed from this game.',
-    'bad-name': 'Please enter a nickname.'
+    'bad-name': 'Please enter a nickname.',
+    'name-taken': 'This nickname is already taken. Try another one.'
 };
 
 const fail = (reason) => {
@@ -73,6 +74,24 @@ export const createRoom = async ({ gameId, set, settings, hostName, setId = null
         set: { title: set.title, questions: set.questions },
         host: { connected: true, lastSeen: rt.now() }
     });
+    return code;
+};
+
+// New room with the same set and settings. Students still on the old room's final screen
+// see `nextCode` and move over automatically, keeping their nickname.
+export const playAgain = async (oldCode) => {
+    const rt = await getRealtime();
+    const [meta, set] = await Promise.all([rt.get(roomPath(oldCode, 'meta')), rt.get(roomPath(oldCode, 'set'))]);
+    if (!meta || !set) throw new Error('The old game could not be found.');
+    const questions = Array.isArray(set.questions) ? set.questions : Object.values(set.questions || {});
+    const code = await createRoom({
+        gameId: meta.gameId,
+        set: { title: set.title, questions },
+        settings: meta.settings,
+        hostName: meta.hostName,
+        setId: meta.setId || null
+    });
+    await rt.update(roomPath(oldCode, 'meta'), { nextCode: code });
     return code;
 };
 
@@ -156,17 +175,26 @@ export const joinRoom = async (code, rawName, { resume = null } = {}) => {
     const list = Object.values(players);
     if (list.filter(p => !p.kicked).length >= MAX_PLAYERS) fail('full');
 
-    const taken = list.map(p => p.name);
+    const taken = list.filter(p => !p.kicked).map(p => p.name);
+    const tabPlayerId = `${rt.clientId}_${getTabId()}`;
     let name;
     if (meta.settings?.randomNames) {
         name = randomName(taken);
     } else {
         name = cleanName(rawName);
         if (!name) fail('bad-name');
-        name = uniqueName(name, taken);
+        const lower = name.toLowerCase();
+        // Same tab coming back with the same name: continue as that player (keeps the score)
+        const own = players[tabPlayerId];
+        if (own && !own.kicked && String(own.name).toLowerCase() === lower) {
+            return joinRoom(code, rawName, { resume: { playerId: tabPlayerId } });
+        }
+        if (taken.some(t => String(t).toLowerCase() === lower)) fail('name-taken');
     }
 
-    const playerId = `${rt.clientId}_${getTabId()}`;
+    // A player record can't be rewritten (security rules), so a tab that already
+    // played in this room under another name gets a fresh id
+    const playerId = players[tabPlayerId] ? `${tabPlayerId}${Math.random().toString(36).slice(2, 6)}` : tabPlayerId;
     // update() writes each field separately, which the security rules check one by one
     await rt.update(roomPath(code, 'players', playerId), {
         name,

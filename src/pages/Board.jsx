@@ -1,7 +1,8 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useSyncExternalStore } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { X } from 'lucide-react';
-import SpaceScreen from '../components/SpaceScreen';
+import { X, Volume2, VolumeX } from 'lucide-react';
+import SpaceScreen, { SPACE_BG } from '../components/SpaceScreen';
+import { audio } from '../platform/audio/audio';
 import { Spinner } from '../components/ui';
 import { getGame } from '../platform/games/registry';
 import { loadBoardSession } from '../platform/games/boardSession';
@@ -12,6 +13,7 @@ const Board = () => {
     const navigate = useNavigate();
     const session = loadBoardSession();
     const game = getGame(gameId);
+    const sound = useSyncExternalStore(audio.subscribe, audio.getSettings);
 
     if (!game?.Board || !session || session.gameId !== gameId) {
         return (
@@ -28,10 +30,17 @@ const Board = () => {
     const GameBoard = game.Board;
 
     return (
-        <div className="app-height w-full relative overflow-y-auto overflow-x-hidden bg-gray-950">
+        <div className="app-height w-full relative overflow-y-auto overflow-x-hidden" style={SPACE_BG}>
             <Suspense fallback={<SpaceScreen center><Spinner size={36} className="text-emerald-400" /></SpaceScreen>}>
                 <GameBoard questions={session.set.questions} title={session.set.title} settings={session.settings} onExit={exit} />
             </Suspense>
+            <button
+                onClick={() => { audio.unlock(); audio.updateSettings({ muted: !sound.muted }); }}
+                aria-label={sound.muted ? 'Unmute' : 'Mute'}
+                className="fixed top-3 right-14 sm:right-28 z-[110] bg-black/40 text-white w-10 h-10 rounded-xl hover:bg-white/20 transition-colors flex items-center justify-center"
+            >
+                {sound.muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+            </button>
             <button
                 onClick={exit}
                 aria-label="Exit game"

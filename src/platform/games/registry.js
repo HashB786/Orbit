@@ -14,12 +14,12 @@ export const GAMES = [
         id: 'comet-clash',
         name: 'Comet Clash',
         kind: 'live',
-        tagline: '1v1 space duels. Blast the comet with the right answer before your rival does.',
+        tagline: 'Blast the asteroid with the right answer: 1v1 Duels, or everyone at once in a Meteor Shower.',
         howItWorks: [
             'Students join with the code on their own phones or laptops.',
-            'Two random students face off for a few rounds on the same asteroid field.',
-            'First to blast the right answer scores +1. If both miss, both lose points.',
-            'The duel winner earns a bonus, then everyone is re-paired until time runs out.'
+            'Duels: two students race on the same question. First to blast the answer +1, both miss −1, and the duel winner gets a bonus.',
+            'Meteor Shower: everyone answers every question. Up to 100 points for speed, −100 for not finding it.',
+            'Missed questions come back later, and you get a class report at the end.'
         ],
         players: '2+ players, own devices',
         accent: 'from-emerald-400 to-sky-500',
@@ -31,25 +31,48 @@ export const GAMES = [
         },
         minQuestions: 3,
         settings: [
-            { key: 'duration', label: 'Game length', type: 'select', options: minutes([3, 5, 8, 10, 15, 20]), default: 480 },
-            { key: 'rounds', label: 'Rounds per duel', type: 'number', min: 3, max: 9, default: 5 },
-            { key: 'roundTime', label: 'Seconds per round', type: 'number', min: 8, max: 30, default: 15, suffix: 's' },
-            { key: 'winBonus', label: 'Duel win bonus', type: 'number', min: 0, max: 10, default: 3, suffix: 'pts' },
             {
-                key: 'missPenalty', label: 'When both miss', type: 'segmented', default: -1,
+                key: 'mode', label: 'Mode', type: 'segmented', default: 'duel',
+                options: [{ value: 'duel', label: 'Duels' }, { value: 'shower', label: 'Meteor Shower' }],
+                help: s => (s.mode === 'shower'
+                    ? 'Everyone plays every question. The fastest correct player gets 100; the others get 100 × fastest time ÷ their time.'
+                    : 'Two random students face off; everyone is re-paired until time runs out.')
+            },
+            { key: 'duration', label: 'Game length', type: 'select', options: minutes([3, 5, 8, 10, 15, 20]), default: 480, showIf: s => s.mode !== 'shower' },
+            { key: 'showerQuestions', label: 'Questions', type: 'number', min: 3, max: 40, default: 10, showIf: s => s.mode === 'shower' },
+            { key: 'rounds', label: 'Rounds per duel', type: 'number', min: 3, max: 9, default: 5, showIf: s => s.mode !== 'shower' },
+            { key: 'roundTime', label: 'Seconds per question', type: 'number', min: 8, max: 40, default: 15, suffix: 's' },
+            { key: 'winBonus', label: 'Duel win bonus', type: 'number', min: 0, max: 10, default: 3, suffix: 'pts', showIf: s => s.mode !== 'shower' },
+            {
+                key: 'missPenalty', label: 'When both miss', type: 'segmented', default: -1, showIf: s => s.mode !== 'shower',
                 options: [{ value: 0, label: 'No penalty' }, { value: -1, label: '−1 each' }, { value: -2, label: '−2 each' }]
             },
-            { key: 'negativeScores', label: 'Scores can go below zero', type: 'toggle', default: false },
-            { key: 'suddenDeath', label: 'Sudden-death round on a tie', type: 'toggle', default: true },
-            { key: 'bots', label: 'Bot rival when nobody is free', type: 'toggle', default: true, help: 'Bots never appear on the leaderboard. Beating one gives half the win bonus.' },
-            { key: 'botWait', label: 'Seconds before a bot joins', type: 'number', min: 3, max: 30, default: 8, suffix: 's', showIf: s => s.bots },
+            {
+                key: 'missPoints', label: "Didn't find the answer", type: 'segmented', default: -100, showIf: s => s.mode === 'shower',
+                options: [{ value: 0, label: '0' }, { value: -50, label: '−50' }, { value: -100, label: '−100' }]
+            },
+            { key: 'negativeScores', label: 'Total scores can go below zero', type: 'toggle', default: true },
+            { key: 'suddenDeath', label: 'Sudden-death round on a tie', type: 'toggle', default: true, showIf: s => s.mode !== 'shower' },
+            { key: 'bots', label: 'Bot rival when nobody is free', type: 'toggle', default: true, showIf: s => s.mode !== 'shower', help: 'Bots never appear on the leaderboard. Beating one gives half the win bonus.' },
+            { key: 'botWait', label: 'Seconds before a bot joins', type: 'number', min: 3, max: 30, default: 8, suffix: 's', showIf: s => s.mode !== 'shower' && s.bots },
             {
                 key: 'speed', label: 'Asteroid speed', type: 'segmented', default: 'normal',
                 options: [{ value: 'calm', label: 'Calm' }, { value: 'normal', label: 'Normal' }, { value: 'fast', label: 'Fast' }]
             },
+            {
+                key: 'hostTimeout', label: 'If your screen goes offline', type: 'select', default: 180,
+                options: [
+                    { value: 0, label: 'Wait for me (never end)' },
+                    { value: 60, label: 'End the game after 1 min' },
+                    { value: 180, label: 'End the game after 3 min' },
+                    { value: 300, label: 'End the game after 5 min' }
+                ],
+                help: 'While your screen is offline the game pauses. Come back in time and it continues where it stopped.'
+            },
             { key: 'lateJoin', label: 'Allow joining after the start', type: 'toggle', default: true },
             { key: 'randomNames', label: 'Fun random nicknames', type: 'toggle', default: false, help: 'Students get a generated name like "Cosmic Otter" instead of typing one.' },
             { key: 'studentLeaderboard', label: 'Show rank on student screens', type: 'toggle', default: true },
+            { key: 'studentMusic', label: 'Music on student devices', type: 'toggle', default: true, help: 'Soft background music on phones. Each student can mute it.' },
             { key: 'studentSound', label: 'Sound effects on student devices', type: 'toggle', default: true }
         ],
         Host: lazy(() => import('../../games/comet-clash/HostScreen')),
@@ -59,14 +82,14 @@ export const GAMES = [
         id: 'grid-battle',
         name: 'Grid Battle',
         kind: 'board',
-        tagline: 'Teams pick tiles on the smart board: questions, bombs, bonuses and grenades.',
+        tagline: 'Space teams explore a board of tiles: questions, black holes, shooting stars and meteor strikes.',
         howItWorks: [
-            'Split the class into teams and put the board on the big screen.',
-            'Teams take turns picking a tile. Questions are answered out loud.',
-            'You judge the answer. Special tiles steal, reset, skip or boost scores.'
+            'Split the class into up to 6 space teams and put the board on the big screen.',
+            'Teams take turns picking a tile. Questions are answered out loud and you judge them.',
+            'Hidden tiles: black holes (−1), solar winds (reset), shooting stars (+1), meteor strikes (hit a team) and wormholes (lose a turn).'
         ],
         players: 'Teams, one big screen',
-        accent: 'from-blue-500 to-indigo-600',
+        accent: 'from-sky-500 to-indigo-600',
         compat: { mc: 'native', tf: 'native', multi: 'native', order: 'native', typed: 'native' },
         typeNotes: { typed: 'The answer is revealed on screen for you to judge.' },
         minQuestions: 1,
@@ -74,11 +97,11 @@ export const GAMES = [
             { key: 'teams', label: 'Teams', type: 'number', min: 2, max: 6, default: 3 },
             { key: 'rows', label: 'Rows', type: 'number', min: 3, max: 8, default: 5 },
             { key: 'cols', label: 'Columns', type: 'number', min: 3, max: 8, default: 6 },
-            { key: 'bombs', label: 'Bombs (−1 point)', type: 'number', min: 0, max: 10, default: 4 },
-            { key: 'winds', label: 'Winds (score reset)', type: 'number', min: 0, max: 5, default: 2 },
-            { key: 'bonuses', label: 'Bonuses (+1 point)', type: 'number', min: 0, max: 10, default: 4 },
-            { key: 'grenades', label: 'Grenades (hit another team)', type: 'number', min: 0, max: 5, default: 2 },
-            { key: 'skips', label: 'Skips (lose a turn)', type: 'number', min: 0, max: 5, default: 2 }
+            { key: 'bombs', label: 'Black holes (−1 point)', type: 'number', min: 0, max: 10, default: 4 },
+            { key: 'winds', label: 'Solar winds (score reset)', type: 'number', min: 0, max: 5, default: 2 },
+            { key: 'bonuses', label: 'Shooting stars (+1 point)', type: 'number', min: 0, max: 10, default: 4 },
+            { key: 'grenades', label: 'Meteor strikes (hit a team)', type: 'number', min: 0, max: 5, default: 2 },
+            { key: 'skips', label: 'Wormholes (lose a turn)', type: 'number', min: 0, max: 5, default: 2 }
         ],
         validate: (s) => {
             const specials = s.bombs + s.winds + s.bonuses + s.grenades + s.skips;

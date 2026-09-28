@@ -1,21 +1,23 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     Users, Lock, Unlock, Play, Timer, Plus, Square, Volume2, VolumeX, Bot, Trophy, Crown, Swords,
-    BookOpen, RotateCcw, Home, AlertTriangle, Monitor, Hourglass, WifiOff
+    BookOpen, RotateCcw, Home, AlertTriangle, Monitor, Hourglass, WifiOff, Sparkles
 } from 'lucide-react';
 import QRCode from '../../components/ui/QRCode';
 import { ConfirmDialog, Spinner } from '../../components/ui';
 import { SPACE_BG } from '../../components/SpaceScreen';
 import { useRealtime, useRoomValue, useServerNow, formatClock, rankPlayers } from '../../platform/rooms/hooks';
-import { roomPath, attachPresence, setRoomLocked, kickPlayer, isOnline } from '../../platform/rooms/rooms';
+import { roomPath, attachPresence, setRoomLocked, kickPlayer, isOnline, playAgain } from '../../platform/rooms/rooms';
 import { getTabId } from '../../platform/realtime';
 import { normalizeQuestion } from '../../platform/questions/normalize';
 import { answerLabel } from '../../platform/questions/types';
 import { audio } from '../../platform/audio/audio';
 import { useTheme } from '../../context/ThemeContext';
 import { CometClashHost } from './hostLogic';
+import { MeteorShowerHost } from './showerLogic';
+import ShowerLive from './ShowerLive';
 
 const MEDALS = ['#fbbf24', '#cbd5e1', '#f59e0b'];
 
@@ -61,7 +63,8 @@ const Lobby = ({ code, meta, players, onStart, onKick, onLock }) => {
     const shortUrl = `${window.location.host}/join`;
     const list = rankPlayers(players);
     const s = meta.settings || {};
-    const canStart = list.length >= (s.bots !== false ? 1 : 2);
+    const shower = s.mode === 'shower';
+    const canStart = list.length >= (shower || s.bots !== false ? 1 : 2);
 
     return (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-6">
@@ -73,9 +76,18 @@ const Lobby = ({ code, meta, players, onStart, onKick, onLock }) => {
                 </div>
                 <p className="mt-3 text-xs text-gray-500">Scan to join instantly</p>
                 <div className="mt-5 flex flex-wrap justify-center gap-2">
-                    <Pill><Swords size={14} /> {s.rounds} rounds per duel</Pill>
-                    <Pill><Timer size={14} /> {Math.round((s.duration || 0) / 60)} min</Pill>
-                    {s.bots !== false && <Pill><Bot size={14} /> Bots on</Pill>}
+                    {shower ? (
+                        <>
+                            <Pill><Sparkles size={14} /> Meteor Shower</Pill>
+                            <Pill><Timer size={14} /> {s.showerQuestions} questions</Pill>
+                        </>
+                    ) : (
+                        <>
+                            <Pill><Swords size={14} /> {s.rounds} rounds per duel</Pill>
+                            <Pill><Timer size={14} /> {Math.round((s.duration || 0) / 60)} min</Pill>
+                            {s.bots !== false && <Pill><Bot size={14} /> Bots on</Pill>}
+                        </>
+                    )}
                 </div>
             </section>
 
@@ -114,7 +126,7 @@ const Lobby = ({ code, meta, players, onStart, onKick, onLock }) => {
 
                 <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
                     <p className="text-sm text-gray-400">
-                        {list.length === 1 && s.bots !== false ? 'One player? They will duel a bot.' : 'Tap a name to remove a player.'}
+                        {list.length === 1 && !shower && s.bots !== false ? 'One player? They will duel a bot.' : 'Tap a name to remove a player.'}
                     </p>
                     <HostButton variant="primary" onClick={onStart} disabled={!canStart}>
                         <Play size={20} className="fill-current" /> Start game
@@ -222,7 +234,8 @@ const Live = ({ meta, players, matches, now, onEnd, onAddTime, onLock, code }) =
 
 // ---------- RESULTS ----------
 
-const Results = ({ meta, players, stats, questions, onExit }) => {
+const Results = ({ meta, players, stats, questions, onExit, onPlayAgain }) => {
+    const [starting, setStarting] = useState(false);
     const { performance } = useTheme();
     const ranked = rankPlayers(players);
     const podium = [ranked[1], ranked[0], ranked[2]];
@@ -248,6 +261,9 @@ const Results = ({ meta, players, stats, questions, onExit }) => {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
             <h1 className="text-center text-3xl sm:text-5xl font-black">Game over!</h1>
             <p className="text-center text-gray-400 mt-2">{meta.setTitle}</p>
+            {meta.endReason === 'host-offline' && (
+                <p className="text-center text-amber-300 text-sm font-semibold mt-2">The game ended because this screen was offline for too long.</p>
+            )}
 
             {ranked.length > 0 && (
                 <div className="mt-8 flex items-end justify-center gap-2 sm:gap-4">
@@ -309,9 +325,23 @@ const Results = ({ meta, players, stats, questions, onExit }) => {
             </div>
 
             <div className="mt-8 flex flex-col sm:flex-row justify-center gap-2">
+                <button
+                    onClick={async () => {
+                        setStarting(true);
+                        try {
+                            await onPlayAgain();
+                        } catch {
+                            setStarting(false);
+                        }
+                    }}
+                    disabled={starting}
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 text-gray-950 font-black transition-colors"
+                >
+                    <RotateCcw size={18} /> {starting ? 'Opening a new room…' : 'Play again'}
+                </button>
                 {meta.setId && (
-                    <Link to={`/host/${meta.setId}?game=comet-clash`} className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black transition-colors">
-                        <RotateCcw size={18} /> Play again
+                    <Link to={`/host/${meta.setId}?game=comet-clash`} className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/15 font-bold transition-colors">
+                        Change settings
                     </Link>
                 )}
                 <button onClick={onExit} className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/15 font-bold transition-colors">
@@ -325,6 +355,7 @@ const Results = ({ meta, players, stats, questions, onExit }) => {
 // ---------- ROOT ----------
 
 const HostScreen = ({ code, onExit }) => {
+    const navigate = useNavigate();
     const { rt, error } = useRealtime();
     const tabId = getTabId();
     const meta = useRoomValue(rt, roomPath(code, 'meta'));
@@ -332,6 +363,9 @@ const HostScreen = ({ code, onExit }) => {
     const matches = useRoomValue(rt, roomPath(code, 'matches')) || {};
     const stats = useRoomValue(rt, roomPath(code, 'stats')) || {};
     const hostNode = useRoomValue(rt, roomPath(code, 'host'));
+    const mode = meta ? (meta.settings?.mode === 'shower' ? 'shower' : 'duel') : null;
+    const shower = useRoomValue(rt, mode === 'shower' ? roomPath(code, 'shower') : null);
+    const offlineForRef = useRef(0);
     const now = useServerNow(rt, 500);
 
     const [claim, setClaim] = useState('checking'); // checking | mine | other
@@ -350,6 +384,8 @@ const HostScreen = ({ code, onExit }) => {
         (async () => {
             const host = await rt.get(roomPath(code, 'host'));
             if (cancelled) return;
+            // How long no host screen was running (tab closed, crash): the controller decides what to do with it
+            offlineForRef.current = host?.lastSeen && !isOnline(host, rt.now()) ? Math.max(0, rt.now() - host.lastSeen) : 0;
             const busyElsewhere = host?.tab && host.tab !== tabId && isOnline(host, rt.now());
             if (busyElsewhere) setClaim('other');
             else {
@@ -368,10 +404,12 @@ const HostScreen = ({ code, onExit }) => {
     }, [claim, hostNode, tabId]);
 
     useEffect(() => {
-        if (!rt || claim !== 'mine') return undefined;
-        const controller = new CometClashHost(rt, code);
+        if (!rt || claim !== 'mine' || !mode) return undefined;
+        const Controller = mode === 'shower' ? MeteorShowerHost : CometClashHost;
+        const controller = new Controller(rt, code);
         controllerRef.current = controller;
-        controller.start();
+        controller.start({ offlineFor: offlineForRef.current });
+        offlineForRef.current = 0;
         setControllerReady(true);
         const detach = attachPresence(rt, roomPath(code, 'host'), { beatWhenHidden: true });
         rt.get(roomPath(code, 'set')).then(set => {
@@ -384,7 +422,7 @@ const HostScreen = ({ code, onExit }) => {
             controllerRef.current = null;
             setControllerReady(false);
         };
-    }, [rt, claim, code]);
+    }, [rt, claim, code, mode]);
 
     // Music follows the game phase
     const status = meta?.status;
@@ -437,7 +475,7 @@ const HostScreen = ({ code, onExit }) => {
         <div className="app-height w-full overflow-y-auto overflow-x-hidden text-white" style={SPACE_BG} onPointerDown={() => audio.unlock()}>
             <header className="flex items-center justify-between gap-3 px-4 sm:px-6 pt-4">
                 <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-xs font-black uppercase tracking-[0.2em] text-emerald-300">Comet Clash</span>
+                    <span className="text-xs font-black uppercase tracking-[0.2em] text-emerald-300">Comet Clash{mode === 'shower' ? ' · Meteor Shower' : ''}</span>
                     <span className="text-gray-500 hidden sm:inline">·</span>
                     <span className="text-sm text-gray-400 truncate hidden sm:inline">{meta.setTitle}</span>
                 </div>
@@ -456,7 +494,19 @@ const HostScreen = ({ code, onExit }) => {
                     onLock={(locked) => setRoomLocked(code, locked)}
                 />
             )}
-            {meta.status === 'live' && (
+            {meta.status === 'live' && mode === 'shower' && (
+                <ShowerLive
+                    code={code}
+                    meta={meta}
+                    players={players}
+                    shower={shower}
+                    now={now}
+                    onEnd={() => setConfirmEnd(true)}
+                    onLock={(locked) => setRoomLocked(code, locked)}
+                    soundToggle={<SoundToggle />}
+                />
+            )}
+            {meta.status === 'live' && mode !== 'shower' && (
                 <Live
                     code={code}
                     meta={meta}
@@ -469,7 +519,17 @@ const HostScreen = ({ code, onExit }) => {
                 />
             )}
             {meta.status === 'ended' && (
-                <Results meta={meta} players={players} stats={stats} questions={questions} onExit={onExit} />
+                <Results
+                    meta={meta}
+                    players={players}
+                    stats={stats}
+                    questions={questions}
+                    onExit={onExit}
+                    onPlayAgain={async () => {
+                        const next = await playAgain(code);
+                        navigate(`/room/${next}`);
+                    }}
+                />
             )}
 
             {meta.status === 'live' && !controllerReady && (
@@ -490,7 +550,7 @@ const HostScreen = ({ code, onExit }) => {
             <ConfirmDialog
                 open={confirmEnd}
                 title={meta.status === 'lobby' ? 'Close this room?' : 'End the game now?'}
-                message={meta.status === 'lobby' ? 'Students will not be able to join anymore.' : 'Unfinished duels end without a bonus and the podium is shown.'}
+                message={meta.status === 'lobby' ? 'Students will not be able to join anymore.' : mode === 'shower' ? 'The remaining questions are skipped and the podium is shown.' : 'Unfinished duels end without a bonus and the podium is shown.'}
                 confirmLabel={meta.status === 'lobby' ? 'Close room' : 'End game'}
                 danger
                 onConfirm={async () => {

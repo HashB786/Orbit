@@ -52,3 +52,9 @@ export const collapsePatch = (patch, state) => {
 };
 
 const clone = (v) => (v === null || typeof v !== 'object' ? v : JSON.parse(JSON.stringify(v)));
+
+// A student's answer counts only once it has fully arrived: `ok`, plus the time when it was found
+export const isCompleteResult = (r) => !!r && typeof r.ok === 'boolean' && (!r.ok || Number.isFinite(r.t));
+
+export const completeResults = (results) =>
+    Object.fromEntries(Object.entries(results || {}).filter(([, r]) => isCompleteResult(r)));

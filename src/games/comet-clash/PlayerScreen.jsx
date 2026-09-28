@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Bot, Crown, Trophy, LogOut, Swords, Hourglass, WifiOff, UserX, Flag, Zap, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Spinner } from '../../components/ui';
-import { SPACE_BG } from '../../components/SpaceScreen';
 import { useRealtime, useRoomValue, useServerNow, rankPlayers } from '../../platform/rooms/hooks';
-import { roomPath, attachPresence, leaveRoom, isOnline } from '../../platform/rooms/rooms';
+import { roomPath, attachPresence, leaveRoom, isOnline, joinRoom } from '../../platform/rooms/rooms';
 import { audio } from '../../platform/audio/audio';
 import { useTheme } from '../../context/ThemeContext';
 import { Playfield } from './playfield';
+import { Screen, Avatar, MuteButton } from './playerUi';
+import ShowerPlay from './ShowerPlay';
 
 const ORDINALS = ['1st', '2nd', '3rd', '4th', '5th', '6th'];
 
@@ -30,18 +31,6 @@ const useWakeLock = (active) => {
         };
     }, [active]);
 };
-
-const Screen = ({ children }) => (
-    <div className="app-height w-full overflow-y-auto overflow-x-hidden text-white" style={SPACE_BG}>
-        <div className="min-h-full flex flex-col items-center justify-center px-5 py-10 text-center">{children}</div>
-    </div>
-);
-
-const Avatar = ({ color, name, size = 64 }) => (
-    <div className="rounded-full flex items-center justify-center font-black text-gray-950 shrink-0" style={{ width: size, height: size, background: color || '#34d399', fontSize: size * 0.42 }}>
-        {(name || '?').slice(0, 1).toUpperCase()}
-    </div>
-);
 
 // ---------- one duel (canvas lives here) ----------
 
@@ -218,10 +207,11 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
                         <Avatar color={myPlayer.color} name={myPlayer.name} size={30} />
                         <span className="font-black text-2xl tabular-nums">{myScore}</span>
                     </div>
-                    <div className="text-center min-w-0">
+                    <div className="flex items-center justify-center gap-2 min-w-0">
                         {match.sudden
                             ? <span className="px-2 py-0.5 rounded-full bg-amber-400 text-gray-950 text-xs font-black uppercase">Sudden death</span>
                             : <span className="text-xs sm:text-sm font-bold text-gray-400 whitespace-nowrap">Round {Math.max(1, match.round)} / {match.rounds}</span>}
+                        <MuteButton inline />
                     </div>
                     <div className="flex items-center gap-2 min-w-0 justify-end">
                         <span className="font-black text-2xl tabular-nums">{rivalScore}</span>
@@ -233,7 +223,7 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
                     {match.status === 'round' && q && (
                         <>
                             <p className="max-w-3xl mx-auto text-base sm:text-xl md:text-2xl font-bold leading-snug line-clamp-3 break-words">{q.prompt}</p>
-                            {q.kind !== 'single' && (
+                            {q.kind !== 'single' && !phaseNote && (
                                 <p className="mt-1.5 text-xs sm:text-sm font-bold text-emerald-300">
                                     {q.kind === 'multi'
                                         ? `Blast every correct answer${progress ? ` · ${progress.found}/${progress.total}` : ''}`
@@ -344,22 +334,56 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
 // ---------- player root ----------
 
 const PlayerScreen = ({ code, playerId, onExit }) => {
+    const navigate = useNavigate();
     const { rt, error } = useRealtime();
     const meta = useRoomValue(rt, roomPath(code, 'meta'));
     const me = useRoomValue(rt, roomPath(code, 'players', playerId));
     const settings = meta?.settings || {};
+    const showerMode = settings.mode === 'shower';
     const players = useRoomValue(rt, roomPath(code, 'players')) || {};
-    const match = useRoomValue(rt, me?.matchId ? roomPath(code, 'matches', me.matchId) : null);
+    const match = useRoomValue(rt, !showerMode && me?.matchId ? roomPath(code, 'matches', me.matchId) : null);
+    const shower = useRoomValue(rt, showerMode ? roomPath(code, 'shower') : null);
     const host = useRoomValue(rt, roomPath(code, 'host'));
     const now = useServerNow(rt, 1000);
 
-    const playing = meta?.status === 'live';
+    // The teacher chose to end the game if their screen is gone too long
+    const hostLimit = (Number(settings.hostTimeout) || 0) * 1000;
+    const hostGone = meta?.status === 'live' && hostLimit > 0 && !!host && !isOnline(host, now) && now - (host.lastSeen || 0) > hostLimit;
+    const ended = meta?.status === 'ended' || hostGone;
+
+    const playing = meta?.status === 'live' && !hostGone;
     useWakeLock(playing);
 
     useEffect(() => {
         if (!rt) return undefined;
         return attachPresence(rt, roomPath(code, 'players', playerId));
     }, [rt, code, playerId]);
+
+    // Background music (the teacher can switch it off for student devices)
+    const inRound = playing && (showerMode
+        ? shower?.status === 'round' || shower?.status === 'result'
+        : me?.status === 'matched' && !!match?.id);
+    const track = settings.studentMusic === false || !meta || ended ? null : inRound ? 'battle' : 'lobby';
+    useEffect(() => {
+        if (track) audio.playMusic(track);
+        else audio.stopMusic();
+    }, [track]);
+    useEffect(() => () => audio.stopMusic(), []);
+
+    // Teacher pressed "Play again": move to the new room with the same nickname
+    const nextCode = meta?.nextCode;
+    useEffect(() => {
+        if (!nextCode || !me?.name || me.kicked) return undefined;
+        let cancelled = false;
+        joinRoom(nextCode, me.name)
+            .catch(() => null)
+            .then(() => {
+                if (!cancelled) navigate(`/play/${nextCode}`);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [nextCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const ranked = useMemo(() => rankPlayers(players), [players]);
     const myRank = ranked.findIndex(p => p.id === playerId) + 1;
@@ -378,22 +402,30 @@ const PlayerScreen = ({ code, playerId, onExit }) => {
         );
     }
 
-    const hostAway = host && !isOnline(host, now) && meta.status !== 'ended';
+    const hostAway = !!host && !isOnline(host, now) && !ended;
     const hostBanner = hostAway && (
-        <div className="fixed bottom-4 inset-x-0 z-30 flex justify-center px-4 pointer-events-none pb-safe">
-            <span className="px-3 py-1.5 rounded-full bg-amber-400 text-gray-950 text-xs font-black flex items-center gap-1.5 shadow-lg"><WifiOff size={13} /> Waiting for the teacher's screen…</span>
+        <div className="fixed inset-x-0 z-30 flex justify-center px-4 pointer-events-none" style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
+            <span className="px-3 py-1.5 rounded-full bg-amber-400 text-gray-950 text-xs font-black flex items-center gap-1.5 shadow-lg">
+                <WifiOff size={13} /> Game paused: waiting for the teacher's screen…
+            </span>
         </div>
     );
 
     // Final screen
-    if (meta.status === 'ended') {
+    if (ended) {
+        const hostEnded = hostGone || meta.endReason === 'host-offline';
         return (
             <Screen>
+                <MuteButton />
                 <Trophy size={48} className="text-amber-300" />
                 <p className="mt-3 text-sm font-bold uppercase tracking-widest text-gray-400">Game over</p>
+                {hostEnded && <p className="mt-1 text-sm text-amber-300 font-semibold max-w-xs">The teacher's screen was offline for too long, so the game ended.</p>}
                 {myRank > 0 && <p className="text-6xl font-black mt-1">#{myRank}</p>}
                 <p className="text-xl font-bold mt-1">{me.name} · {me.score || 0} pts</p>
-                <p className="text-sm text-gray-400 mt-1">{me.wins || 0} duel{me.wins === 1 ? '' : 's'} won · {me.answered ? Math.round(((me.correct || 0) / me.answered) * 100) : 0}% correct</p>
+                <p className="text-sm text-gray-400 mt-1">
+                    {!showerMode && `${me.wins || 0} duel${me.wins === 1 ? '' : 's'} won · `}
+                    {me.answered ? Math.round(((me.correct || 0) / me.answered) * 100) : 0}% correct
+                </p>
                 <ol className="mt-6 w-full max-w-xs space-y-1.5 text-left">
                     {ranked.slice(0, 3).map((p, i) => (
                         <li key={p.id} className={`flex items-center gap-3 px-3 py-2 rounded-xl ${p.id === playerId ? 'bg-emerald-500/20' : 'bg-white/5'}`}>
@@ -403,10 +435,36 @@ const PlayerScreen = ({ code, playerId, onExit }) => {
                         </li>
                     ))}
                 </ol>
-                <Link to="/join" onClick={() => leaveRoom(code, playerId)} className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-emerald-500 text-gray-950 font-black">
-                    Join another game <ArrowRight size={18} />
-                </Link>
+                {nextCode ? (
+                    <p className="mt-8 text-emerald-300 font-bold flex items-center gap-2"><Spinner size={18} /> Joining the next game…</p>
+                ) : (
+                    <>
+                        <p className="mt-8 text-sm text-gray-400 max-w-xs">Stay on this screen: if your teacher starts another round, you'll join it automatically.</p>
+                        <Link to="/join" onClick={() => leaveRoom(code, playerId)} className="mt-4 inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-emerald-500 text-gray-950 font-black">
+                            Join another game <ArrowRight size={18} />
+                        </Link>
+                    </>
+                )}
             </Screen>
+        );
+    }
+
+    // Meteor Shower: everyone plays every question
+    if (playing && showerMode && shower) {
+        return (
+            <>
+                {hostBanner}
+                <ShowerPlay
+                    rt={rt}
+                    code={code}
+                    shower={shower}
+                    me={me}
+                    meId={playerId}
+                    myRank={myRank}
+                    total={shower.total || settings.showerQuestions}
+                    settings={settings}
+                />
+            </>
         );
     }
 
@@ -431,10 +489,11 @@ const PlayerScreen = ({ code, playerId, onExit }) => {
     return (
         <Screen>
             {hostBanner}
+            <MuteButton />
             <Avatar color={me.color} name={me.name} size={84} />
             <p className="mt-4 text-3xl font-black break-words max-w-full">{me.name}</p>
 
-            {meta.status === 'lobby' ? (
+            {meta.status === 'lobby' || showerMode ? (
                 <>
                     <p className="mt-2 text-emerald-300 font-bold">You're in!</p>
                     <p className="mt-6 text-gray-300 max-w-xs">Watch the big screen. The game starts when your teacher is ready.</p>

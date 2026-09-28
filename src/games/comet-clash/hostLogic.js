@@ -9,7 +9,7 @@
 
 import { toChoiceRound, decoyPool, shuffle } from '../../platform/questions/rounds';
 import { normalizeQuestion } from '../../platform/questions/normalize';
-import { roomPath, isOnline, assignPath, collapsePatch } from '../../platform/rooms/shared';
+import { roomPath, isOnline, assignPath, collapsePatch, completeResults } from '../../platform/rooms/shared';
 
 export const BOT_NAMES = ['Nova-7', 'Byte', 'Quasar', 'Pixel', 'Zed-9', 'Orbitron', 'Comet-X', 'Astra', 'Vortex', 'Lumen'];
 
@@ -22,8 +22,12 @@ export const DEFAULT_TIMINGS = {
     done: 4500, // duel summary on screen
     forfeitAfter: 15000, // offline this long during a duel -> rival wins by forfeit
     rematchAfter: 5000, // allow facing the same rival again if both waited this long
-    noNewDuelsWithin: 10000 // don't start duels in the last seconds of the game
+    noNewDuelsWithin: 10000, // don't start duels in the last seconds of the game
+    gapThreshold: 15000 // shorter host outages are ignored
 };
+
+// Background tabs may tick only once a minute, so only a longer silence means the laptop was asleep
+const LONG_FREEZE_MS = 90000;
 
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
@@ -68,7 +72,21 @@ export class CometClashHost {
         return roomPath(this.code, ...rest);
     }
 
-    async start() {
+    // offlineFor: how long the host screen was gone before this controller started (ms)
+    async start({ offlineFor = 0 } = {}) {
+        this.pendingGap = offlineFor;
+        // Connection drops while this tab stays open count as offline time too
+        let lostAt = 0;
+        const offConnection = this.rt.onConnectionChange?.((connected) => {
+            if (!connected) lostAt = lostAt || this.now();
+            else if (lostAt) {
+                this.pendingGap = Math.max(this.pendingGap, this.now() - lostAt);
+                lostAt = 0;
+                this.poke();
+            }
+        });
+        if (offConnection) this.unsubs.push(offConnection);
+
         const set = await this.rt.get(this.path('set'));
         const raw = Array.isArray(set?.questions) ? set.questions : Object.values(set?.questions || {});
         this.questions = raw.map(normalizeQuestion).filter(Boolean);
@@ -174,7 +192,9 @@ export class CometClashHost {
             assignPath(this.state, key.split('/'), value);
         };
 
-        if (now >= meta.endsAt) {
+        if (this.checkGap(set, now)) {
+            // ended because the host screen was offline too long
+        } else if (now >= meta.endsAt) {
             this.endGame(set, now);
         } else {
             this.updatePresence(set, now);
@@ -362,7 +382,7 @@ export class CometClashHost {
 
     checkRound(set, m, now) {
         const round = m.round;
-        const results = { ...(m.results?.[round] || {}) };
+        const results = completeResults(m.results?.[round]);
         const base = `matches/${m.id}`;
         const elapsed = now - m.roundStartAt;
 
@@ -524,6 +544,32 @@ export class CometClashHost {
             set(`players/${id}/lastOpponent`, id === m.a ? m.b : m.a);
         }
         set(`matches/${m.id}`, null);
+    }
+
+    // The host screen was offline (tab closed, laptop asleep, network lost). Past the teacher's limit the
+    // game ends; otherwise it continues and the clock is moved forward so no playing time is lost.
+    // Returns true when the game was ended.
+    checkGap(set, now) {
+        let gap = this.pendingGap || 0;
+        this.pendingGap = 0;
+        // Timers frozen for a long time (laptop asleep) also count
+        if (this.lastTick && now - this.lastTick > LONG_FREEZE_MS) gap = Math.max(gap, now - this.lastTick);
+        this.lastTick = now;
+        if (gap < this.t.gapThreshold) return false;
+
+        const limit = (Number(this.settings.hostTimeout) || 0) * 1000;
+        if (limit > 0 && gap >= limit) {
+            set('meta/endReason', 'host-offline');
+            this.endGame(set, now);
+            return true;
+        }
+        this.shiftClock(set, gap);
+        return false;
+    }
+
+    shiftClock(set, gap) {
+        const meta = this.state.meta;
+        if (meta.endsAt) set('meta/endsAt', meta.endsAt + gap);
     }
 
     endGame(set, now) {

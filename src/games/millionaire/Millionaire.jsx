@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
+import { Users, RotateCcw, Crown, Orbit, Flag } from 'lucide-react';
 import { toChoiceRound, decoyPool, shuffle } from '../../platform/questions/rounds';
+import { SPACE_BG } from '../../components/SpaceScreen';
 import { audio } from '../../platform/audio/audio';
+import { useTheme } from '../../context/ThemeContext';
 
 // Prize ladders (index 0 = first question). Milestones are guaranteed once reached.
 const LADDERS = {
@@ -13,8 +15,8 @@ const LADDERS = {
 };
 
 const TIMINGS = {
-    dramatic: { lock: 3000, correct: 2000, wrong: 3000 },
-    quick: { lock: 900, correct: 1200, wrong: 1800 }
+    dramatic: { lock: 3000, correct: 2200, wrong: 3000 },
+    quick: { lock: 900, correct: 1300, wrong: 1800 }
 };
 
 const LETTERS = ['A', 'B', 'C', 'D'];
@@ -35,6 +37,7 @@ const buildRun = (questions, count) => {
 };
 
 const Millionaire = ({ questions = [], settings = {} }) => {
+    const { performance } = useTheme();
     const count = [5, 10, 15].includes(settings.questionCount) ? settings.questionCount : 15;
     const ladder = LADDERS[count];
     const timing = TIMINGS[settings.suspense] || TIMINGS.dramatic;
@@ -44,7 +47,7 @@ const Millionaire = ({ questions = [], settings = {} }) => {
     const [runId, setRunId] = useState(0);
     const run = useMemo(() => buildRun(questions, count), [questions, count, runId]);
 
-    const [gameState, setGameState] = useState('playing'); // playing | gameover | won
+    const [gameState, setGameState] = useState('playing'); // playing | gameover | won | walked
     const [index, setIndex] = useState(0);
     const [selected, setSelected] = useState(null);
     const [answerState, setAnswerState] = useState('idle'); // idle | locked | correct | incorrect
@@ -52,7 +55,35 @@ const Millionaire = ({ questions = [], settings = {} }) => {
     const timers = useRef([]);
 
     const later = (fn, ms) => timers.current.push(setTimeout(fn, ms));
-    useEffect(() => () => timers.current.forEach(clearTimeout), []);
+    useEffect(() => {
+        audio.playMusic('tension');
+        return () => {
+            timers.current.forEach(clearTimeout);
+            audio.stopMusic();
+        };
+    }, []);
+
+    const total = run.length;
+    const currentQ = run[Math.min(index, Math.max(0, total - 1))];
+    const isLocked = answerState !== 'idle';
+
+    // Last milestone reached before question `i`
+    const safePrize = (i) => {
+        let prize = '$0';
+        for (let k = 0; k < i; k++) if (ladder[k]?.[1]) prize = ladder[k][0];
+        return prize;
+    };
+
+    const finishWin = () => {
+        setGameState('won');
+        audio.stopMusic();
+        audio.sfx('podium');
+        if (performance.particles) {
+            import('canvas-confetti').then(({ default: confetti }) => {
+                confetti({ particleCount: 180, spread: 110, origin: { y: 0.35 }, disableForReducedMotion: true });
+            }).catch(() => {});
+        }
+    };
 
     const restart = () => {
         timers.current.forEach(clearTimeout);
@@ -63,43 +94,24 @@ const Millionaire = ({ questions = [], settings = {} }) => {
         setSelected(null);
         setAnswerState('idle');
         setLifelines({ fifty: { used: false, removed: [] }, audience: { used: false, votes: [] } });
-    };
-
-    if (!run.length) {
-        return (
-            <div className="w-full min-h-full bg-[#0a0f25] text-white flex items-center justify-center p-6 text-center">
-                <p className="text-lg font-bold">This set has no questions Millionaire can use.</p>
-            </div>
-        );
-    }
-
-    const total = run.length;
-    const currentQ = run[Math.min(index, total - 1)];
-    const isLocked = answerState !== 'idle';
-
-    // Last milestone reached before this question
-    const guaranteed = () => {
-        if (gameState === 'won') return ladder[total - 1]?.[0] || ladder[ladder.length - 1][0];
-        let prize = '$0';
-        for (let i = 0; i < index; i++) if (ladder[i]?.[1]) prize = ladder[i][0];
-        return prize;
+        audio.playMusic('tension');
+        audio.sfx('whoosh');
     };
 
     const handleAnswerClick = (i) => {
-        if (isLocked || lifelines.fifty.removed.includes(i)) return;
+        if (gameState !== 'playing' || isLocked || !currentQ || lifelines.fifty.removed.includes(i)) return;
         audio.unlock();
-        audio.sfx('countdown');
+        audio.sfx('lockIn');
         setSelected(i);
         setAnswerState('locked');
 
         later(() => {
             if (currentQ.options[i].isCorrect) {
                 setAnswerState('correct');
-                audio.sfx('correct');
+                audio.sfx(ladder[index]?.[1] ? 'milestone' : 'correct');
                 later(() => {
                     if (index >= total - 1) {
-                        setGameState('won');
-                        audio.sfx('podium');
+                        finishWin();
                     } else {
                         setIndex(index + 1);
                         setSelected(null);
@@ -110,14 +122,18 @@ const Millionaire = ({ questions = [], settings = {} }) => {
             } else {
                 setAnswerState('incorrect');
                 audio.sfx('wrong');
-                later(() => setGameState('gameover'), timing.wrong);
+                later(() => {
+                    setGameState('gameover');
+                    audio.stopMusic();
+                    audio.sfx('matchLose');
+                }, timing.wrong);
             }
         }, timing.lock);
     };
 
     const applyFiftyFifty = () => {
         if (lifelines.fifty.used || isLocked || currentQ.options.length < 3) return;
-        audio.sfx('click');
+        audio.sfx('lifeline');
         const wrong = currentQ.options.map((o, i) => (o.isCorrect ? -1 : i)).filter(i => i >= 0);
         const removed = shuffle(wrong).slice(0, Math.min(2, currentQ.options.length - 2));
         setLifelines(prev => ({ ...prev, fifty: { used: true, removed } }));
@@ -125,7 +141,7 @@ const Millionaire = ({ questions = [], settings = {} }) => {
 
     const applyAskAudience = () => {
         if (lifelines.audience.used || isLocked) return;
-        audio.sfx('click');
+        audio.sfx('lifeline');
         const n = currentQ.options.length;
         const votes = new Array(n).fill(0);
         const correct = currentQ.options.findIndex(o => o.isCorrect);
@@ -142,25 +158,52 @@ const Millionaire = ({ questions = [], settings = {} }) => {
         setLifelines(prev => ({ ...prev, audience: { used: true, votes } }));
     };
 
+    // Smart-board keyboard: A–D or 1–4 to answer
+    useEffect(() => {
+        const onKey = (e) => {
+            if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select')) return;
+            const k = e.key.toUpperCase();
+            const i = LETTERS.indexOf(k) >= 0 ? LETTERS.indexOf(k) : ['1', '2', '3', '4'].indexOf(k);
+            if (i >= 0 && currentQ && i < currentQ.options.length) handleAnswerClick(i);
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    });
+
+    if (!run.length) {
+        return (
+            <div className="w-full min-h-full text-white flex items-center justify-center p-6 text-center" style={SPACE_BG}>
+                <p className="text-lg font-bold">This set has no questions Millionaire can use.</p>
+            </div>
+        );
+    }
+
     // ---------- end screens ----------
     if (gameState !== 'playing') {
         const isWin = gameState === 'won';
+        const walked = gameState === 'walked';
+        const prize = isWin ? ladder[total - 1]?.[0] : walked ? (index > 0 ? ladder[index - 1][0] : '$0') : safePrize(index);
         return (
-            <div className="w-full min-h-full bg-[#0a0f25] flex flex-col items-center justify-center p-4 sm:p-6 text-center text-white">
+            <div className="w-full min-h-full flex flex-col items-center justify-center p-4 sm:p-6 text-center text-white" style={SPACE_BG}>
                 <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
+                    initial={{ scale: 0.85, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="max-w-lg w-full bg-[#111830] border-2 border-yellow-600/50 rounded-2xl p-6 sm:p-8 md:p-12 shadow-[0_0_50px_rgba(202,138,4,0.15)]"
+                    className="max-w-lg w-full rounded-3xl bg-[#0b1128]/90 border border-white/10 p-6 sm:p-10"
+                    style={{ boxShadow: isWin ? '0 0 80px -10px rgba(251,191,36,0.5)' : '0 0 60px -20px rgba(96,165,250,0.4)' }}
                 >
-                    {isWin ? <CheckCircle2 size={80} className="text-yellow-400 mx-auto mb-6" /> : <XCircle size={80} className="text-red-500 mx-auto mb-6" />}
-                    <h2 className={`text-4xl md:text-5xl font-black mb-2 ${isWin ? 'text-yellow-400' : 'text-white'}`}>{isWin ? 'YOU WON!' : 'GAME OVER'}</h2>
-                    <p className="text-blue-200 text-lg mb-8">{isWin ? 'You are a virtual millionaire!' : `You answered ${index} question${index === 1 ? '' : 's'} correctly.`}</p>
-                    <div className="bg-[#0a0f25] border border-blue-900 rounded-xl p-6 mb-8">
-                        <p className="text-sm text-blue-400 uppercase tracking-widest font-bold mb-2">Total winnings</p>
-                        <p className="text-4xl sm:text-5xl font-mono text-yellow-500 break-all">{guaranteed()}</p>
+                    {isWin ? <Crown size={72} className="text-amber-300 mx-auto mb-4" /> : walked ? <Flag size={64} className="text-sky-300 mx-auto mb-4" /> : <Orbit size={64} className="text-rose-300 mx-auto mb-4" />}
+                    <h2 className={`text-4xl md:text-5xl font-black mb-2 ${isWin ? 'text-amber-300' : ''}`}>
+                        {isWin ? 'Millionaire!' : walked ? 'Safe landing' : 'Lost in space'}
+                    </h2>
+                    <p className="text-gray-300 text-lg mb-8">
+                        {isWin ? 'Every question answered. Out of this world!' : walked ? 'You took the money and flew home.' : `You answered ${index} question${index === 1 ? '' : 's'} correctly.`}
+                    </p>
+                    <div className="rounded-2xl bg-white/5 border border-white/10 p-6 mb-8">
+                        <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-2">Winnings</p>
+                        <p className="text-4xl sm:text-5xl font-black text-amber-300 tabular-nums break-all">{prize}</p>
                     </div>
-                    <button onClick={restart} className="w-full py-4 bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 text-white font-bold rounded-xl transition-colors shadow-lg flex items-center justify-center gap-2">
-                        <RotateCcw size={20} /> PLAY AGAIN
+                    <button onClick={restart} className="w-full py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black transition-colors flex items-center justify-center gap-2">
+                        <RotateCcw size={20} /> Play again
                     </button>
                 </motion.div>
             </div>
@@ -169,29 +212,37 @@ const Millionaire = ({ questions = [], settings = {} }) => {
 
     // ---------- playing ----------
     const treeTopDown = ladder.slice(0, total).map((step, i) => ({ level: i + 1, amount: step[0], milestone: !!step[1] })).reverse();
-    const lifelineClass = (used) => `relative overflow-hidden w-16 h-12 md:w-20 md:h-14 rounded-full border-2 flex items-center justify-center font-bold text-lg md:text-xl transition-colors disabled:cursor-not-allowed
-        ${used ? 'border-gray-600 text-gray-600 opacity-50 bg-[#0a0f25]' : 'border-blue-400 text-blue-100 bg-gradient-to-b from-[#1a2345] to-[#0a0f25] hover:border-yellow-400 hover:text-yellow-400 shadow-[0_0_15px_rgba(59,130,246,0.3)]'}`;
+    const lifelineClass = (used) => `relative w-16 h-12 md:w-20 md:h-14 rounded-full border-2 flex items-center justify-center font-black text-lg transition-colors disabled:cursor-not-allowed
+        ${used ? 'border-white/10 text-white/25' : 'border-sky-300/60 text-sky-100 bg-sky-400/10 hover:border-amber-300 hover:text-amber-200 shadow-[0_0_20px_rgba(56,189,248,0.25)]'}`;
 
     return (
-        <div className="w-full min-h-full md:h-full bg-[#0a0f25] text-white flex flex-col md:flex-row md:overflow-hidden relative font-sans">
-            <div className="flex-1 flex flex-col p-4 sm:p-6 lg:p-12 min-w-0">
-                {/* Lifelines */}
-                <div className="flex justify-between items-center mb-4 sm:mb-8 pr-12 sm:pr-28 md:pr-0">
-                    <div className="flex gap-4">
+        <div className="w-full min-h-full md:h-full text-white flex flex-col md:flex-row md:overflow-hidden" style={SPACE_BG}>
+            <div className="flex-1 flex flex-col p-4 sm:p-6 lg:p-10 min-w-0">
+                {/* Lifelines + current prize */}
+                <div className="flex justify-between items-center mb-4 sm:mb-6 pr-28 sm:pr-40 md:pr-0">
+                    <div className="flex gap-3">
                         {allowFifty && (
                             <button disabled={lifelines.fifty.used || isLocked || currentQ.options.length < 3} onClick={applyFiftyFifty} className={lifelineClass(lifelines.fifty.used)} aria-label="50:50 lifeline">
                                 50:50
-                                {lifelines.fifty.used && <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center"><XCircle size={32} className="text-red-500" strokeWidth={3} /></div>}
+                                {lifelines.fifty.used && <span className="absolute inset-x-2 top-1/2 h-0.5 bg-rose-400 rotate-[-20deg]" />}
                             </button>
                         )}
                         {allowAudience && (
                             <button disabled={lifelines.audience.used || isLocked} onClick={applyAskAudience} className={lifelineClass(lifelines.audience.used)} aria-label="Ask the audience">
-                                <Users size={24} />
-                                {lifelines.audience.used && <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center"><XCircle size={32} className="text-red-500" strokeWidth={3} /></div>}
+                                <Users size={22} />
+                                {lifelines.audience.used && <span className="absolute inset-x-2 top-1/2 h-0.5 bg-rose-400 rotate-[-20deg]" />}
+                            </button>
+                        )}
+                        {index > 0 && (
+                            <button disabled={isLocked} onClick={() => { audio.sfx('click'); audio.stopMusic(); setGameState('walked'); }} className="hidden sm:flex items-center px-4 rounded-full border-2 border-white/15 text-sm font-bold text-gray-300 hover:text-white hover:border-white/40 disabled:opacity-40 transition-colors">
+                                Take the money
                             </button>
                         )}
                     </div>
-                    <div className="md:hidden text-center text-yellow-400 font-bold font-mono text-xl">{ladder[index]?.[0]}</div>
+                    <div className="md:hidden text-right">
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Playing for</div>
+                        <div className="text-amber-300 font-black text-xl tabular-nums">{ladder[index]?.[0]}</div>
+                    </div>
                 </div>
 
                 {/* Audience poll */}
@@ -201,13 +252,13 @@ const Millionaire = ({ questions = [], settings = {} }) => {
                             initial={{ opacity: 0, y: -20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0 }}
-                            className="bg-[#111830] border border-blue-500/30 p-4 rounded-xl mb-6 flex justify-between items-end h-32 gap-2"
+                            className="rounded-3xl bg-white/5 border border-white/10 p-4 mb-5 flex justify-between items-end h-32 gap-3 max-w-md"
                         >
                             {currentQ.options.map((_, i) => (
                                 <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
-                                    <span className="text-yellow-400 text-xs font-bold mb-1">{lifelines.audience.votes[i] || 0}%</span>
-                                    <motion.div initial={{ height: 0 }} animate={{ height: `${lifelines.audience.votes[i] || 0}%` }} className="w-full max-w-[40px] bg-gradient-to-t from-blue-700 to-blue-400 rounded-t-sm" />
-                                    <span className="mt-2 font-bold text-blue-200">{LETTERS[i]}</span>
+                                    <span className="text-amber-300 text-xs font-black mb-1">{lifelines.audience.votes[i] || 0}%</span>
+                                    <motion.div initial={{ height: 0 }} animate={{ height: `${lifelines.audience.votes[i] || 0}%` }} className="w-full max-w-[36px] rounded-t-lg bg-gradient-to-t from-sky-600 to-emerald-300" />
+                                    <span className="mt-2 font-black text-sky-200">{LETTERS[i]}</span>
                                 </div>
                             ))}
                         </motion.div>
@@ -215,39 +266,41 @@ const Millionaire = ({ questions = [], settings = {} }) => {
                 </AnimatePresence>
 
                 {/* Question */}
-                <div className="flex-1 flex flex-col justify-end pb-2 sm:pb-8">
-                    <p className="text-center text-xs font-bold uppercase tracking-widest text-blue-300 mb-3">Question {index + 1} of {total} · for {ladder[index]?.[0]}</p>
-                    <div className="relative mb-5 sm:mb-8 w-full">
-                        <div className="absolute inset-0 bg-[#000000] border-2 border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.5)] rounded-2xl transform skew-x-[-5deg]" />
-                        <div className="relative z-10 p-5 md:p-10 text-center text-lg sm:text-xl md:text-3xl font-medium leading-relaxed break-words">{currentQ.text}</div>
-                    </div>
+                <div className="flex-1 flex flex-col justify-end pb-2 sm:pb-6">
+                    <p className="text-center text-xs font-black uppercase tracking-[0.25em] text-sky-300 mb-3">
+                        Question {index + 1} of {total} · for {ladder[index]?.[0]}
+                    </p>
+                    <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="relative mb-5 sm:mb-8 w-full rounded-[2rem] border border-sky-300/30 bg-[#0b1128]/85 shadow-[0_0_40px_-10px_rgba(56,189,248,0.45)] p-5 md:p-10 text-center text-lg sm:text-xl md:text-3xl font-bold leading-relaxed break-words"
+                    >
+                        {currentQ.text}
+                    </motion.div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 md:gap-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                         {currentQ.options.map((option, i) => {
                             const isRemoved = lifelines.fifty.removed.includes(i);
-                            let boxStyle = 'bg-[#000000] border-blue-500 hover:border-yellow-400';
-                            let letterStyle = 'text-yellow-500';
-                            if (isRemoved) boxStyle = 'bg-transparent border-transparent opacity-0 pointer-events-none';
-                            else if (selected === i) {
-                                letterStyle = 'text-white';
-                                if (answerState === 'locked') boxStyle = 'bg-orange-500/20 border-orange-500 animate-pulse';
-                                else if (answerState === 'correct') boxStyle = 'bg-green-500/30 border-green-500 shadow-[0_0_30px_rgba(34,197,94,0.5)]';
-                                else if (answerState === 'incorrect') boxStyle = 'bg-red-500/30 border-red-500';
+                            let box = 'border-white/15 bg-[#0b1128]/80 hover:border-sky-300/70';
+                            let orb = 'bg-white/10 text-sky-200';
+                            if (selected === i) {
+                                if (answerState === 'locked') { box = 'border-amber-300 bg-amber-400/15 animate-pulse'; orb = 'bg-amber-300 text-gray-950'; }
+                                else if (answerState === 'correct') { box = 'border-emerald-300 bg-emerald-400/20 shadow-[0_0_30px_rgba(52,211,153,0.5)]'; orb = 'bg-emerald-300 text-gray-950'; }
+                                else if (answerState === 'incorrect') { box = 'border-rose-400 bg-rose-500/20'; orb = 'bg-rose-400 text-gray-950'; }
                             } else if (answerState === 'incorrect' && option.isCorrect) {
-                                boxStyle = 'bg-green-500/30 border-green-500 animate-pulse';
+                                box = 'border-emerald-300 bg-emerald-400/15 animate-pulse';
+                                orb = 'bg-emerald-300 text-gray-950';
                             }
                             return (
                                 <button
                                     key={i}
                                     onClick={() => handleAnswerClick(i)}
                                     disabled={isLocked || isRemoved}
-                                    className="relative group min-h-[3.5rem] md:h-20 w-full outline-none"
+                                    className={`min-h-[3.75rem] md:min-h-[5rem] w-full rounded-full border-2 flex items-center gap-3 sm:gap-4 pl-2 pr-5 py-2 text-left transition-colors duration-300 ${box} ${isRemoved ? 'invisible' : ''}`}
                                 >
-                                    <div className={`absolute inset-0 border-2 rounded-xl transform skew-x-[-15deg] transition-colors duration-300 ${boxStyle}`} />
-                                    <div className={`relative z-10 h-full min-h-[3.5rem] flex items-center px-6 sm:px-8 py-2 text-left ${isRemoved ? 'invisible' : ''}`}>
-                                        <span className={`font-bold text-lg sm:text-xl mr-3 sm:mr-4 shrink-0 ${letterStyle}`}>{LETTERS[i]}:</span>
-                                        <span className="text-base sm:text-lg md:text-xl line-clamp-2 break-words text-white">{option.text}</span>
-                                    </div>
+                                    <span className={`w-10 h-10 md:w-12 md:h-12 shrink-0 rounded-full flex items-center justify-center font-black text-lg transition-colors ${orb}`}>{LETTERS[i]}</span>
+                                    <span className="text-base sm:text-lg md:text-xl font-semibold line-clamp-2 break-words">{option.text}</span>
                                 </button>
                             );
                         })}
@@ -255,23 +308,25 @@ const Millionaire = ({ questions = [], settings = {} }) => {
                 </div>
             </div>
 
-            {/* Money tree (desktop) */}
-            <div className="hidden md:flex md:w-64 lg:w-80 shrink-0 bg-[#050814] border-l border-blue-900/50 p-4 lg:p-6 pt-16 lg:pt-16 flex-col overflow-y-auto">
-                {/* my-auto centers the tree without cutting it off when the window is short */}
-                <div className="my-auto flex flex-col gap-1 lg:gap-1.5">
-                    {treeTopDown.map(node => {
-                        const isActive = node.level === index + 1;
-                        const isPassed = node.level <= index;
-                        const textColor = isActive ? 'text-black' : node.milestone ? 'text-white' : 'text-yellow-600';
-                        const bgColor = isActive ? 'bg-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.4)]' : isPassed ? 'bg-blue-900/20' : 'bg-transparent';
-                        return (
-                            <div key={node.level} className={`flex justify-between items-center px-4 lg:px-6 py-1 lg:py-1.5 rounded-full font-mono text-base lg:text-lg transition-colors ${bgColor} ${textColor}`}>
-                                <span className="opacity-70 text-sm">{node.level}</span>
-                                <span className="font-bold tracking-wider">{node.amount}</span>
-                            </div>
-                        );
-                    })}
-                </div>
+            {/* Prize ladder (desktop) */}
+            <div className="hidden md:flex md:w-64 lg:w-72 shrink-0 bg-[#050816]/80 border-l border-white/10 p-4 lg:p-5 pt-16 flex-col justify-center gap-1 overflow-y-auto">
+                {treeTopDown.map(node => {
+                    const isActive = node.level === index + 1;
+                    const isPassed = node.level <= index;
+                    return (
+                        <div
+                            key={node.level}
+                            className={`flex justify-between items-center px-4 py-1.5 rounded-full text-base lg:text-lg font-bold tabular-nums transition-colors
+                                ${isActive ? 'bg-amber-300 text-gray-950 shadow-[0_0_24px_rgba(251,191,36,0.5)]' : isPassed ? 'text-emerald-300/80' : node.milestone ? 'text-white' : 'text-sky-200/50'}`}
+                        >
+                            <span className="text-sm opacity-70 flex items-center gap-1.5">
+                                {node.milestone && !isActive && <span className="w-1.5 h-1.5 rounded-full bg-amber-300" />}
+                                {node.level}
+                            </span>
+                            <span>{node.amount}</span>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );
