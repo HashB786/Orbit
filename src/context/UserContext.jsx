@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 
-// The only profile data for now: the display name used as author name and default nickname.
-// (Google sign-in for teachers comes later; joining a game never needs an account.)
+// The display name used as author name and default nickname.
+// Signed-in teachers use their account name; everyone else a name kept in this browser.
 const UserContext = createContext();
 
 const read = () => {
@@ -14,17 +15,25 @@ const read = () => {
 };
 
 export const UserProvider = ({ children }) => {
-    const [userData, setUserData] = useState(read);
+    const auth = useAuth();
+    const [local, setLocal] = useState(read);
 
     useEffect(() => {
         try {
-            localStorage.setItem('userSettings', JSON.stringify(userData));
+            localStorage.setItem('userSettings', JSON.stringify(local));
         } catch {
             /* ignore */
         }
-    }, [userData]);
+    }, [local]);
 
-    const updateUserData = (updates) => setUserData(prev => ({ ...prev, ...updates }));
+    const signedIn = !!auth?.user;
+    const userData = { name: signedIn ? auth.displayName : local.name };
+
+    const updateUserData = (updates) => {
+        if (typeof updates.name !== 'string') return;
+        setLocal(prev => ({ ...prev, name: updates.name }));
+        if (signedIn) auth.updateName(updates.name).catch(() => {});
+    };
 
     return (
         <UserContext.Provider value={{ userData, updateUserData }}>

@@ -2,9 +2,14 @@ import React, { useMemo, useState } from 'react';
 import { Sparkles, Copy, ClipboardPaste, ChevronDown, CheckCircle2, AlertTriangle, FileJson, List, Wand2 } from 'lucide-react';
 import { Modal, Segmented, Stepper, TypeBadge, TYPE_ICONS, btn, inputClass, cx } from '../ui';
 import { toast } from '../ui/toast';
-import { QUESTION_TYPES, TYPE_IDS } from '../../platform/questions/types';
+import { TYPE_IDS } from '../../platform/questions/types';
 import { AI_LANGUAGES, EXAMPLE_JSON, buildAiPrompt, parseQuestionsJson, typeCounts } from '../../platform/questions/jsonImport';
 import { parseImport } from '../../platform/questions/normalize';
+import { useLanguage } from '../../context/LanguageContext';
+import Slots from '../../i18n/Slots';
+
+// Ask the AI for questions in the language the teacher is using Orbit in
+const AI_LANGUAGE_FOR = { en: 'English', uz: 'Uzbek', ru: 'Russian' };
 
 const copyText = async (text) => {
     try {
@@ -35,25 +40,29 @@ const Step = ({ n, title, hint, children }) => (
     </section>
 );
 
-const Preview = ({ questions, max = 5 }) => (
-    <ul className="mt-2 space-y-1.5">
-        {questions.slice(0, max).map(q => (
-            <li key={q.id} className="flex items-center gap-2 text-sm min-w-0">
-                <TypeBadge type={q.type} />
-                <span className="truncate text-gray-700 dark:text-gray-200">{q.prompt}</span>
-            </li>
-        ))}
-        {questions.length > max && <li className="text-xs text-gray-500">+{questions.length - max} more</li>}
-    </ul>
-);
+const Preview = ({ questions, max = 5 }) => {
+    const { t } = useLanguage();
+    return (
+        <ul className="mt-2 space-y-1.5">
+            {questions.slice(0, max).map(q => (
+                <li key={q.id} className="flex items-center gap-2 text-sm min-w-0">
+                    <TypeBadge type={q.type} />
+                    <span className="truncate text-gray-700 dark:text-gray-200">{q.prompt}</span>
+                </li>
+            ))}
+            {questions.length > max && <li className="text-xs text-gray-500">{t('importer.more', { count: questions.length - max })}</li>}
+        </ul>
+    );
+};
 
 // "Import questions" dialog of the set editor
 const ImportModal = ({ open, onClose, onImport, currentTitle = '' }) => {
+    const { t, lang } = useLanguage();
     const [tab, setTab] = useState('ai');
     const [topic, setTopic] = useState(currentTitle);
     const [count, setCount] = useState(10);
     const [level, setLevel] = useState('');
-    const [language, setLanguage] = useState('English');
+    const [language, setLanguage] = useState(AI_LANGUAGE_FOR[lang] || 'English');
     const [types, setTypes] = useState(TYPE_IDS);
     const [showPrompt, setShowPrompt] = useState(false);
     const [showExample, setShowExample] = useState(false);
@@ -68,13 +77,13 @@ const ImportModal = ({ open, onClose, onImport, currentTitle = '' }) => {
 
     const ready = tab === 'ai' ? parsed.questions : lineQuestions;
 
-    const toggleType = (t) => setTypes(prev => (prev.includes(t) ? (prev.length > 1 ? prev.filter(x => x !== t) : prev) : [...prev, t]));
+    const toggleType = (type) => setTypes(prev => (prev.includes(type) ? (prev.length > 1 ? prev.filter(x => x !== type) : prev) : [...prev, type]));
 
     const copyPrompt = async () => {
-        if (await copyText(prompt)) toast('Prompt copied. Paste it into ChatGPT, then copy its answer back here.');
+        if (await copyText(prompt)) toast(t('importer.promptCopied'));
         else {
             setShowPrompt(true);
-            toast('Copy the prompt below by hand.', 'info');
+            toast(t('importer.copyByHand'), 'info');
         }
     };
 
@@ -82,9 +91,9 @@ const ImportModal = ({ open, onClose, onImport, currentTitle = '' }) => {
         try {
             const text = await navigator.clipboard.readText();
             if (text) setJson(text);
-            else toast('The clipboard is empty.', 'info');
+            else toast(t('importer.clipboardEmpty'), 'info');
         } catch {
-            toast('Click the box below and press Ctrl+V (or long-press → Paste on a phone).', 'info');
+            toast(t('importer.pasteByHand'), 'info');
         }
     };
 
@@ -99,13 +108,13 @@ const ImportModal = ({ open, onClose, onImport, currentTitle = '' }) => {
         <Modal
             open={open}
             onClose={onClose}
-            title="Import questions"
+            title={t('importer.title')}
             size="lg"
             footer={(
                 <>
-                    <button className={btn.secondary} onClick={onClose}>Cancel</button>
+                    <button className={btn.secondary} onClick={onClose}>{t('common.cancel')}</button>
                     <button className={btn.primary} onClick={submit} disabled={!ready.length}>
-                        <CheckCircle2 size={18} /> {ready.length ? `Import ${ready.length} question${ready.length === 1 ? '' : 's'}` : 'Import'}
+                        <CheckCircle2 size={18} /> {ready.length ? t('importer.importN', { count: ready.length }) : t('editor.import')}
                     </button>
                 </>
             )}
@@ -113,54 +122,54 @@ const ImportModal = ({ open, onClose, onImport, currentTitle = '' }) => {
             <Segmented
                 value={tab}
                 onChange={setTab}
-                options={[{ value: 'ai', label: 'From ChatGPT', icon: Sparkles }, { value: 'lines', label: 'Simple list', icon: List }]}
+                options={[{ value: 'ai', label: t('editor.fromChatGPT'), icon: Sparkles }, { value: 'lines', label: t('importer.simpleList'), icon: List }]}
             />
 
             {tab === 'ai' ? (
                 <div className="mt-4 space-y-3">
-                    <Step n={1} title="Ask ChatGPT" hint="or Gemini, Copilot, any AI chat">
+                    <Step n={1} title={t('importer.step1')} hint={t('importer.step1Hint')}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <label className="sm:col-span-2 block">
-                                <span className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Topic</span>
-                                <input value={topic} onChange={e => setTopic(e.target.value.slice(0, 120))} placeholder="e.g. Photosynthesis, Past Simple, Fractions" className={inputClass} />
+                                <span className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">{t('importer.topic')}</span>
+                                <input value={topic} onChange={e => setTopic(e.target.value.slice(0, 120))} placeholder={t('importer.topicPlaceholder')} className={inputClass} />
                             </label>
                             <label className="block">
-                                <span className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">For whom (optional)</span>
-                                <input value={level} onChange={e => setLevel(e.target.value.slice(0, 60))} placeholder="e.g. grade 7 students" className={inputClass} />
+                                <span className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">{t('importer.level')}</span>
+                                <input value={level} onChange={e => setLevel(e.target.value.slice(0, 60))} placeholder={t('importer.levelPlaceholder')} className={inputClass} />
                             </label>
                             <div>
-                                <span className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Language</span>
-                                <Segmented value={language} onChange={setLanguage} options={AI_LANGUAGES.map(l => ({ value: l, label: l }))} size="sm" />
+                                <span className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">{t('importer.language')}</span>
+                                <Segmented value={language} onChange={setLanguage} options={AI_LANGUAGES.map(l => ({ value: l, label: t(`importer.languages.${l}`) }))} size="sm" />
                             </div>
                         </div>
                         <div className="mt-3">
-                            <Stepper label="Number of questions" value={count} min={3} max={40} onChange={setCount} />
+                            <Stepper label={t('importer.count')} value={count} min={3} max={40} onChange={setCount} />
                         </div>
                         <div className="mt-3">
-                            <span className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Question types</span>
+                            <span className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">{t('importer.types')}</span>
                             <div className="flex flex-wrap gap-1.5">
-                                {TYPE_IDS.map(t => {
-                                    const Icon = TYPE_ICONS[t];
-                                    const on = types.includes(t);
+                                {TYPE_IDS.map(type => {
+                                    const Icon = TYPE_ICONS[type];
+                                    const on = types.includes(type);
                                     return (
                                         <button
-                                            key={t}
+                                            key={type}
                                             type="button"
-                                            onClick={() => toggleType(t)}
+                                            onClick={() => toggleType(type)}
                                             aria-pressed={on}
                                             className={cx('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors',
                                                 on ? 'border-primary-400 bg-primary-500/15 text-primary-700 dark:text-primary-200' : 'border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400')}
                                         >
-                                            <Icon size={13} /> {QUESTION_TYPES[t].label}
+                                            <Icon size={13} /> {t(`qtypes.${type}.label`)}
                                         </button>
                                     );
                                 })}
                             </div>
                         </div>
                         <div className="mt-4 flex flex-wrap gap-2">
-                            <button type="button" onClick={copyPrompt} className={btn.primary}><Copy size={16} /> Copy prompt</button>
+                            <button type="button" onClick={copyPrompt} className={btn.primary}><Copy size={16} /> {t('importer.copyPrompt')}</button>
                             <button type="button" onClick={() => setShowPrompt(v => !v)} className={btn.ghost}>
-                                <ChevronDown size={16} className={cx('transition-transform', showPrompt && 'rotate-180')} /> {showPrompt ? 'Hide prompt' : 'See prompt'}
+                                <ChevronDown size={16} className={cx('transition-transform', showPrompt && 'rotate-180')} /> {showPrompt ? t('importer.hidePrompt') : t('importer.seePrompt')}
                             </button>
                         </div>
                         {showPrompt && (
@@ -168,16 +177,16 @@ const ImportModal = ({ open, onClose, onImport, currentTitle = '' }) => {
                         )}
                     </Step>
 
-                    <Step n={2} title="Paste the answer here">
+                    <Step n={2} title={t('importer.step2')}>
                         <div className="flex flex-wrap gap-2 mb-2">
-                            <button type="button" onClick={pasteFromClipboard} className={btn.secondary}><ClipboardPaste size={16} /> Paste from clipboard</button>
-                            <button type="button" onClick={() => setShowExample(v => !v)} className={btn.ghost}><FileJson size={16} /> {showExample ? 'Hide example' : 'See the format'}</button>
+                            <button type="button" onClick={pasteFromClipboard} className={btn.secondary}><ClipboardPaste size={16} /> {t('importer.paste')}</button>
+                            <button type="button" onClick={() => setShowExample(v => !v)} className={btn.ghost}><FileJson size={16} /> {showExample ? t('importer.hideExample') : t('importer.seeFormat')}</button>
                         </div>
                         {showExample && (
                             <div className="mb-3 rounded-xl bg-white dark:bg-[#050918] border border-gray-200 dark:border-white/10">
                                 <pre className="max-h-56 overflow-auto p-3 text-xs text-gray-700 dark:text-gray-300">{EXAMPLE_JSON}</pre>
                                 <div className="px-3 pb-3">
-                                    <button type="button" onClick={() => setJson(EXAMPLE_JSON)} className={cx(btn.ghost, 'text-sm')}><Wand2 size={15} /> Try this example</button>
+                                    <button type="button" onClick={() => setJson(EXAMPLE_JSON)} className={cx(btn.ghost, 'text-sm')}><Wand2 size={15} /> {t('importer.tryExample')}</button>
                                 </div>
                             </div>
                         )}
@@ -188,12 +197,12 @@ const ImportModal = ({ open, onClose, onImport, currentTitle = '' }) => {
                             spellCheck={false}
                             placeholder={'{\n  "title": "…",\n  "questions": [ … ]\n}'}
                             className={cx(inputClass, 'font-mono text-xs leading-relaxed')}
-                            aria-label="Paste JSON"
+                            aria-label={t('importer.pasteJson')}
                         />
 
                         {parsed.error && (
                             <p className="mt-2 flex items-start gap-2 text-sm text-rose-600 dark:text-rose-300" role="alert">
-                                <AlertTriangle size={16} className="shrink-0 mt-0.5" /> {parsed.error}
+                                <AlertTriangle size={16} className="shrink-0 mt-0.5" /> {t(`importer.errors.${parsed.error.code}`, { pos: parsed.error.pos })}
                             </p>
                         )}
                         {!parsed.error && parsed.total > 0 && (
@@ -201,10 +210,10 @@ const ImportModal = ({ open, onClose, onImport, currentTitle = '' }) => {
                                 {parsed.questions.length > 0 && (
                                     <>
                                         <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                                            <CheckCircle2 size={16} /> {parsed.questions.length} question{parsed.questions.length === 1 ? '' : 's'} ready
+                                            <CheckCircle2 size={16} /> {t('importer.ready', { count: parsed.questions.length })}
                                             <span className="flex flex-wrap gap-1">
-                                                {typeCounts(parsed.questions).map(t => (
-                                                    <span key={t.type} className="text-xs font-bold text-gray-500 dark:text-gray-400">· {t.count} {t.label}</span>
+                                                {typeCounts(parsed.questions).map(c => (
+                                                    <span key={c.type} className="text-xs font-bold text-gray-500 dark:text-gray-400">· {c.count} {t(`qtypes.${c.type}.short`)}</span>
                                                 ))}
                                             </span>
                                         </p>
@@ -214,13 +223,13 @@ const ImportModal = ({ open, onClose, onImport, currentTitle = '' }) => {
                                 {parsed.problems.length > 0 && (
                                     <div className="mt-3 rounded-xl border border-amber-300/70 dark:border-amber-400/25 bg-amber-50 dark:bg-amber-400/[0.06]">
                                         <button type="button" onClick={() => setProblemsOpen(v => !v)} className="w-full flex items-center gap-2 px-3 py-2 text-sm font-semibold text-amber-800 dark:text-amber-200">
-                                            <AlertTriangle size={16} /> {parsed.problems.length} question{parsed.problems.length === 1 ? '' : 's'} will be skipped
+                                            <AlertTriangle size={16} /> {t('importer.skipped', { count: parsed.problems.length })}
                                             <ChevronDown size={16} className={cx('ml-auto transition-transform', problemsOpen && 'rotate-180')} />
                                         </button>
                                         {problemsOpen && (
                                             <ul className="px-3 pb-3 space-y-1 text-xs text-amber-900 dark:text-amber-100/90">
                                                 {parsed.problems.map(p => (
-                                                    <li key={p.n} className="break-words"><b>#{p.n}</b>{p.prompt ? ` "${p.prompt.slice(0, 60)}${p.prompt.length > 60 ? '…' : ''}"` : ''}: {p.message}</li>
+                                                    <li key={p.n} className="break-words"><b>#{p.n}</b>{p.prompt ? ` "${p.prompt.slice(0, 60)}${p.prompt.length > 60 ? '…' : ''}"` : ''}: {p.codes.map(code => t(`validation.${code}`)).join(' ')}</li>
                                                 ))}
                                             </ul>
                                         )}
@@ -229,7 +238,7 @@ const ImportModal = ({ open, onClose, onImport, currentTitle = '' }) => {
                                 {parsed.meta.title && parsed.questions.length > 0 && (
                                     <label className="mt-3 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                                         <input type="checkbox" checked={useTitle} onChange={e => setUseTitle(e.target.checked)} className="w-4 h-4 accent-[rgb(var(--color-primary-600))]" />
-                                        Use “{parsed.meta.title}” as the set title
+                                        {t('importer.useTitle', { title: parsed.meta.title })}
                                     </label>
                                 )}
                             </div>
@@ -239,20 +248,20 @@ const ImportModal = ({ open, onClose, onImport, currentTitle = '' }) => {
             ) : (
                 <div className="mt-4">
                     <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                        One question per line as <code className="px-1 rounded bg-gray-100 dark:bg-white/10">question | answer</code>. They become written-answer questions you can change later.
+                        <Slots text={t('importer.linesHint')} slots={{ format: <code className="px-1 rounded bg-gray-100 dark:bg-white/10">{t('importer.linesFormat')}</code> }} />
                     </p>
                     <textarea
                         value={lines}
                         onChange={e => setLines(e.target.value)}
                         rows={9}
-                        placeholder={'Capital of France | Paris\n7 × 8 | 56\nLargest planet | Jupiter'}
+                        placeholder={t('importer.linesPlaceholder')}
                         className={cx(inputClass, 'font-mono text-sm')}
-                        aria-label="Questions, one per line"
+                        aria-label={t('importer.linesLabel')}
                     />
                     {lineQuestions.length > 0 && (
                         <>
                             <p className="mt-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
-                                <CheckCircle2 size={16} /> {lineQuestions.length} question{lineQuestions.length === 1 ? '' : 's'} ready
+                                <CheckCircle2 size={16} /> {t('importer.ready', { count: lineQuestions.length })}
                             </p>
                             <Preview questions={lineQuestions} />
                         </>

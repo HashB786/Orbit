@@ -8,8 +8,10 @@ import { useMySets, deleteSet, duplicateSet } from '../platform/sets/store';
 import { unpublishSet } from '../platform/sets/publicSets';
 import { matchesSearch } from '../platform/sets/search';
 import { useUser } from '../context/UserContext';
+import { useT } from '../context/LanguageContext';
 
 const Create = () => {
+    const t = useT();
     const mySets = useMySets();
     const navigate = useNavigate();
     const { userData } = useUser();
@@ -24,9 +26,9 @@ const Create = () => {
         try {
             if (set.remoteId) await unpublishSet(set.remoteId);
             deleteSet(set.id);
-            toast(`Deleted "${set.title}"`);
+            toast(t('create.deleted', { title: set.title }));
         } catch {
-            toast('Could not remove the public copy. Check your connection and try again.', 'error');
+            toast(t('create.unpublishFailed'), 'error');
         }
     };
 
@@ -37,12 +39,12 @@ const Create = () => {
             <PageHeader
                 icon={PenSquare}
                 tone="sky"
-                title="Create"
-                subtitle="Your question sets. Private until you publish them."
+                title={t('nav.create')}
+                subtitle={t('create.subtitle')}
                 actions={(
                     <>
-                        <Link to="/create/new?import=1" className={btn.secondary}><Sparkles size={18} className="text-violet-400" /> Import from ChatGPT</Link>
-                        <Link to="/create/new" className={btn.primary}><Plus size={18} /> New set</Link>
+                        <Link to="/create/new?import=1" className={btn.secondary}><Sparkles size={18} className="text-violet-400" /> {t('create.import')}</Link>
+                        <Link to="/create/new" className={btn.primary}><Plus size={18} /> {t('create.newSet')}</Link>
                     </>
                 )}
             />
@@ -50,7 +52,7 @@ const Create = () => {
             {mySets.length > 3 && (
                 <div className="relative">
                     <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search your sets…" className={`${inputClass} pl-10`} aria-label="Search your sets" />
+                    <input value={query} onChange={e => setQuery(e.target.value)} placeholder={t('create.searchPlaceholder')} className={`${inputClass} pl-10`} aria-label={t('create.searchLabel')} />
                 </div>
             )}
 
@@ -58,15 +60,15 @@ const Create = () => {
                 <EmptyState
                     icon={PenSquare}
                     tone="sky"
-                    title="No sets yet"
+                    title={t('create.emptyTitle')}
                     action={(
                         <div className="flex flex-wrap justify-center gap-2">
-                            <Link to="/create/new" className={btn.primary}><Plus size={18} /> Create your first set</Link>
-                            <Link to="/create/new?import=1" className={btn.secondary}><Sparkles size={18} className="text-violet-400" /> Import from ChatGPT</Link>
+                            <Link to="/create/new" className={btn.primary}><Plus size={18} /> {t('create.first')}</Link>
+                            <Link to="/create/new?import=1" className={btn.secondary}><Sparkles size={18} className="text-violet-400" /> {t('create.import')}</Link>
                         </div>
                     )}
                 >
-                    Write questions yourself, or ask ChatGPT for a quiz and paste it in. Mix multiple choice, true/false, written answers, multi-select and put-in-order.
+                    {t('create.emptyText')}
                 </EmptyState>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -79,24 +81,22 @@ const Create = () => {
                             actions={(
                                 <>
                                     <HostButton setId={set.id} />
-                                    <button className={iconBtn} onClick={() => navigate(`/create/${set.id}`)}><Pencil size={14} /> Edit</button>
-                                    <button className={iconBtn} onClick={() => { duplicateSet(set, userData.name); toast('Copy created'); }}><Copy size={14} /> Copy</button>
-                                    <button className={`${iconBtn} hover:!bg-red-50 hover:text-red-600 dark:hover:!bg-red-900/20`} onClick={() => setPendingDelete(set)} aria-label={`Delete ${set.title}`}><Trash2 size={14} /></button>
+                                    <button className={iconBtn} onClick={() => navigate(`/create/${set.id}`)}><Pencil size={14} /> {t('common.edit')}</button>
+                                    <button className={iconBtn} onClick={() => { duplicateSet(set, userData.name, t('common.copyOf')); toast(t('create.copied')); }}><Copy size={14} /> {t('common.copy')}</button>
+                                    <button className={`${iconBtn} hover:!bg-red-50 hover:text-red-600 dark:hover:!bg-red-900/20`} onClick={() => setPendingDelete(set)} aria-label={t('create.deleteLabel', { title: set.title })}><Trash2 size={14} /></button>
                                 </>
                             )}
                         />
                     ))}
-                    {!list.length && <p className="text-sm text-gray-500 col-span-full">No sets match "{query}".</p>}
+                    {!list.length && <p className="text-sm text-gray-500 col-span-full">{t('create.noMatch', { query })}</p>}
                 </div>
             )}
 
             <ConfirmDialog
                 open={!!pendingDelete}
-                title="Delete this set?"
-                message={pendingDelete?.remoteId
-                    ? `"${pendingDelete?.title}" will be deleted and removed from the public library.`
-                    : `"${pendingDelete?.title}" will be deleted from this browser.`}
-                confirmLabel="Delete"
+                title={t('create.deleteTitle')}
+                message={t(pendingDelete?.remoteId ? 'create.deletePublic' : 'create.deletePrivate', { title: pendingDelete?.title })}
+                confirmLabel={t('common.delete')}
                 danger
                 onConfirm={confirmDelete}
                 onCancel={() => setPendingDelete(null)}

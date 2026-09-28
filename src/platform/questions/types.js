@@ -9,14 +9,17 @@
 //   items?:    string[]                  // order (stored in the correct order)
 // }
 
+import { t } from '../../i18n';
+
 export const TYPE_IDS = ['mc', 'tf', 'typed', 'multi', 'order'];
 
+// Labels are translated: t(`qtypes.${type}.label`), .short and .hint
 export const QUESTION_TYPES = {
-    mc: { id: 'mc', label: 'Multiple choice', short: 'Choice', hint: 'One correct option' },
-    tf: { id: 'tf', label: 'True / False', short: 'True/False', hint: 'Is the statement true?' },
-    typed: { id: 'typed', label: 'Written answer', short: 'Written', hint: 'Students type the answer' },
-    multi: { id: 'multi', label: 'Multi-select', short: 'Multi', hint: 'Several correct options' },
-    order: { id: 'order', label: 'Put in order', short: 'Order', hint: 'Arrange items in sequence' }
+    mc: { id: 'mc' },
+    tf: { id: 'tf' },
+    typed: { id: 'typed' },
+    multi: { id: 'multi' },
+    order: { id: 'order' }
 };
 
 export const LIMITS = { prompt: 280, option: 80, minOptions: 2, maxOptions: 6, minItems: 2, maxItems: 6, maxAccepted: 6 };
@@ -57,7 +60,7 @@ export const convertQuestion = (q, type) => {
         if (q.options) options = q.options.map(o => ({ ...o }));
         else if (q.items) options = q.items.map((text, i) => ({ id: uid(), text, correct: i === 0 }));
         else if (q.accepted) options = [{ id: uid(), text: q.accepted[0] || '', correct: true }];
-        else if (q.type === 'tf') options = [{ id: uid(), text: 'True', correct: q.answer }, { id: uid(), text: 'False', correct: !q.answer }];
+        else if (q.type === 'tf') options = [{ id: uid(), text: t('common.true'), correct: q.answer }, { id: uid(), text: t('common.false'), correct: !q.answer }];
         while (options.length < 4) options.push({ id: uid(), text: '', correct: false });
         if (type === 'mc') {
             // Exactly one correct: keep the first one
@@ -98,42 +101,42 @@ export const tidyQuestion = (q) => {
     return out;
 };
 
-// Returns a list of problems; an empty list means the question can be played
+// Returns a list of problem codes (translated as t(`validation.${code}`)); empty = playable
 export const validateQuestion = (raw) => {
     const q = tidyQuestion(raw);
     const errors = [];
-    if (!q.prompt) errors.push('Write the question.');
+    if (!q.prompt) errors.push('prompt');
 
     const hasDuplicates = (list) => new Set(list.map(normalizeAnswer)).size !== list.length;
 
     switch (q.type) {
         case 'mc': {
-            if (q.options.length < 2) errors.push('Add at least 2 options.');
+            if (q.options.length < 2) errors.push('minOptions');
             const correct = q.options.filter(o => o.correct).length;
-            if (correct === 0) errors.push('Mark the correct option.');
-            if (correct > 1) errors.push('Only one option can be correct.');
-            if (hasDuplicates(q.options.map(o => o.text))) errors.push('Options must be different.');
+            if (correct === 0) errors.push('markCorrect');
+            if (correct > 1) errors.push('oneCorrect');
+            if (hasDuplicates(q.options.map(o => o.text))) errors.push('distinctOptions');
             break;
         }
         case 'multi': {
-            if (q.options.length < 2) errors.push('Add at least 2 options.');
+            if (q.options.length < 2) errors.push('minOptions');
             const correct = q.options.filter(o => o.correct).length;
-            if (correct === 0) errors.push('Mark at least one correct option.');
-            if (correct === q.options.length && q.options.length > 0) errors.push('At least one option must be wrong.');
-            if (hasDuplicates(q.options.map(o => o.text))) errors.push('Options must be different.');
+            if (correct === 0) errors.push('markSomeCorrect');
+            if (correct === q.options.length && q.options.length > 0) errors.push('oneWrong');
+            if (hasDuplicates(q.options.map(o => o.text))) errors.push('distinctOptions');
             break;
         }
         case 'typed':
-            if (q.accepted.length === 0) errors.push('Add the correct answer.');
+            if (q.accepted.length === 0) errors.push('answer');
             break;
         case 'order':
-            if (q.items.length < 2) errors.push('Add at least 2 items.');
-            if (hasDuplicates(q.items)) errors.push('Items must be different.');
+            if (q.items.length < 2) errors.push('minItems');
+            if (hasDuplicates(q.items)) errors.push('distinctItems');
             break;
         case 'tf':
             break;
         default:
-            errors.push('Unknown question type.');
+            errors.push('unknownType');
     }
     return errors;
 };
@@ -147,7 +150,7 @@ export const answerTexts = (q) => {
         case 'multi':
             return (q.options || []).filter(o => o.correct && clean(o.text)).map(o => clean(o.text));
         case 'tf':
-            return [q.answer === false ? 'False' : 'True'];
+            return [q.answer === false ? t('common.false') : t('common.true')];
         case 'typed':
             return (q.accepted || []).map(clean).filter(Boolean);
         case 'order':
@@ -161,7 +164,7 @@ export const answerTexts = (q) => {
 export const answerLabel = (q) => {
     const texts = answerTexts(q);
     if (q.type === 'order') return texts.join(' → ');
-    if (q.type === 'typed') return texts.length > 1 ? `${texts[0]} (or ${texts.slice(1).join(', ')})` : texts[0] || '';
+    if (q.type === 'typed') return texts.length > 1 ? t('common.orAlso', { main: texts[0], rest: texts.slice(1).join(', ') }) : texts[0] || '';
     return texts.join(', ');
 };
 

@@ -1,81 +1,45 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { LANGUAGE_KEY, detectLanguage, isLoaded, loadLanguage, setCurrentLanguage, translate, translateRaw } from '../i18n';
 
 const LanguageContext = createContext();
 
-const translations = {
-    en: {
-        home: 'Home',
-        discover: 'Discover',
-        create: 'Create',
-        games: 'Games',
-        settings: 'Settings',
-        joinGame: 'Join a game',
-        profile: 'Profile',
-        appearance: 'Appearance',
-        theme: 'Appearance',
-        language: 'Language',
-        sound: 'Sound',
-        save: 'Save',
-        welcome: 'Welcome back'
-    },
-    uz: {
-        home: 'Bosh sahifa',
-        discover: 'Kashf etish',
-        create: 'Yaratish',
-        games: "O'yinlar",
-        settings: 'Sozlamalar',
-        joinGame: "O'yinga qo'shilish",
-        profile: 'Profil',
-        appearance: "Ko'rinish",
-        theme: "Ko'rinish",
-        language: 'Til',
-        sound: 'Ovoz',
-        save: 'Saqlash',
-        welcome: 'Xush kelibsiz'
-    },
-    ru: {
-        home: 'Главная',
-        discover: 'Обзор',
-        create: 'Создать',
-        games: 'Игры',
-        settings: 'Настройки',
-        joinGame: 'Войти в игру',
-        profile: 'Профиль',
-        appearance: 'Внешний вид',
-        theme: 'Тема',
-        language: 'Язык',
-        sound: 'Звук',
-        save: 'Сохранить',
-        welcome: 'С возвращением'
-    }
-};
-
-export const LanguageProvider = ({ children }) => {
-    const [lang, setLang] = useState(() => {
-        try {
-            const saved = localStorage.getItem('language');
-            return saved && translations[saved] ? saved : 'en';
-        } catch {
-            return 'en';
-        }
-    });
+export const LanguageProvider = ({ children, initial }) => {
+    // main.jsx loads the starting language before the first render, so there's no flash of English
+    const [lang, setLangState] = useState(() => (initial && isLoaded(initial) ? initial : 'en'));
 
     useEffect(() => {
-        try {
-            localStorage.setItem('language', lang);
-        } catch {
-            /* ignore */
-        }
+        setCurrentLanguage(lang);
         document.documentElement.lang = lang;
     }, [lang]);
 
-    const t = (key) => translations[lang][key] || translations.en[key] || key;
+    const setLang = useCallback(async (next) => {
+        try {
+            await loadLanguage(next);
+        } catch {
+            return; // offline and not loaded yet: keep the current language
+        }
+        try {
+            localStorage.setItem(LANGUAGE_KEY, next);
+        } catch {
+            /* ignore */
+        }
+        setCurrentLanguage(next);
+        setLangState(next);
+    }, []);
 
-    return (
-        <LanguageContext.Provider value={{ lang, setLang, t }}>
-            {children}
-        </LanguageContext.Provider>
-    );
+    const value = useMemo(() => ({
+        lang,
+        setLang,
+        t: (key, vars) => translate(lang, key, vars),
+        raw: (key) => translateRaw(lang, key)
+    }), [lang, setLang]);
+
+    return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 };
 
 export const useLanguage = () => useContext(LanguageContext);
+
+// Shorthand when only `t` is needed
+export const useT = () => useContext(LanguageContext).t;
+
+export const initialLanguage = detectLanguage;

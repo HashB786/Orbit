@@ -4,6 +4,8 @@ import React, { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, CircleDot, ToggleLeft, PenLine, ListChecks, ArrowDownUp, Loader2 } from 'lucide-react';
 import { QUESTION_TYPES } from '../../platform/questions/types';
+import { t as translateNow } from '../../i18n';
+import { useT } from '../../context/LanguageContext';
 import IconOrb from '../art/IconOrb';
 
 export { IconOrb };
@@ -41,7 +43,7 @@ export const PageHeader = ({ icon, tone, title, subtitle, actions }) => (
 // ---------- feedback ----------
 
 export const Spinner = ({ className = '', size = 24 }) => (
-    <Loader2 size={size} className={cx('animate-spin text-primary-500', className)} aria-label="Loading" />
+    <Loader2 size={size} className={cx('animate-spin text-primary-500', className)} aria-label={translateNow('common.loading')} />
 );
 
 export const PageSpinner = () => (
@@ -139,12 +141,12 @@ const TYPE_COLORS = {
 };
 
 export const TypeBadge = ({ type, short = true, className = '' }) => {
+    const t = useT();
     const Icon = TYPE_ICONS[type];
-    const info = QUESTION_TYPES[type];
-    if (!info) return null;
+    if (!QUESTION_TYPES[type]) return null;
     return (
         <span className={cx('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap', TYPE_COLORS[type], className)}>
-            {Icon && <Icon size={12} />} {short ? info.short : info.label}
+            {Icon && <Icon size={12} />} {t(`qtypes.${type}.${short ? 'short' : 'label'}`)}
         </span>
     );
 };
@@ -187,7 +189,7 @@ export const Modal = ({ open, onClose, title, children, footer, size = 'md' }) =
             >
                 <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
                     <h2 className="font-display text-xl font-bold min-w-0 truncate">{title}</h2>
-                    <button onClick={onClose} className={btn.icon} aria-label="Close"><X size={18} /></button>
+                    <button onClick={onClose} className={btn.icon} aria-label={translateNow('common.close')}><X size={18} /></button>
                 </div>
                 <div className="px-5 pb-5 overflow-y-auto">{children}</div>
                 {footer && <div className="px-5 py-4 border-t border-gray-100 dark:border-white/10 flex flex-wrap justify-end gap-2 pb-safe">{footer}</div>}
@@ -197,7 +199,9 @@ export const Modal = ({ open, onClose, title, children, footer, size = 'md' }) =
     );
 };
 
-export const ConfirmDialog = ({ open, title, message, confirmLabel = 'Confirm', danger = false, onConfirm, onCancel }) => (
+export const ConfirmDialog = ({ open, title, message, confirmLabel, danger = false, onConfirm, onCancel }) => {
+    const t = useT();
+    return (
     <Modal
         open={open}
         onClose={onCancel}
@@ -205,11 +209,12 @@ export const ConfirmDialog = ({ open, title, message, confirmLabel = 'Confirm', 
         size="sm"
         footer={(
             <>
-                <button className={btn.secondary} onClick={onCancel}>Cancel</button>
-                <button className={danger ? btn.danger : btn.primary} onClick={onConfirm}>{confirmLabel}</button>
+                <button className={btn.secondary} onClick={onCancel}>{t('common.cancel')}</button>
+                <button className={danger ? btn.danger : btn.primary} onClick={onConfirm}>{confirmLabel || t('common.continue')}</button>
             </>
         )}
     >
         <p className="text-sm text-gray-600 dark:text-gray-300">{message}</p>
     </Modal>
-);
+    );
+};

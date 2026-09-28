@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Globe, Lock, Play, Sparkles } from 'lucide-react';
 import { TypeBadge, cardClass, cx } from '../ui';
 import { TYPE_IDS } from '../../platform/questions/types';
+import { useT } from '../../context/LanguageContext';
 
 const SUBJECT_EMOJI = {
     Math: '➗', Science: '🔬', Geography: '🌍', History: '🏛️', English: '📖', Languages: '🗣️',
@@ -11,9 +12,13 @@ const SUBJECT_EMOJI = {
 
 export const subjectEmoji = (subject) => SUBJECT_EMOJI[subject] || '📘';
 
+// Subjects are stored in English; custom ones (from imports) are shown as written
+export const subjectName = (t, subject) => (SUBJECT_EMOJI[subject] ? t(`subjects.${subject}`) : subject);
+
 // Compact card used in Discover, Create and the set picker
 const SetCard = ({ set, to, onClick, badge, actions, selected = false }) => {
-    const types = TYPE_IDS.filter(t => set.questions.some(q => q.type === t));
+    const t = useT();
+    const types = TYPE_IDS.filter(id => set.questions.some(q => q.type === id));
     const Wrapper = to ? Link : 'button';
     const wrapperProps = to ? { to } : { type: 'button', onClick };
 
@@ -28,19 +33,19 @@ const SetCard = ({ set, to, onClick, badge, actions, selected = false }) => {
                 <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
                         <span className="font-display font-bold text-gray-900 dark:text-white truncate">{set.title}</span>
-                        {badge === 'featured' && <Sparkles size={14} className="text-amber-500 shrink-0" aria-label="Featured" />}
-                        {badge === 'public' && <Globe size={14} className="text-sky-500 shrink-0" aria-label="Public" />}
-                        {badge === 'private' && <Lock size={13} className="text-gray-400 shrink-0" aria-label="Private" />}
+                        {badge === 'featured' && <Sparkles size={14} className="text-amber-500 shrink-0" aria-label={t('sets.featured')} />}
+                        {badge === 'public' && <Globe size={14} className="text-sky-500 shrink-0" aria-label={t('sets.public')} />}
+                        {badge === 'private' && <Lock size={13} className="text-gray-400 shrink-0" aria-label={t('sets.private')} />}
                     </span>
                     <span className="block text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-                        {set.questions.length} question{set.questions.length === 1 ? '' : 's'}
-                        {set.subject ? ` · ${set.subject}` : ''}
+                        {t('common.questions', { count: set.questions.length })}
+                        {set.subject ? ` · ${subjectName(t, set.subject)}` : ''}
                         {set.author ? ` · ${set.author}` : ''}
-                        {set.plays > 0 ? ` · ${set.plays} play${set.plays === 1 ? '' : 's'}` : ''}
+                        {set.plays > 0 ? ` · ${t('common.plays', { count: set.plays })}` : ''}
                     </span>
                     {types.length > 0 && (
                         <span className="flex flex-wrap gap-1 mt-2">
-                            {types.map(t => <TypeBadge key={t} type={t} />)}
+                            {types.map(id => <TypeBadge key={id} type={id} />)}
                         </span>
                     )}
                 </span>
@@ -50,10 +55,13 @@ const SetCard = ({ set, to, onClick, badge, actions, selected = false }) => {
     );
 };
 
-export const HostButton = ({ setId, className = '' }) => (
-    <Link to={`/host/${setId}`} className={cx('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-b from-primary-500 to-primary-600 hover:from-primary-400 hover:to-primary-500 text-white text-sm font-bold shadow-[0_6px_16px_-8px_rgb(var(--color-primary-500))] transition-colors', className)}>
-        <Play size={14} className="fill-current" /> Host
-    </Link>
-);
+export const HostButton = ({ setId, className = '' }) => {
+    const t = useT();
+    return (
+        <Link to={`/host/${setId}`} className={cx('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-b from-primary-500 to-primary-600 hover:from-primary-400 hover:to-primary-500 text-white text-sm font-bold shadow-[0_6px_16px_-8px_rgb(var(--color-primary-500))] transition-colors', className)}>
+            <Play size={14} className="fill-current" /> {t('common.host')}
+        </Link>
+    );
+};
 
 export default SetCard;

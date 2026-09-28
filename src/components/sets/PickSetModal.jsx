@@ -7,9 +7,11 @@ import { useMySets } from '../../platform/sets/store';
 import { FEATURED_SETS } from '../../platform/sets/featured';
 import { usePublicSets, refreshPublicSets } from '../../platform/sets/publicSets';
 import { matchesSearch } from '../../platform/sets/search';
+import { useT } from '../../context/LanguageContext';
 
 // "Which set do you want to play?" dialog used by the Games page
-const PickSetModal = ({ open, onClose, onPick, title = 'Choose a question set' }) => {
+const PickSetModal = ({ open, onClose, onPick, title }) => {
+    const t = useT();
     const mySets = useMySets();
     const pub = usePublicSets();
     const [tab, setTab] = useState(mySets.length ? 'mine' : 'featured');
@@ -25,15 +27,15 @@ const PickSetModal = ({ open, onClose, onPick, title = 'Choose a question set' }
     }, [tab, mySets, pub.sets, query]);
 
     return (
-        <Modal open={open} onClose={onClose} title={title} size="lg">
+        <Modal open={open} onClose={onClose} title={title || t('pick.title')} size="lg">
             <Segmented
                 value={tab}
                 onChange={setTab}
-                options={[{ value: 'mine', label: 'My sets' }, { value: 'featured', label: 'Featured' }, { value: 'public', label: 'Public' }]}
+                options={[{ value: 'mine', label: t('pick.mine') }, { value: 'featured', label: t('sets.featured') }, { value: 'public', label: t('sets.public') }]}
             />
             <div className="relative mt-3">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search sets…" className={`${inputClass} pl-9`} />
+                <input value={query} onChange={e => setQuery(e.target.value)} placeholder={t('pick.search')} className={`${inputClass} pl-9`} />
             </div>
             <div className="mt-3 space-y-2 min-h-[12rem]">
                 {tab === 'public' && pub.loading && <div className="flex justify-center py-8"><Spinner /></div>}
@@ -43,8 +45,8 @@ const PickSetModal = ({ open, onClose, onPick, title = 'Choose a question set' }
                 {!list.length && !(tab === 'public' && pub.loading) && (
                     <div className="text-center text-sm text-gray-500 py-10">
                         {tab === 'mine'
-                            ? <>You haven't made any sets yet. <Link to="/create/new" className="text-primary-600 font-semibold inline-flex items-center gap-1"><PenSquare size={14} /> Create one</Link></>
-                            : 'No sets found.'}
+                            ? <>{t('pick.noneYet')} <Link to="/create/new" className="text-primary-600 font-semibold inline-flex items-center gap-1"><PenSquare size={14} /> {t('pick.createOne')}</Link></>
+                            : t('pick.noneFound')}
                     </div>
                 )}
             </div>

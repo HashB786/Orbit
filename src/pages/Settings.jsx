@@ -1,20 +1,31 @@
 import React, { useEffect, useState, useSyncExternalStore } from 'react';
-import { User, Palette, Globe, Zap, Trash2, Volume2, VolumeX, Music, Play, Check, Settings as SettingsIcon, Battery, Gauge, Sparkles } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import {
+    User, Palette, Globe, Zap, Trash2, Volume2, VolumeX, Music, Play, Check, Settings as SettingsIcon, Battery, Gauge, Sparkles,
+    LogIn, LogOut, UserPlus, Mail, ShieldCheck, AlertTriangle
+} from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
-import { useLanguage } from '../context/LanguageContext';
-import { PageHeader, Toggle, ConfirmDialog, IconOrb, btn, inputClass, cx } from '../components/ui';
+import { useLanguage, useT } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
+import { PageHeader, Toggle, ConfirmDialog, IconOrb, Modal, Spinner, btn, inputClass, cx } from '../components/ui';
+import { toast } from '../components/ui/toast';
+import { GoogleIcon, PasswordInput, ErrorNote } from '../components/auth/AuthPanel';
+import { authErrorKey, isSilentAuthError } from '../platform/auth';
+import { localeOf } from '../i18n';
+import { deleteAllSets } from '../platform/sets/store';
+import { deletePublicSetsOf } from '../platform/sets/publicSets';
 import Flag from '../components/art/Flag';
 import { Stars } from '../components/art/shapes';
 import { audio } from '../platform/audio/audio';
 
 const TABS = [
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'appearance', label: 'Appearance', icon: Palette },
-    { id: 'sound', label: 'Sound', icon: Volume2 },
-    { id: 'performance', label: 'Performance', icon: Zap },
-    { id: 'language', label: 'Language', icon: Globe },
-    { id: 'data', label: 'Your data', icon: Trash2 }
+    { id: 'account', icon: User },
+    { id: 'appearance', icon: Palette },
+    { id: 'sound', icon: Volume2 },
+    { id: 'performance', icon: Zap },
+    { id: 'language', icon: Globe },
+    { id: 'data', icon: Trash2 }
 ];
 
 const Panel = ({ title, subtitle, children, className = '' }) => (
@@ -48,30 +59,214 @@ const Choice = ({ selected, onClick, children, className = '' }) => (
     </button>
 );
 
-// ---------- Profile ----------
+// ---------- Account ----------
 
-const ProfileSettings = () => {
+const DeleteAccountDialog = ({ open, onClose }) => {
+    const t = useT();
+    const auth = useAuth();
+    const navigate = useNavigate();
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [busy, setBusy] = useState(false);
+    const google = auth.user?.provider === 'google';
+
+    const remove = async () => {
+        setBusy(true);
+        setError('');
+        try {
+            await auth.deleteAccount({
+                password,
+                // Published sets first: they need the account's permission to be removed
+                deleteData: async (uid) => {
+                    await deletePublicSetsOf(uid);
+                    await deleteAllSets();
+                }
+            });
+            onClose();
+            toast(t('account.deleted'));
+            navigate('/');
+        } catch (err) {
+            if (!isSilentAuthError(err)) setError(t(authErrorKey(err)));
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return (
+        <Modal
+            open={open}
+            onClose={busy ? () => {} : onClose}
+            title={t('account.deleteTitle')}
+            size="sm"
+            footer={(
+                <>
+                    <button className={btn.secondary} onClick={onClose} disabled={busy}>{t('common.cancel')}</button>
+                    <button className={btn.danger} onClick={remove} disabled={busy || (!google && !password)}>
+                        {busy ? <Spinner size={16} /> : <Trash2 size={16} />} {t('account.deleteConfirm')}
+                    </button>
+                </>
+            )}
+        >
+            <div className="space-y-3">
+                <p className="text-sm text-gray-600 dark:text-gray-300">{t('account.deleteText')}</p>
+                {google ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('account.deleteGoogle')}</p>
+                ) : (
+                    <div>
+                        <label htmlFor="delete-password" className="block text-sm font-semibold mb-1.5">{t('account.deletePassword')}</label>
+                        <PasswordInput id="delete-password" value={password} onChange={setPassword} autoComplete="current-password" />
+                    </div>
+                )}
+                {error && <ErrorNote>{error}</ErrorNote>}
+            </div>
+        </Modal>
+    );
+};
+
+const NameField = ({ initial, onSave, saving }) => {
+    const t = useT();
+    const [name, setName] = useState(initial);
+    useEffect(() => setName(initial), [initial]);
+    const changed = name.trim() && name.trim() !== initial;
+    return (
+        <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); if (changed) onSave(name.trim()); }}>
+            <input
+                id="display-name"
+                aria-label={t('account.name')}
+                value={name}
+                onChange={(e) => setName(e.target.value.slice(0, 40))}
+                className={inputClass}
+                placeholder={t('auth.namePlaceholder')}
+                autoComplete="name"
+            />
+            <button type="submit" disabled={!changed || saving} className={cx(btn.primary, 'shrink-0')}>{t('common.save')}</button>
+        </form>
+    );
+};
+
+const Avatar = ({ user, name }) => (user?.photoURL
+    ? <img src={user.photoURL} alt="" referrerPolicy="no-referrer" className="w-14 h-14 shrink-0 rounded-full object-cover ring-2 ring-primary-400/40" />
+    : (
+        <span className="w-14 h-14 shrink-0 rounded-full bg-gradient-to-br from-primary-400 to-violet-600 text-white text-2xl font-display font-bold flex items-center justify-center shadow-[0_0_24px_-6px_rgb(var(--color-primary-400))]">
+            {(name || '?').charAt(0).toUpperCase()}
+        </span>
+    ));
+
+const AccountSettings = () => {
+    const { t, lang } = useLanguage();
+    const auth = useAuth();
     const { userData, updateUserData } = useUser();
+    const [deleting, setDeleting] = useState(false);
+    const [saving, setSaving] = useState(false);
+
+    if (auth.status === 'loading') return <Panel><div className="flex justify-center py-8"><Spinner /></div></Panel>;
+
+    // Guests and students: a nickname kept in this browser, plus the way in for teachers
+    if (!auth.user) {
+        return (
+            <div className="space-y-4">
+                <Panel title={t('account.nickname')} subtitle={t('account.nicknameText')}>
+                    <div className="flex items-center gap-4">
+                        <Avatar name={userData.name} />
+                        <input
+                            id="display-name"
+                            aria-label={t('account.nickname')}
+                            value={userData.name}
+                            onChange={(e) => updateUserData({ name: e.target.value.slice(0, 40) })}
+                            className={inputClass}
+                            placeholder={t('play.nicknamePlaceholder')}
+                        />
+                    </div>
+                </Panel>
+                <Panel title={t('account.teacherTitle')} subtitle={t('account.teacherText')}>
+                    <div className="flex flex-wrap gap-2">
+                        <Link to="/signin?next=/settings" className={btn.primary}><LogIn size={18} /> {t('auth.signInButton')}</Link>
+                        <Link to="/signin?mode=signup&next=/settings" className={btn.secondary}><UserPlus size={18} /> {t('auth.signup.title')}</Link>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">{t('auth.studentNote')}</p>
+                </Panel>
+            </div>
+        );
+    }
+
+    const saveName = async (name) => {
+        setSaving(true);
+        updateUserData({ name });
+        setSaving(false);
+        toast(t('account.nameSaved'));
+    };
+
+    const unfinished = auth.needs === 'verify' || auth.needs === 'terms';
+
     return (
         <div className="space-y-4">
-            <Panel title="Your name" subtitle="Shown as the author of sets you publish, and filled in as your nickname when you join a game.">
-                <div className="flex items-center gap-4">
-                    <span className="w-14 h-14 shrink-0 rounded-full bg-gradient-to-br from-primary-400 to-violet-600 text-white text-2xl font-display font-bold flex items-center justify-center shadow-[0_0_24px_-6px_rgb(var(--color-primary-400))]">
-                        {userData.name.charAt(0).toUpperCase() || '?'}
-                    </span>
-                    <input
-                        id="display-name"
-                        aria-label="Display name"
-                        value={userData.name}
-                        onChange={(e) => updateUserData({ name: e.target.value.slice(0, 40) })}
-                        className={inputClass}
-                        placeholder="Enter your name"
-                    />
+            <Panel>
+                <div className="flex items-center gap-4 min-w-0">
+                    <Avatar user={auth.user} name={auth.displayName} />
+                    <div className="min-w-0">
+                        <p className="font-display text-xl font-bold text-gray-900 dark:text-white truncate">{auth.displayName || auth.user.email}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{auth.user.email}</p>
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 dark:bg-white/[0.07] text-gray-600 dark:text-gray-300">
+                                {auth.user.provider === 'google' ? <GoogleIcon size={11} /> : <Mail size={11} />}
+                                {t(`account.provider.${auth.user.provider === 'google' ? 'google' : 'password'}`)}
+                            </span>
+                            {auth.user.emailVerified
+                                ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"><ShieldCheck size={11} /> {t('account.verified')}</span>
+                                : <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-400/15 text-amber-700 dark:text-amber-300"><AlertTriangle size={11} /> {t('account.notVerified')}</span>}
+                        </div>
+                    </div>
+                </div>
+                {unfinished && (
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300/60 dark:border-amber-400/20 bg-amber-50 dark:bg-amber-400/[0.06] p-3.5">
+                        <p className="text-sm text-amber-800 dark:text-amber-200">{t(auth.needs === 'verify' ? 'account.finishVerify' : 'account.finishTerms')}</p>
+                        <Link to="/signin?next=/settings" className={cx(btn.primary, 'py-2')}>{t('common.continue')}</Link>
+                    </div>
+                )}
+            </Panel>
+
+            <Panel title={t('account.name')} subtitle={t('account.nameText')}>
+                <NameField initial={auth.displayName} onSave={saveName} saving={saving} />
+            </Panel>
+
+            <Panel title={t('account.legalTitle')}>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                    {auth.profile?.termsAcceptedAt
+                        ? t('account.termsAccepted', { date: new Date(auth.profile.termsAcceptedAt).toLocaleDateString(localeOf(lang), { dateStyle: 'medium' }) })
+                        : t('account.termsNotAccepted')}
+                </p>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm font-semibold">
+                    <Link to="/terms" className="text-primary-600 dark:text-primary-300 hover:underline">{t('legal.terms.title')}</Link>
+                    <Link to="/privacy" className="text-primary-600 dark:text-primary-300 hover:underline">{t('legal.privacy.title')}</Link>
                 </div>
             </Panel>
-            <div className="rounded-2xl border border-primary-300/50 dark:border-primary-400/20 bg-primary-500/[0.07] p-4 text-sm text-gray-600 dark:text-gray-300">
-                <b className="text-gray-900 dark:text-white">No account needed.</b> Your sets are saved in this browser. Teacher sign-in with Google is coming, so sets can follow you to any device. Students never need an account to join a game.
+
+            <Panel>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h3 className="font-bold text-gray-900 dark:text-white">{t('auth.signOut')}</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('account.signOutText')}</p>
+                    </div>
+                    <button
+                        onClick={() => auth.signOut().then(() => toast(t('auth.signedOut'))).catch(err => toast(t(authErrorKey(err)), 'error'))}
+                        className={cx(btn.secondary, 'shrink-0')}
+                    >
+                        <LogOut size={18} /> {t('auth.signOut')}
+                    </button>
+                </div>
+            </Panel>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-rose-300/60 dark:border-rose-400/20 bg-rose-50 dark:bg-rose-500/[0.06] p-4">
+                <div className="flex items-start gap-3">
+                    <IconOrb icon={Trash2} tone="rose" size={40} moon={false} />
+                    <div>
+                        <h3 className="font-bold text-gray-900 dark:text-white">{t('account.deleteTitle')}</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('account.deleteShort')}</p>
+                    </div>
+                </div>
+                <button onClick={() => setDeleting(true)} className={cx(btn.danger, 'shrink-0')}>{t('account.deleteButton')}</button>
             </div>
+            {deleting && <DeleteAccountDialog open onClose={() => setDeleting(false)} />}
         </div>
     );
 };
@@ -95,18 +290,19 @@ const ThemePreview = ({ dark }) => (
 );
 
 const ACCENTS = [
-    { id: 'green', label: 'Emerald', from: '#6ee7b7', to: '#047857' },
-    { id: 'blue', label: 'Ocean', from: '#93c5fd', to: '#1d4ed8' },
-    { id: 'violet', label: 'Nebula', from: '#c4b5fd', to: '#6d28d9' }
+    { id: 'green', from: '#6ee7b7', to: '#047857' },
+    { id: 'blue', from: '#93c5fd', to: '#1d4ed8' },
+    { id: 'violet', from: '#c4b5fd', to: '#6d28d9' }
 ];
 
 const AppearanceSettings = () => {
+    const t = useT();
     const { theme, setTheme, colorTheme, setColorTheme } = useTheme();
     return (
         <div className="space-y-4">
-            <Panel title="Theme" subtitle="Space is Orbit's home. Daylight is easier to read in a bright room.">
+            <Panel title={t('settings.theme')} subtitle={t('settings.themeText')}>
                 <div className="grid grid-cols-2 gap-3">
-                    {[{ id: 'dark', label: 'Space' }, { id: 'light', label: 'Daylight' }].map(opt => (
+                    {[{ id: 'dark', label: t('settings.space') }, { id: 'light', label: t('settings.daylight') }].map(opt => (
                         <Choice key={opt.id} selected={theme === opt.id} onClick={() => setTheme(opt.id, true)}>
                             <ThemePreview dark={opt.id === 'dark'} />
                             <span className="block font-bold mt-2 text-gray-900 dark:text-white">{opt.label}</span>
@@ -114,7 +310,7 @@ const AppearanceSettings = () => {
                     ))}
                 </div>
             </Panel>
-            <Panel title="Accent colour" subtitle="Used for buttons, highlights and your planet.">
+            <Panel title={t('settings.accent')} subtitle={t('settings.accentText')}>
                 <div className="grid grid-cols-3 gap-3">
                     {ACCENTS.map(a => (
                         <Choice key={a.id} selected={colorTheme === a.id} onClick={() => setColorTheme(a.id, true)} className="flex flex-col items-center gap-2 py-4">
@@ -128,7 +324,7 @@ const AppearanceSettings = () => {
                                 <circle cx="24" cy="24" r="18" fill={`url(#accent-${a.id})`} />
                                 <ellipse cx="24" cy="24" rx="27" ry="7" fill="none" stroke={a.from} strokeWidth="2" opacity="0.7" transform="rotate(-24 24 24)" />
                             </svg>
-                            <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{a.label}</span>
+                            <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{t(`settings.accents.${a.id}`)}</span>
                         </Choice>
                     ))}
                 </div>
@@ -158,6 +354,7 @@ const Slider = ({ label, icon: Icon, value, onChange }) => (
 );
 
 const SoundSettings = () => {
+    const t = useT();
     const settings = useSyncExternalStore(audio.subscribe, audio.getSettings);
     const [playing, setPlaying] = useState(false);
     // Stop the preview when leaving this tab
@@ -177,22 +374,22 @@ const SoundSettings = () => {
 
     return (
         <div className="space-y-4">
-            <Panel title="Sound" subtitle="All music and effects are generated live by Orbit, so there's nothing to download.">
+            <Panel title={t('settings.tabs.sound')} subtitle={t('settings.soundText')}>
                 <div className="space-y-6">
                     <button
                         onClick={() => { audio.unlock(); audio.updateSettings({ muted: !settings.muted }); }}
                         className={cx(btn.secondary, settings.muted && '!text-rose-600 dark:!text-rose-300')}
                     >
-                        {settings.muted ? <VolumeX size={18} /> : <Volume2 size={18} />} {settings.muted ? 'Sound is off' : 'Sound is on'}
+                        {settings.muted ? <VolumeX size={18} /> : <Volume2 size={18} />} {settings.muted ? t('settings.soundOff') : t('settings.soundOn')}
                     </button>
-                    <Slider label="Music" icon={Music} value={settings.music} onChange={v => audio.updateSettings({ music: v })} />
-                    <Slider label="Sound effects" icon={Zap} value={settings.sfx} onChange={v => { audio.updateSettings({ sfx: v }); audio.unlock(); audio.sfx('hit'); }} />
+                    <Slider label={t('settings.music')} icon={Music} value={settings.music} onChange={v => audio.updateSettings({ music: v })} />
+                    <Slider label={t('settings.effects')} icon={Zap} value={settings.sfx} onChange={v => { audio.updateSettings({ sfx: v }); audio.unlock(); audio.sfx('hit'); }} />
                     <button onClick={preview} className={btn.primary}>
-                        <Play size={16} className="fill-current" /> {playing ? 'Stop preview' : 'Preview battle music'}
+                        <Play size={16} className="fill-current" /> {playing ? t('settings.stopPreview') : t('settings.preview')}
                     </button>
                 </div>
             </Panel>
-            <p className="text-sm text-gray-500 dark:text-gray-400 px-1">In live games the teacher's screen plays the music. Student devices play softer music (a host setting) and each student can mute their own device.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 px-1">{t('settings.soundNote')}</p>
         </div>
     );
 };
@@ -200,12 +397,13 @@ const SoundSettings = () => {
 // ---------- Performance ----------
 
 const PRESETS = [
-    { id: 'saver', label: 'Battery saver', text: 'No moving stars, calm animations', icon: Battery, particles: false, reducedMotion: true },
-    { id: 'balanced', label: 'Balanced', text: 'Smooth, without background effects', icon: Gauge, particles: false, reducedMotion: false },
-    { id: 'full', label: 'Full effects', text: 'Twinkling stars and confetti', icon: Sparkles, particles: true, reducedMotion: false }
+    { id: 'saver', icon: Battery, particles: false, reducedMotion: true },
+    { id: 'balanced', icon: Gauge, particles: false, reducedMotion: false },
+    { id: 'full', icon: Sparkles, particles: true, reducedMotion: false }
 ];
 
 const PerformanceSettings = () => {
+    const t = useT();
     const { performance, updatePerformance } = useTheme();
     const current = PRESETS.find(p => p.particles === !!performance.particles && p.reducedMotion === !!performance.reducedMotion)?.id;
     const apply = (p) => {
@@ -214,13 +412,13 @@ const PerformanceSettings = () => {
     };
     return (
         <div className="space-y-4">
-            <Panel title="Performance" subtitle="On older school computers, fewer effects keep games smooth. Games also lower their quality automatically when a device is slow.">
+            <Panel title={t('settings.tabs.performance')} subtitle={t('settings.performanceText')}>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {PRESETS.map(p => (
                         <Choice key={p.id} selected={current === p.id} onClick={() => apply(p)} className="p-4">
                             <p.icon size={22} className="text-primary-500" />
-                            <span className="block font-bold mt-2 text-gray-900 dark:text-white">{p.label}</span>
-                            <span className="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">{p.text}</span>
+                            <span className="block font-bold mt-2 text-gray-900 dark:text-white">{t(`settings.presets.${p.id}.label`)}</span>
+                            <span className="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t(`settings.presets.${p.id}.text`)}</span>
                         </Choice>
                     ))}
                 </div>
@@ -228,15 +426,15 @@ const PerformanceSettings = () => {
             <Panel>
                 <div className="space-y-5">
                     <Toggle
-                        label="Background stars and celebrations"
-                        help="Twinkling stars, shooting stars and confetti."
+                        label={t('settings.particles')}
+                        help={t('settings.particlesHelp')}
                         checked={!!performance.particles}
                         onChange={v => updatePerformance('particles', v)}
                     />
                     <div className="h-px bg-gray-200/70 dark:bg-white/[0.07]" />
                     <Toggle
-                        label="Reduced motion"
-                        help="Stops orbiting moons and softens page transitions. Game play itself is not affected."
+                        label={t('settings.reducedMotion')}
+                        help={t('settings.reducedMotionHelp')}
                         checked={!!performance.reducedMotion}
                         onChange={v => updatePerformance('reducedMotion', v)}
                     />
@@ -249,22 +447,22 @@ const PerformanceSettings = () => {
 // ---------- Language ----------
 
 const LANGUAGES = [
-    { code: 'en', native: 'English', label: 'English' },
-    { code: 'uz', native: "O'zbekcha", label: 'Uzbek' },
-    { code: 'ru', native: 'Русский', label: 'Russian' }
+    { code: 'en', native: 'English' },
+    { code: 'uz', native: 'Oʻzbekcha' },
+    { code: 'ru', native: 'Русский' }
 ];
 
 const LanguageSettings = () => {
-    const { lang, setLang } = useLanguage();
+    const { lang, setLang, t } = useLanguage();
     return (
-        <Panel title="Application language" subtitle="Menus and navigation switch language right away. Game screens are in English for now.">
+        <Panel title={t('settings.languageTitle')} subtitle={t('settings.languageText')}>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {LANGUAGES.map(l => (
                     <Choice key={l.code} selected={lang === l.code} onClick={() => setLang(l.code)} className="flex items-center gap-3 p-4">
                         <Flag code={l.code} className="w-12 h-8 rounded-md shadow-sm" />
                         <span className="min-w-0">
                             <span className="block font-bold text-gray-900 dark:text-white">{l.native}</span>
-                            <span className="block text-xs text-gray-500 dark:text-gray-400">{l.label}</span>
+                            <span className="block text-xs text-gray-500 dark:text-gray-400">{t(`settings.languages.${l.code}`)}</span>
                         </span>
                     </Choice>
                 ))}
@@ -276,28 +474,32 @@ const LanguageSettings = () => {
 // ---------- Data ----------
 
 const DataSettings = () => {
+    const t = useT();
     const [confirm, setConfirm] = useState(false);
     return (
-        <Panel title="Your data" subtitle="Everything you make is saved in this browser.">
+        <Panel title={t('settings.tabs.data')} subtitle={t('settings.dataText')}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-rose-300/60 dark:border-rose-400/20 bg-rose-50 dark:bg-rose-500/[0.06] p-4">
                 <div className="flex items-start gap-3">
                     <IconOrb icon={Trash2} tone="rose" size={40} moon={false} />
                     <div>
-                        <h3 className="font-bold text-gray-900 dark:text-white">Delete all Orbit data in this browser</h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Removes your sets, settings and saved scores. Published sets stay public.</p>
+                        <h3 className="font-bold text-gray-900 dark:text-white">{t('settings.resetTitle')}</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('settings.resetText')}</p>
                     </div>
                 </div>
-                <button onClick={() => setConfirm(true)} className={cx(btn.danger, 'shrink-0')}>Delete everything</button>
+                <button onClick={() => setConfirm(true)} className={cx(btn.danger, 'shrink-0')}>{t('settings.resetButton')}</button>
             </div>
             <ConfirmDialog
                 open={confirm}
-                title="Delete everything?"
-                message="All your sets and settings will be removed from this browser. This cannot be undone."
-                confirmLabel="Delete everything"
+                title={t('settings.resetConfirmTitle')}
+                message={t('settings.resetConfirmText')}
+                confirmLabel={t('settings.resetButton')}
                 danger
                 onCancel={() => setConfirm(false)}
                 onConfirm={() => {
+                    // Keep the language and "a teacher signs in here", so the account comes back after the reload
+                    const keep = ['language', 'orbit.accountHint'].map(k => [k, localStorage.getItem(k)]);
                     localStorage.clear();
+                    keep.forEach(([k, v]) => v !== null && localStorage.setItem(k, v));
                     window.location.reload();
                 }}
             />
@@ -306,7 +508,7 @@ const DataSettings = () => {
 };
 
 const PANELS = {
-    profile: ProfileSettings,
+    account: AccountSettings,
     appearance: AppearanceSettings,
     sound: SoundSettings,
     performance: PerformanceSettings,
@@ -315,15 +517,18 @@ const PANELS = {
 };
 
 const Settings = () => {
-    const [active, setActive] = useState('profile');
+    // ?tab=account opens a tab directly (the sidebar's account link)
+    const [params, setParams] = useSearchParams();
+    const active = PANELS[params.get('tab')] ? params.get('tab') : 'account';
+    const setActive = (id) => setParams(id === 'account' ? {} : { tab: id }, { replace: true });
     const { t } = useLanguage();
     const Current = PANELS[active];
 
     return (
         <div className="space-y-6 md:pb-16">
-            <PageHeader icon={SettingsIcon} tone="slate" title={t('settings')} subtitle="Make Orbit yours." />
+            <PageHeader icon={SettingsIcon} tone="slate" title={t('nav.settings')} subtitle={t('settings.subtitle')} />
             <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-                <nav className="md:w-56 shrink-0 flex md:flex-col gap-1 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 pb-1 md:pb-0" aria-label="Settings sections">
+                <nav className="md:w-56 shrink-0 flex md:flex-col gap-1 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 pb-1 md:pb-0" aria-label={t('settings.sections')}>
                     {TABS.map(tab => (
                         <button
                             key={tab.id}
@@ -337,7 +542,7 @@ const Settings = () => {
                             )}
                         >
                             <tab.icon size={18} className={tab.id === 'data' && active !== 'data' ? 'text-rose-400' : ''} />
-                            {tab.label}
+                            {t(`settings.tabs.${tab.id}`)}
                         </button>
                     ))}
                 </nav>

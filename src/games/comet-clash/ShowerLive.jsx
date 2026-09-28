@@ -4,6 +4,8 @@ import { Lock, Unlock, Square, Users, Zap, Trophy, CheckCircle2 } from 'lucide-r
 import { rankPlayers } from '../../platform/rooms/hooks';
 import { isOnline } from '../../platform/rooms/rooms';
 import { audio } from '../../platform/audio/audio';
+import { useT } from '../../context/LanguageContext';
+import Slots from '../../i18n/Slots';
 
 const MEDALS = ['#fbbf24', '#cbd5e1', '#f59e0b'];
 
@@ -29,6 +31,7 @@ const Delta = ({ value }) => {
 
 // Teacher's big screen during a Meteor Shower
 const ShowerLive = ({ meta, players, shower, now, onEnd, onLock, soundToggle }) => {
+    const t = useT();
     const ranked = rankPlayers(players);
     const online = ranked.filter(p => isOnline(p, now));
     const status = shower?.status;
@@ -60,11 +63,11 @@ const ShowerLive = ({ meta, players, shower, now, onEnd, onLock, soundToggle }) 
 
     const controls = (
         <div className="flex flex-wrap gap-2">
-            <Btn onClick={() => onLock(!meta.locked)} title={meta.locked ? 'Unlock room' : 'Lock room'}>
+            <Btn onClick={() => onLock(!meta.locked)} title={meta.locked ? t('hostGame.unlock') : t('hostGame.lock')}>
                 {meta.locked ? <Lock size={16} /> : <Unlock size={16} />}
             </Btn>
             {soundToggle}
-            <Btn danger onClick={onEnd}><Square size={16} /> End</Btn>
+            <Btn danger onClick={onEnd}><Square size={16} /> {t('hostGame.end')}</Btn>
         </div>
     );
 
@@ -72,7 +75,7 @@ const ShowerLive = ({ meta, players, shower, now, onEnd, onLock, soundToggle }) 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
                 <div className="flex items-center gap-3">
-                    <span className="text-2xl sm:text-3xl font-black">Question {Math.max(1, round)} <span className="text-gray-500">/ {total}</span></span>
+                    <span className="text-2xl sm:text-3xl font-black"><Slots text={t('shower.questionOf')} slots={{ n: Math.max(1, round), total: <span className="text-gray-500">{total}</span> }} /></span>
                     <span className="text-sm text-gray-400 font-semibold flex items-center gap-1.5"><Users size={16} /> {online.length}</span>
                 </div>
                 {controls}
@@ -80,9 +83,9 @@ const ShowerLive = ({ meta, players, shower, now, onEnd, onLock, soundToggle }) 
 
             {(!status || status === 'intro') && (
                 <div className="rounded-3xl bg-white/5 border border-white/10 p-10 text-center">
-                    <p className="text-xs font-black uppercase tracking-[0.3em] text-emerald-300">Meteor Shower</p>
-                    <h2 className="text-4xl sm:text-6xl font-black mt-3">Get ready!</h2>
-                    <p className="text-gray-400 mt-3">Everyone answers every question. The fastest correct answer gets 100 points.</p>
+                    <p className="text-xs font-black uppercase tracking-[0.3em] text-emerald-300">{t('shower.name')}</p>
+                    <h2 className="text-4xl sm:text-6xl font-black mt-3">{t('shower.getReady')}</h2>
+                    <p className="text-gray-400 mt-3">{t('shower.hostIntro')}</p>
                 </div>
             )}
 
@@ -94,7 +97,7 @@ const ShowerLive = ({ meta, players, shower, now, onEnd, onLock, soundToggle }) 
                         <>
                             <p className="text-2xl sm:text-4xl font-black leading-snug break-words">{shower.q.prompt}</p>
                             {shower.q.kind !== 'single' && (
-                                <p className="mt-2 text-emerald-300 font-bold">{shower.q.kind === 'multi' ? 'Blast every correct answer' : 'Blast them in the right order'}</p>
+                                <p className="mt-2 text-emerald-300 font-bold">{shower.q.kind === 'multi' ? t('cc.hint.multi') : t('cc.hint.order')}</p>
                             )}
                             <div className="mt-6 flex flex-wrap justify-center gap-2">
                                 {shower.q.options.map((o, i) => (
@@ -105,7 +108,7 @@ const ShowerLive = ({ meta, players, shower, now, onEnd, onLock, soundToggle }) 
                                 <span className={`text-6xl font-black tabular-nums ${left < 5000 ? 'text-amber-300' : ''}`}>{Math.max(0, Math.ceil(left / 1000))}</span>
                                 <span className="text-left">
                                     <span className="block text-3xl font-black tabular-nums">{submitted} <span className="text-gray-500 text-xl">/ {online.length}</span></span>
-                                    <span className="block text-xs font-bold uppercase tracking-wider text-gray-400">answered</span>
+                                    <span className="block text-xs font-bold uppercase tracking-wider text-gray-400">{t('shower.answered')}</span>
                                 </span>
                             </div>
                             <div className="mt-6 h-2 rounded-full bg-white/10 overflow-hidden max-w-xl mx-auto">
@@ -120,17 +123,17 @@ const ShowerLive = ({ meta, players, shower, now, onEnd, onLock, soundToggle }) 
                 <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-6">
                     <section className="rounded-3xl bg-white/5 border border-white/10 p-6 text-center flex flex-col justify-center">
                         <CheckCircle2 size={40} className="mx-auto text-emerald-300" />
-                        <p className="mt-3 text-xs font-bold uppercase tracking-widest text-gray-400">Answer</p>
+                        <p className="mt-3 text-xs font-bold uppercase tracking-widest text-gray-400">{t('editor.answer')}</p>
                         <p className="text-3xl sm:text-4xl font-black mt-1 break-words">{shower.last.answer}</p>
-                        <p className="mt-4 text-gray-300"><b className="text-white">{shower.last.found}</b> of {shower.last.answered} found it</p>
+                        <p className="mt-4 text-gray-300"><Slots text={t('shower.foundIt')} slots={{ found: <b className="text-white">{shower.last.found}</b>, count: shower.last.answered }} /></p>
                         {shower.last.fastest && players[shower.last.fastest.pid] && (
                             <p className="mt-2 text-amber-300 font-bold flex items-center justify-center gap-1.5">
-                                <Zap size={16} /> Fastest: {players[shower.last.fastest.pid].name} ({(shower.last.fastest.t / 1000).toFixed(1)}s)
+                                <Zap size={16} /> {t('shower.fastestIs', { name: players[shower.last.fastest.pid].name, s: (shower.last.fastest.t / 1000).toFixed(1) })}
                             </p>
                         )}
                     </section>
                     <section className="rounded-3xl bg-white/5 border border-white/10 p-5">
-                        <h2 className="text-xl font-black flex items-center gap-2 mb-3"><Trophy size={20} className="text-amber-300" /> Leaderboard</h2>
+                        <h2 className="text-xl font-black flex items-center gap-2 mb-3"><Trophy size={20} className="text-amber-300" /> {t('hostGame.leaderboard')}</h2>
                         <ol className="space-y-1.5">
                             {ranked.slice(0, 10).map((p, i) => (
                                 <motion.li layout key={p.id} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/5">
@@ -142,7 +145,7 @@ const ShowerLive = ({ meta, players, shower, now, onEnd, onLock, soundToggle }) 
                                 </motion.li>
                             ))}
                         </ol>
-                        {ranked.length > 10 && <p className="text-xs text-gray-500 mt-2">+{ranked.length - 10} more</p>}
+                        {ranked.length > 10 && <p className="text-xs text-gray-500 mt-2">{t('importer.more', { count: ranked.length - 10 })}</p>}
                     </section>
                 </div>
             )}

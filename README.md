@@ -1,9 +1,15 @@
 # Orbit
 
-Orbit is an interactive quiz-game platform for classrooms, in the spirit of Kahoot and Blooket. Teachers build question sets, pick a game, tune the settings and share a room code. Students join on their own devices with just the code and a nickname. They never need an account.
+Orbit is an interactive quiz-game platform for classrooms, in the spirit of Kahoot and Blooket. Teachers sign in, build question sets, pick a game, tune the settings and share a room code. Students join on their own devices with just the code and a nickname. They never need an account.
 
 ## Features
 
+- **Three languages:** English, Uzbek (Latin) and Russian, including every game screen. The first visit follows the browser's language. Students can switch on the join and nickname screens, teachers in Settings. English ships with the app; Uzbek and Russian load only when chosen.
+- **Teacher accounts:** creating and hosting need a teacher account. Joining a game never does.
+  - Sign in with **Google**, or with **email and password**. Email accounts must confirm their address through a verification email.
+  - Every teacher accepts the Terms of Use and Privacy Policy (the `/terms` and `/privacy` pages) before creating anything.
+  - Sets are saved to the account, so they follow the teacher to any device. Sets made in a browser before accounts existed move into the first account that signs in there.
+  - Settings → Account: change your name, sign out, or delete the account and everything in it.
 - **Create:** a question editor with five types: multiple choice, true/false, written answer, multi-select and put-in-order.
   - **Import from ChatGPT:** Orbit writes a ready prompt (topic, number of questions, grade, language, question types). Paste the AI's JSON answer back and a live preview shows what will be imported and why any question is skipped. The importer tolerates code fences, trailing commas, curly quotes and different key names.
   - **Examples:** every question type has a "+ Example" button, plus "One example of each".
@@ -31,24 +37,31 @@ Without Firebase keys, Orbit runs in **offline test mode**:
 
 - Question sets and the "public library" live in this browser.
 - Live games connect the **tabs of one browser**.
+- Teacher accounts are simulated. "Continue with Google" signs in a test teacher, and the verification email is replaced by a "Simulate clicking the link" button.
 
 To try a live game, host it in one tab and open `/join` in other tabs to join as students. Each tab becomes its own player. Add `?local=1` to any URL to force this mode even when Firebase is configured.
 
 ## Firebase setup (real classrooms)
 
 1. Create a project at [console.firebase.google.com](https://console.firebase.google.com). The free Spark plan is enough for a class.
-2. **Authentication → Sign-in method → Anonymous → Enable.**
-   - Every device gets an invisible anonymous id. Students still don't sign in.
-   - Later, teachers' anonymous sessions can be linked to Google accounts without losing their sets.
-3. **Firestore Database → Create database.** Paste the contents of [`firestore.rules`](firestore.rules) into the **Rules** tab.
-4. **Realtime Database → Create database.** Paste [`database.rules.json`](database.rules.json) into its **Rules** tab.
-5. **Project settings → Your apps → Web app.** Copy the config into a `.env` file, using [`.env.example`](.env.example) as the template. Include `VITE_FIREBASE_DATABASE_URL`.
-6. When deploying to Netlify, add the same `VITE_FIREBASE_*` variables under **Site settings → Environment variables**. [`public/_redirects`](public/_redirects) already makes links like `/play/123456` work.
+2. **Authentication → Sign-in method.** Enable three providers:
+   - **Anonymous:** every device gets an invisible id, so students can join games without signing in.
+   - **Google:** pick a support email when asked.
+   - **Email/Password:** leave "Email link (passwordless sign-in)" off.
+3. **Authentication → Settings → Authorized domains.** Add your site's domain (for example `your-site.netlify.app` and any custom domain). Without it, Google sign-in and verification links fail on the live site. `localhost` is there by default.
+4. **Authentication → Templates** (optional). The verification and password-reset emails are sent in the language the teacher is using Orbit in. You can change the sender name and the wording here.
+5. **Firestore Database → Create database.** Paste the contents of [`firestore.rules`](firestore.rules) into the **Rules** tab and press **Publish**.
+6. **Realtime Database → Create database.** Paste [`database.rules.json`](database.rules.json) into its **Rules** tab and press **Publish**.
+   - Both rule files changed when teacher accounts were added: only signed-in teachers with a verified email can save sets, publish or open game rooms. Re-paste them whenever they change.
+7. **Project settings → Your apps → Web app.** Copy the config into a `.env` file, using [`.env.example`](.env.example) as the template. Include `VITE_FIREBASE_DATABASE_URL`.
+   - Optional: `VITE_CONTACT_EMAIL` is shown on the Terms and Privacy pages as the address for questions. Without it, those pages tell people to ask the school.
+8. When deploying to Netlify, add the same `VITE_*` variables under **Site settings → Environment variables**. [`public/_redirects`](public/_redirects) already makes links like `/play/123456` work.
 
 Limits to know about:
 
 - On the free plan, the Realtime Database allows **100 simultaneous connections**, which is roughly three classes at once. The pay-as-you-go Blaze plan removes the limit and costs very little at school scale.
 - Images are deliberately not supported, to keep the database small.
+- Game rooms are temporary. When a teacher opens a new room, Orbit deletes the rooms that teacher opened on the same device more than 7 days ago.
 
 ## Comet Clash rules
 
@@ -104,9 +117,11 @@ At the end, the host screen shows a podium and a **class report** of the questio
 
 ```
 src/
+  i18n/                     translation engine + locales/en|uz|ru (en is bundled, uz/ru load on demand)
   platform/                 shared by every page and game
+    auth/                   teacher accounts: Firebase Auth, or a simulated version for offline test mode
     questions/              question types, validation, choice rounds, game compatibility
-    sets/                   my sets (browser), featured sets, public library (Firestore), search
+    sets/                   my sets (account, cached in the browser), featured sets, public library (Firestore), search
     realtime/               one small database interface: Firebase | localStorage (offline) | memory (tests)
     rooms/                  room codes, joining, presence, moderation, React hooks
     games/registry.js       the list of games: kind, supported types, settings schema, components
@@ -115,9 +130,18 @@ src/
     comet-clash/            playfield engine, host controller (game rules), host / player / practice screens
     grid-battle/            smart-board game
     millionaire/            smart-board game
-  pages/                    Home, Discover, Create, SetEditor, SetView, Games, HostSetup, HostRoom, Play, Board...
-  components/               UI kit, editor, set cards, host setup panels
+  pages/                    Home, Discover, Create, SetEditor, SetView, Games, HostSetup, HostRoom, Play, Board, SignIn, Legal...
+  components/               UI kit, editor, set cards, host setup panels, auth (sign-in, verify email, accept terms)
 ```
+
+## Translations
+
+Every text on screen comes from `src/i18n/locales/<lang>/`. Components call `t('section.key', { vars })` from `useT()`. Code outside React (the canvas game, toasts) uses the `t` exported by `src/i18n`.
+
+- Placeholders are written `{name}`. Counts use plural forms (`one` / `other` in English and Uzbek, `one` / `few` / `many` in Russian) and are picked automatically from `count`.
+- `**bold**` in a text is shown bold (the `Rich` component). `Slots` puts links or styled words into `{placeholders}`, so every language keeps its own word order.
+- A missing key falls back to English, and in development it logs a warning.
+- When you add a text, add it to all three locales. Uzbek uses ʻ (U+02BB) in oʻ / gʻ and ʼ (U+02BC) for the tutuq belgisi.
 
 ## Adding a new game
 
@@ -126,6 +150,7 @@ src/
    - `kind`: `'live'` (students join with a code) or `'board'` (one big screen).
    - `compat`: for each question type, `'native'`, `'adapted'` or `'unsupported'`. Host setup uses this to show teachers which questions will be played.
    - `settings`: a list of `number` / `toggle` / `select` / `segmented` fields. The host setup form is generated from it, and `sanitizeSettings` validates it.
+   - `i18n`: the name of the game's translation section. Its name, description and setting labels live under `games.<i18n>` and `gs.<i18n>` in every locale.
    - Components:
      - Board games: `Board({ questions, settings, onExit })`.
      - Live games: `Host({ code, onExit })` and `Player({ code, playerId, onExit })`.
@@ -134,5 +159,4 @@ src/
 
 ## Roadmap
 
-- Google sign-in for teachers, so sets sync across devices. The data already has `ownerId` fields. Joining a game will stay account-free.
 - More live game modes built on the same room layer.

@@ -2,6 +2,7 @@
 // Written answers are adapted into multiple choice using decoys from the rest of the set.
 
 import { answerTexts, normalizeAnswer } from './types';
+import { t } from '../../i18n';
 
 export const shuffle = (arr, rand = Math.random) => {
     const a = [...arr];
@@ -76,7 +77,8 @@ export const toChoiceRound = (q, pool, { maxOptions = 4, rand = Math.random } = 
             return {
                 kind: 'single',
                 prompt: q.prompt,
-                options: [{ text: 'True', correct: q.answer !== false }, { text: 'False', correct: q.answer === false }]
+                // Built on the host, so True/False follow the teacher's language like the rest of the question
+                options: [{ text: t('common.true'), correct: q.answer !== false }, { text: t('common.false'), correct: q.answer === false }]
             };
         case 'order':
             return {

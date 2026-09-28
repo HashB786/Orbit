@@ -6,11 +6,13 @@ import { audio } from '../platform/audio/audio';
 import { Spinner } from '../components/ui';
 import { getGame } from '../platform/games/registry';
 import { loadBoardSession } from '../platform/games/boardSession';
+import { useT } from '../context/LanguageContext';
 
 // Smart-board games: full screen, one device, no room code
 const Board = () => {
     const { gameId } = useParams();
     const navigate = useNavigate();
+    const t = useT();
     const session = loadBoardSession();
     const game = getGame(gameId);
     const sound = useSyncExternalStore(audio.subscribe, audio.getSettings);
@@ -19,8 +21,8 @@ const Board = () => {
         return (
             <SpaceScreen center>
                 <div className="max-w-sm text-center">
-                    <p className="text-lg font-bold">This board game isn't set up yet.</p>
-                    <Link to="/games" className="inline-block mt-6 px-6 py-3 rounded-2xl bg-emerald-500 text-gray-950 font-black">Choose a game</Link>
+                    <p className="text-lg font-bold">{t('board.notSetUp')}</p>
+                    <Link to="/games" className="inline-block mt-6 px-6 py-3 rounded-2xl bg-emerald-500 text-gray-950 font-black">{t('board.choose')}</Link>
                 </div>
             </SpaceScreen>
         );
@@ -36,17 +38,17 @@ const Board = () => {
             </Suspense>
             <button
                 onClick={() => { audio.unlock(); audio.updateSettings({ muted: !sound.muted }); }}
-                aria-label={sound.muted ? 'Unmute' : 'Mute'}
+                aria-label={sound.muted ? t('common.unmute') : t('common.mute')}
                 className="fixed top-3 right-14 sm:right-28 z-[110] bg-black/40 text-white w-10 h-10 rounded-xl hover:bg-white/20 transition-colors flex items-center justify-center"
             >
                 {sound.muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
             </button>
             <button
                 onClick={exit}
-                aria-label="Exit game"
+                aria-label={t('board.exit')}
                 className="fixed top-3 right-3 z-[110] bg-black/40 backdrop-blur text-white w-10 h-10 sm:w-auto sm:h-auto sm:px-4 sm:py-2 rounded-xl font-bold hover:bg-white/20 hover:text-red-300 transition-colors flex items-center justify-center gap-2"
             >
-                <X size={18} /> <span className="hidden sm:inline">Exit</span>
+                <X size={18} /> <span className="hidden sm:inline">{t('common.exit')}</span>
             </button>
         </div>
     );

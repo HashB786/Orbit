@@ -1,9 +1,9 @@
 // Firebase Realtime Database behind the same small interface as the local/memory versions.
 
-import { getDatabaseApi, getAuthUser } from '../../config/firebase';
+import { getDatabaseApi, getAuthApi, getAuthUser } from '../../config/firebase';
 
 export const createFirebaseRealtime = async () => {
-    const [api, user] = await Promise.all([getDatabaseApi(), getAuthUser()]);
+    const [api, { auth }] = await Promise.all([getDatabaseApi(), getAuthApi(), getAuthUser()]);
     const { db, ref, get, set, update, remove, onValue, runTransaction, onDisconnect, push } = api;
 
     let offset = 0;
@@ -19,7 +19,10 @@ export const createFirebaseRealtime = async () => {
 
     return {
         mode: 'firebase',
-        clientId: user.uid,
+        // Read live: a guest who signs in as a teacher (or signs out) keeps using the right id
+        get clientId() {
+            return auth.currentUser?.uid || '';
+        },
         now: () => Date.now() + offset,
         newKey: () => push(ref(db, 'keys')).key,
         get: async (path) => (await get(ref(db, path))).val(),

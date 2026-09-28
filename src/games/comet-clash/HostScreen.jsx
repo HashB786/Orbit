@@ -18,6 +18,9 @@ import { useTheme } from '../../context/ThemeContext';
 import { CometClashHost } from './hostLogic';
 import { MeteorShowerHost } from './showerLogic';
 import ShowerLive from './ShowerLive';
+import { useT } from '../../context/LanguageContext';
+import Slots from '../../i18n/Slots';
+import { gameName, getGame } from '../../platform/games/registry';
 
 const MEDALS = ['#fbbf24', '#cbd5e1', '#f59e0b'];
 
@@ -41,10 +44,11 @@ const HostButton = ({ children, onClick, variant = 'ghost', disabled, title }) =
 );
 
 const SoundToggle = () => {
+    const t = useT();
     const [muted, setMuted] = useState(audio.getSettings().muted);
     return (
         <HostButton
-            title={muted ? 'Unmute' : 'Mute'}
+            title={muted ? t('common.unmute') : t('common.mute')}
             onClick={() => {
                 audio.unlock();
                 audio.updateSettings({ muted: !muted });
@@ -59,6 +63,7 @@ const SoundToggle = () => {
 // ---------- LOBBY ----------
 
 const Lobby = ({ code, meta, players, onStart, onKick, onLock }) => {
+    const t = useT();
     const joinUrl = `${window.location.origin}/play/${code}`;
     const shortUrl = `${window.location.host}/join`;
     const list = rankPlayers(players);
@@ -69,23 +74,23 @@ const Lobby = ({ code, meta, players, onStart, onKick, onLock }) => {
     return (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-6">
             <section className="rounded-3xl bg-white/5 border border-white/10 p-6 text-center flex flex-col items-center">
-                <p className="text-gray-400 font-semibold">Join at <b className="text-white">{shortUrl}</b> with code</p>
+                <p className="text-gray-400 font-semibold"><Slots text={t('hostGame.joinAt')} slots={{ url: <b className="text-white">{shortUrl}</b> }} /></p>
                 <p className="mt-2 text-6xl sm:text-7xl font-black tracking-[0.12em] tabular-nums">{code.slice(0, 3)} {code.slice(3)}</p>
                 <div className="mt-5 p-3 bg-white rounded-2xl">
                     <QRCode value={joinUrl} size={168} />
                 </div>
-                <p className="mt-3 text-xs text-gray-500">Scan to join instantly</p>
+                <p className="mt-3 text-xs text-gray-500">{t('hostGame.scan')}</p>
                 <div className="mt-5 flex flex-wrap justify-center gap-2">
                     {shower ? (
                         <>
-                            <Pill><Sparkles size={14} /> Meteor Shower</Pill>
-                            <Pill><Timer size={14} /> {s.showerQuestions} questions</Pill>
+                            <Pill><Sparkles size={14} /> {t('shower.name')}</Pill>
+                            <Pill><Timer size={14} /> {t('common.questions', { count: s.showerQuestions })}</Pill>
                         </>
                     ) : (
                         <>
-                            <Pill><Swords size={14} /> {s.rounds} rounds per duel</Pill>
-                            <Pill><Timer size={14} /> {Math.round((s.duration || 0) / 60)} min</Pill>
-                            {s.bots !== false && <Pill><Bot size={14} /> Bots on</Pill>}
+                            <Pill><Swords size={14} /> {t('hostGame.roundsPerDuel', { count: s.rounds })}</Pill>
+                            <Pill><Timer size={14} /> {t('units.minutes', { n: Math.round((s.duration || 0) / 60) })}</Pill>
+                            {s.bots !== false && <Pill><Bot size={14} /> {t('hostGame.botsOn')}</Pill>}
                         </>
                     )}
                 </div>
@@ -93,10 +98,10 @@ const Lobby = ({ code, meta, players, onStart, onKick, onLock }) => {
 
             <section className="rounded-3xl bg-white/5 border border-white/10 p-5 sm:p-6 flex flex-col min-h-[20rem]">
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                    <h2 className="text-2xl font-black flex items-center gap-2"><Users size={24} /> {list.length} player{list.length === 1 ? '' : 's'}</h2>
+                    <h2 className="text-2xl font-black flex items-center gap-2"><Users size={24} /> {t('common.players', { count: list.length })}</h2>
                     <div className="flex gap-2">
-                        <HostButton onClick={() => onLock(!meta.locked)} title={meta.locked ? 'Unlock room' : 'Lock room'}>
-                            {meta.locked ? <Lock size={18} /> : <Unlock size={18} />} {meta.locked ? 'Locked' : 'Open'}
+                        <HostButton onClick={() => onLock(!meta.locked)} title={meta.locked ? t('hostGame.unlock') : t('hostGame.lock')}>
+                            {meta.locked ? <Lock size={18} /> : <Unlock size={18} />} {meta.locked ? t('hostGame.locked') : t('hostGame.open')}
                         </HostButton>
                         <SoundToggle />
                     </div>
@@ -105,7 +110,7 @@ const Lobby = ({ code, meta, players, onStart, onKick, onLock }) => {
                 {list.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center text-gray-400">
                         <Hourglass size={36} className="mb-3 opacity-60" />
-                        <p className="font-semibold">Waiting for students to join…</p>
+                        <p className="font-semibold">{t('hostGame.waiting')}</p>
                     </div>
                 ) : (
                     <ul className="flex flex-wrap gap-2 content-start">
@@ -113,7 +118,7 @@ const Lobby = ({ code, meta, players, onStart, onKick, onLock }) => {
                             <motion.li key={p.id} initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
                                 <button
                                     onClick={() => onKick(p)}
-                                    title={`Remove ${p.name}`}
+                                    title={t('hostGame.removeName', { name: p.name })}
                                     className="group flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-white/10 hover:bg-red-500/25 transition-colors"
                                 >
                                     <span className="w-6 h-6 rounded-full" style={{ background: p.color }} />
@@ -126,10 +131,10 @@ const Lobby = ({ code, meta, players, onStart, onKick, onLock }) => {
 
                 <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
                     <p className="text-sm text-gray-400">
-                        {list.length === 1 && !shower && s.bots !== false ? 'One player? They will duel a bot.' : 'Tap a name to remove a player.'}
+                        {list.length === 1 && !shower && s.bots !== false ? t('hostGame.onePlayer') : t('hostGame.tapToRemove')}
                     </p>
                     <HostButton variant="primary" onClick={onStart} disabled={!canStart}>
-                        <Play size={20} className="fill-current" /> Start game
+                        <Play size={20} className="fill-current" /> {t('hostGame.start')}
                     </HostButton>
                 </div>
             </section>
@@ -140,25 +145,26 @@ const Lobby = ({ code, meta, players, onStart, onKick, onLock }) => {
 // ---------- LIVE ----------
 
 const DuelCard = ({ m, players, now }) => {
+    const t = useT();
     const a = players[m.a];
-    const b = m.b === 'bot' ? { name: m.bot?.name || 'Bot', color: '#94a3b8', bot: true } : players[m.b];
-    const status = m.status === 'intro' ? 'Get ready'
-        : m.status === 'round' ? (m.sudden ? 'Sudden death!' : `Round ${m.round}/${m.rounds}`)
-            : m.status === 'result' ? 'Round over'
-                : m.outcome?.winner === m.a ? `${a?.name} wins!`
-                    : m.outcome?.winner === m.b ? `${b?.name} wins!`
-                        : m.outcome?.reason === 'time' ? 'Time up' : 'Draw';
+    const b = m.b === 'bot' ? { name: m.bot?.name || t('cc.bot'), color: '#94a3b8', bot: true } : players[m.b];
+    const status = m.status === 'intro' ? t('hostGame.duel.ready')
+        : m.status === 'round' ? (m.sudden ? t('cc.sudden') : t('cc.round', { n: m.round, total: m.rounds }))
+            : m.status === 'result' ? t('hostGame.duel.roundOver')
+                : m.outcome?.winner === m.a ? t('hostGame.duel.wins', { name: a?.name })
+                    : m.outcome?.winner === m.b ? t('hostGame.duel.wins', { name: b?.name })
+                        : m.outcome?.reason === 'time' ? t('cc.timeUp') : t('cc.draw');
     return (
         <li className="rounded-2xl bg-white/5 border border-white/10 p-3">
             <div className="flex items-center justify-between gap-2 text-xs font-bold text-gray-400 mb-2">
                 <span className={m.sudden && m.status === 'round' ? 'text-amber-300' : ''}>{status}</span>
-                {m.status === 'round' && now < m.roundStartAt + 60000 && <span className="tabular-nums">{m.q?.kind === 'order' ? 'Order' : m.q?.kind === 'multi' ? 'Multi' : ''}</span>}
+                {m.status === 'round' && now < m.roundStartAt + 60000 && <span className="tabular-nums">{m.q?.kind === 'order' ? t('qtypes.order.short') : m.q?.kind === 'multi' ? t('qtypes.multi.short') : ''}</span>}
             </div>
             {[[m.a, a], [m.b, b]].map(([id, p]) => (
                 <div key={id} className="flex items-center justify-between gap-2 py-0.5">
                     <span className="flex items-center gap-2 min-w-0">
                         <span className="w-3 h-3 rounded-full shrink-0" style={{ background: p?.color || '#64748b' }} />
-                        <span className="font-bold truncate">{p?.name || 'Left'}</span>
+                        <span className="font-bold truncate">{p?.name || t('hostGame.duel.left')}</span>
                         {p?.bot && <Bot size={14} className="text-gray-400 shrink-0" />}
                     </span>
                     <span className="font-black tabular-nums text-lg">{m.scores?.[id] ?? 0}</span>
@@ -169,6 +175,7 @@ const DuelCard = ({ m, players, now }) => {
 };
 
 const Live = ({ meta, players, matches, now, onEnd, onAddTime, onLock, code }) => {
+    const t = useT();
     const ranked = rankPlayers(players);
     const active = Object.values(matches || {}).filter(m => m?.id).sort((x, y) => x.createdAt - y.createdAt);
     const waiting = ranked.filter(p => p.status === 'queued' && isOnline(p, now));
@@ -180,21 +187,21 @@ const Live = ({ meta, players, matches, now, onEnd, onAddTime, onLock, code }) =
             <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
                 <div className="flex items-center gap-3">
                     <span className={`text-5xl sm:text-6xl font-black tabular-nums ${remaining < 30000 ? 'text-amber-300' : ''}`}>{formatClock(remaining)}</span>
-                    <span className="text-gray-400 text-sm font-semibold leading-tight">left<br />Join: <b className="text-white tabular-nums">{code}</b></span>
+                    <span className="text-gray-400 text-sm font-semibold leading-tight">{t('hostGame.left')}<br /><Slots text={t('hostGame.joinCode')} slots={{ code: <b className="text-white tabular-nums">{code}</b> }} /></span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <HostButton onClick={onAddTime} title="Add one minute"><Plus size={16} /> 1 min</HostButton>
-                    <HostButton onClick={() => onLock(!meta.locked)} title={meta.locked ? 'Unlock room' : 'Lock room'}>
+                    <HostButton onClick={onAddTime} title={t('hostGame.addMinute')}><Plus size={16} /> {t('units.minutes', { n: 1 })}</HostButton>
+                    <HostButton onClick={() => onLock(!meta.locked)} title={meta.locked ? t('hostGame.unlock') : t('hostGame.lock')}>
                         {meta.locked ? <Lock size={16} /> : <Unlock size={16} />}
                     </HostButton>
                     <SoundToggle />
-                    <HostButton variant="danger" onClick={onEnd}><Square size={16} /> End</HostButton>
+                    <HostButton variant="danger" onClick={onEnd}><Square size={16} /> {t('hostGame.end')}</HostButton>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-6">
                 <section className="rounded-3xl bg-white/5 border border-white/10 p-4 sm:p-5">
-                    <h2 className="text-xl font-black flex items-center gap-2 mb-3"><Trophy size={20} className="text-amber-300" /> Leaderboard</h2>
+                    <h2 className="text-xl font-black flex items-center gap-2 mb-3"><Trophy size={20} className="text-amber-300" /> {t('hostGame.leaderboard')}</h2>
                     <ol className="space-y-1.5">
                         {ranked.slice(0, 12).map((p, i) => (
                             <motion.li layout key={p.id} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/5">
@@ -206,24 +213,24 @@ const Live = ({ meta, players, matches, now, onEnd, onAddTime, onLock, code }) =
                             </motion.li>
                         ))}
                     </ol>
-                    {ranked.length > 12 && <p className="text-xs text-gray-500 mt-2">+{ranked.length - 12} more</p>}
+                    {ranked.length > 12 && <p className="text-xs text-gray-500 mt-2">{t('importer.more', { count: ranked.length - 12 })}</p>}
                 </section>
 
                 <section className="space-y-4">
                     <div className="rounded-3xl bg-white/5 border border-white/10 p-4 sm:p-5">
-                        <h2 className="text-xl font-black flex items-center gap-2 mb-3"><Swords size={20} className="text-emerald-300" /> Duels <span className="text-gray-500 text-base">({active.length})</span></h2>
+                        <h2 className="text-xl font-black flex items-center gap-2 mb-3"><Swords size={20} className="text-emerald-300" /> {t('hostGame.duels')} <span className="text-gray-500 text-base">({active.length})</span></h2>
                         {active.length ? (
                             <ul className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
                                 {active.map(m => <DuelCard key={m.id} m={m} players={players} now={now} />)}
                             </ul>
                         ) : (
-                            <p className="text-gray-400 text-sm">Pairing players…</p>
+                            <p className="text-gray-400 text-sm">{t('hostGame.pairing')}</p>
                         )}
                     </div>
                     {(waiting.length > 0 || away.length > 0) && (
                         <div className="rounded-3xl bg-white/5 border border-white/10 p-4 text-sm text-gray-300 space-y-1">
-                            {waiting.length > 0 && <p><Hourglass size={14} className="inline mr-1.5" />Finding rivals for: <b className="text-white">{waiting.map(p => p.name).join(', ')}</b></p>}
-                            {away.length > 0 && <p className="text-gray-400"><WifiOff size={14} className="inline mr-1.5" />Offline: {away.map(p => p.name).join(', ')}</p>}
+                            {waiting.length > 0 && <p><Hourglass size={14} className="inline mr-1.5" /><Slots text={t('hostGame.findingFor')} slots={{ names: <b className="text-white">{waiting.map(p => p.name).join(', ')}</b> }} /></p>}
+                            {away.length > 0 && <p className="text-gray-400"><WifiOff size={14} className="inline mr-1.5" />{t('hostGame.offline', { names: away.map(p => p.name).join(', ') })}</p>}
                         </div>
                     )}
                 </section>
@@ -235,6 +242,7 @@ const Live = ({ meta, players, matches, now, onEnd, onAddTime, onLock, code }) =
 // ---------- RESULTS ----------
 
 const Results = ({ meta, players, stats, questions, onExit, onPlayAgain }) => {
+    const t = useT();
     const [starting, setStarting] = useState(false);
     const { performance } = useTheme();
     const ranked = rankPlayers(players);
@@ -259,10 +267,10 @@ const Results = ({ meta, players, stats, questions, onExit, onPlayAgain }) => {
 
     return (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-            <h1 className="text-center text-3xl sm:text-5xl font-black">Game over!</h1>
+            <h1 className="text-center text-3xl sm:text-5xl font-black">{t('hostGame.gameOver')}</h1>
             <p className="text-center text-gray-400 mt-2">{meta.setTitle}</p>
             {meta.endReason === 'host-offline' && (
-                <p className="text-center text-amber-300 text-sm font-semibold mt-2">The game ended because this screen was offline for too long.</p>
+                <p className="text-center text-amber-300 text-sm font-semibold mt-2">{t('hostGame.endedOffline')}</p>
             )}
 
             {ranked.length > 0 && (
@@ -277,7 +285,7 @@ const Results = ({ meta, players, stats, questions, onExit, onPlayAgain }) => {
                         >
                             {order[i] === 0 && <Crown size={32} className="text-amber-300 mb-1" />}
                             <span className="font-black text-center truncate max-w-full">{p.name}</span>
-                            <span className="text-sm text-gray-400 mb-2 tabular-nums">{p.score} pts</span>
+                            <span className="text-sm text-gray-400 mb-2 tabular-nums">{t('cc.points', { count: p.score })}</span>
                             <div className={`w-full ${heights[i]} rounded-t-2xl flex items-start justify-center pt-2 text-3xl font-black text-gray-900`} style={{ background: MEDALS[order[i]] }}>
                                 {order[i] + 1}
                             </div>
@@ -288,7 +296,7 @@ const Results = ({ meta, players, stats, questions, onExit, onPlayAgain }) => {
 
             <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <section className="rounded-3xl bg-white/5 border border-white/10 p-5">
-                    <h2 className="text-lg font-black mb-3 flex items-center gap-2"><Trophy size={18} className="text-amber-300" /> Final ranking</h2>
+                    <h2 className="text-lg font-black mb-3 flex items-center gap-2"><Trophy size={18} className="text-amber-300" /> {t('hostGame.finalRanking')}</h2>
                     <ol className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
                         {ranked.map((p, i) => (
                             <li key={p.id} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/5">
@@ -298,13 +306,13 @@ const Results = ({ meta, players, stats, questions, onExit, onPlayAgain }) => {
                                 <span className="font-black tabular-nums w-12 text-right">{p.score}</span>
                             </li>
                         ))}
-                        {!ranked.length && <li className="text-gray-400 text-sm">Nobody played.</li>}
+                        {!ranked.length && <li className="text-gray-400 text-sm">{t('hostGame.nobody')}</li>}
                     </ol>
                 </section>
 
                 <section className="rounded-3xl bg-white/5 border border-white/10 p-5">
-                    <h2 className="text-lg font-black mb-1 flex items-center gap-2"><BookOpen size={18} className="text-sky-300" /> Class report</h2>
-                    <p className="text-xs text-gray-400 mb-3">Questions the class found hardest. Worth reviewing together.</p>
+                    <h2 className="text-lg font-black mb-1 flex items-center gap-2"><BookOpen size={18} className="text-sky-300" /> {t('hostGame.report')}</h2>
+                    <p className="text-xs text-gray-400 mb-3">{t('hostGame.reportText')}</p>
                     {report.length ? (
                         <ul className="space-y-3">
                             {report.map((r, i) => (
@@ -320,7 +328,7 @@ const Results = ({ meta, players, stats, questions, onExit, onPlayAgain }) => {
                                 </li>
                             ))}
                         </ul>
-                    ) : <p className="text-sm text-gray-400">No answers recorded.</p>}
+                    ) : <p className="text-sm text-gray-400">{t('hostGame.noAnswers')}</p>}
                 </section>
             </div>
 
@@ -337,15 +345,15 @@ const Results = ({ meta, players, stats, questions, onExit, onPlayAgain }) => {
                     disabled={starting}
                     className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 text-gray-950 font-black transition-colors"
                 >
-                    <RotateCcw size={18} /> {starting ? 'Opening a new room…' : 'Play again'}
+                    <RotateCcw size={18} /> {starting ? t('hostGame.opening') : t('hostGame.playAgain')}
                 </button>
                 {meta.setId && (
                     <Link to={`/host/${meta.setId}?game=comet-clash`} className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/15 font-bold transition-colors">
-                        Change settings
+                        {t('hostGame.changeSettings')}
                     </Link>
                 )}
                 <button onClick={onExit} className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/15 font-bold transition-colors">
-                    <Home size={18} /> Back to Orbit
+                    <Home size={18} /> {t('hostGame.backToOrbit')}
                 </button>
             </div>
         </div>
@@ -356,6 +364,7 @@ const Results = ({ meta, players, stats, questions, onExit, onPlayAgain }) => {
 
 const HostScreen = ({ code, onExit }) => {
     const navigate = useNavigate();
+    const t = useT();
     const { rt, error } = useRealtime();
     const tabId = getTabId();
     const meta = useRoomValue(rt, roomPath(code, 'meta'));
@@ -441,13 +450,13 @@ const HostScreen = ({ code, onExit }) => {
     }, [playerCount, status]);
 
     if (error) {
-        return <div className="app-height flex items-center justify-center text-white" style={SPACE_BG}><p>Could not connect: {String(error.message || error)}</p></div>;
+        return <div className="app-height flex items-center justify-center text-white" style={SPACE_BG}><p>{t('roomErrors.connection')}</p></div>;
     }
     if (!rt || meta === undefined || claim === 'checking') {
         return <div className="app-height flex items-center justify-center" style={SPACE_BG}><Spinner size={36} className="text-emerald-400" /></div>;
     }
     if (!meta) {
-        return <div className="app-height flex items-center justify-center text-white" style={SPACE_BG}><p>This room no longer exists.</p></div>;
+        return <div className="app-height flex items-center justify-center text-white" style={SPACE_BG}><p>{t('cc.noGame')}</p></div>;
     }
 
     if (claim === 'other') {
@@ -455,8 +464,8 @@ const HostScreen = ({ code, onExit }) => {
             <div className="app-height flex items-center justify-center px-4 text-white" style={SPACE_BG}>
                 <div className="max-w-sm text-center">
                     <Monitor size={40} className="mx-auto mb-4 text-sky-300" />
-                    <h1 className="text-2xl font-black">This game is open in another tab</h1>
-                    <p className="text-gray-400 mt-2">Only one screen can run the game at a time.</p>
+                    <h1 className="text-2xl font-black">{t('hostGame.otherTab')}</h1>
+                    <p className="text-gray-400 mt-2">{t('hostGame.otherTabText')}</p>
                     <button
                         onClick={async () => {
                             await rt.update(roomPath(code, 'host'), { tab: tabId, connected: true, lastSeen: rt.now() });
@@ -464,7 +473,7 @@ const HostScreen = ({ code, onExit }) => {
                         }}
                         className="mt-6 w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black transition-colors"
                     >
-                        Run the game here
+                        {t('hostGame.runHere')}
                     </button>
                 </div>
             </div>
@@ -475,12 +484,12 @@ const HostScreen = ({ code, onExit }) => {
         <div className="app-height w-full overflow-y-auto overflow-x-hidden text-white" style={SPACE_BG} onPointerDown={() => audio.unlock()}>
             <header className="flex items-center justify-between gap-3 px-4 sm:px-6 pt-4">
                 <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-xs font-black uppercase tracking-[0.2em] text-emerald-300">Comet Clash{mode === 'shower' ? ' · Meteor Shower' : ''}</span>
+                    <span className="text-xs font-black uppercase tracking-[0.2em] text-emerald-300">{gameName(t, getGame('comet-clash'))}{mode === 'shower' ? ` · ${t('shower.name')}` : ''}</span>
                     <span className="text-gray-500 hidden sm:inline">·</span>
                     <span className="text-sm text-gray-400 truncate hidden sm:inline">{meta.setTitle}</span>
                 </div>
                 {meta.status !== 'ended' && (
-                    <button onClick={() => setConfirmEnd(true)} className="text-sm font-semibold text-gray-400 hover:text-white">Close room</button>
+                    <button onClick={() => setConfirmEnd(true)} className="text-sm font-semibold text-gray-400 hover:text-white">{t('hostGame.closeRoom')}</button>
                 )}
             </header>
 
@@ -534,24 +543,24 @@ const HostScreen = ({ code, onExit }) => {
 
             {meta.status === 'live' && !controllerReady && (
                 <div className="fixed bottom-4 inset-x-0 flex justify-center px-4">
-                    <p className="px-4 py-2 rounded-full bg-amber-400 text-gray-950 text-sm font-bold flex items-center gap-2"><AlertTriangle size={16} /> Reconnecting…</p>
+                    <p className="px-4 py-2 rounded-full bg-amber-400 text-gray-950 text-sm font-bold flex items-center gap-2"><AlertTriangle size={16} /> {t('hostGame.reconnecting')}</p>
                 </div>
             )}
 
             <ConfirmDialog
                 open={!!kickTarget}
-                title={`Remove ${kickTarget?.name}?`}
-                message="They will be removed from this game and can't rejoin with the same device."
-                confirmLabel="Remove"
+                title={t('hostGame.removeTitle', { name: kickTarget?.name })}
+                message={t('hostGame.removeText')}
+                confirmLabel={t('hostGame.remove')}
                 danger
                 onConfirm={() => { kickPlayer(code, kickTarget.id); setKickTarget(null); }}
                 onCancel={() => setKickTarget(null)}
             />
             <ConfirmDialog
                 open={confirmEnd}
-                title={meta.status === 'lobby' ? 'Close this room?' : 'End the game now?'}
-                message={meta.status === 'lobby' ? 'Students will not be able to join anymore.' : mode === 'shower' ? 'The remaining questions are skipped and the podium is shown.' : 'Unfinished duels end without a bonus and the podium is shown.'}
-                confirmLabel={meta.status === 'lobby' ? 'Close room' : 'End game'}
+                title={meta.status === 'lobby' ? t('hostGame.closeTitle') : t('hostGame.endTitle')}
+                message={meta.status === 'lobby' ? t('hostGame.closeText') : mode === 'shower' ? t('hostGame.endShowerText') : t('hostGame.endDuelText')}
+                confirmLabel={meta.status === 'lobby' ? t('hostGame.closeRoom') : t('hostGame.endGame')}
                 danger
                 onConfirm={async () => {
                     setConfirmEnd(false);

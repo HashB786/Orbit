@@ -7,10 +7,10 @@ import { roomPath, attachPresence, leaveRoom, isOnline, joinRoom } from '../../p
 import { audio } from '../../platform/audio/audio';
 import { useTheme } from '../../context/ThemeContext';
 import { Playfield } from './playfield';
-import { Screen, Avatar, MuteButton } from './playerUi';
+import { Screen, Avatar, MuteButton, roundHint } from './playerUi';
 import ShowerPlay from './ShowerPlay';
-
-const ORDINALS = ['1st', '2nd', '3rd', '4th', '5th', '6th'];
+import { useT } from '../../context/LanguageContext';
+import Slots from '../../i18n/Slots';
 
 // Keep phones awake while playing
 const useWakeLock = (active) => {
@@ -35,6 +35,7 @@ const useWakeLock = (active) => {
 // ---------- one duel (canvas lives here) ----------
 
 const Duel = ({ rt, code, match, me, players, settings }) => {
+    const t = useT();
     const { performance } = useTheme();
     const canvasRef = useRef(null);
     const fieldRef = useRef(null);
@@ -45,7 +46,7 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
     const sound = settings.studentSound !== false;
 
     const rivalId = match.a === me ? match.b : match.a;
-    const rival = rivalId === 'bot' ? { name: match.bot?.name || 'Bot', color: '#94a3b8', bot: true } : players[rivalId] || { name: 'Rival' };
+    const rival = rivalId === 'bot' ? { name: match.bot?.name || t('cc.bot'), color: '#94a3b8', bot: true } : players[rivalId] || { name: t('cc.rival') };
     const myPlayer = players[me] || {};
     const roundKey = `${match.id}:${match.round}`;
 
@@ -209,8 +210,8 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
                     </div>
                     <div className="flex items-center justify-center gap-2 min-w-0">
                         {match.sudden
-                            ? <span className="px-2 py-0.5 rounded-full bg-amber-400 text-gray-950 text-xs font-black uppercase">Sudden death</span>
-                            : <span className="text-xs sm:text-sm font-bold text-gray-400 whitespace-nowrap">Round {Math.max(1, match.round)} / {match.rounds}</span>}
+                            ? <span className="px-2 py-0.5 rounded-full bg-amber-400 text-gray-950 text-xs font-black uppercase">{t('cc.sudden')}</span>
+                            : <span className="text-xs sm:text-sm font-bold text-gray-400 whitespace-nowrap">{t('cc.round', { n: Math.max(1, match.round), total: match.rounds })}</span>}
                         <MuteButton inline />
                     </div>
                     <div className="flex items-center gap-2 min-w-0 justify-end">
@@ -225,9 +226,7 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
                             <p className="max-w-3xl mx-auto text-base sm:text-xl md:text-2xl font-bold leading-snug line-clamp-3 break-words">{q.prompt}</p>
                             {q.kind !== 'single' && !phaseNote && (
                                 <p className="mt-1.5 text-xs sm:text-sm font-bold text-emerald-300">
-                                    {q.kind === 'multi'
-                                        ? `Blast every correct answer${progress ? ` · ${progress.found}/${progress.total}` : ''}`
-                                        : `Blast them in order${progress ? ` · next: ${ORDINALS[progress.found] || progress.found + 1}` : ' · 1st first'}`}
+                                    {roundHint(t, q.kind, progress)}
                                 </p>
                             )}
                         </>
@@ -242,13 +241,13 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
                 {rivalLead && !phaseNote && (
                     <div className="pointer-events-none absolute top-3 inset-x-0 flex justify-center px-4">
                         <span className="px-3 py-1.5 rounded-full bg-amber-400 text-gray-950 text-sm font-black flex items-center gap-1.5 animate-pulse">
-                            <Zap size={14} /> {rival.name} found it! Hurry!
+                            <Zap size={14} /> {t('cc.foundIt', { name: rival.name })}
                         </span>
                     </div>
                 )}
                 {phaseNote === 'done' && match.status === 'round' && (
                     <div className="pointer-events-none absolute top-3 inset-x-0 flex justify-center px-4">
-                        <span className="px-3 py-1.5 rounded-full bg-emerald-400 text-gray-950 text-sm font-black">Locked in! Waiting for {rival.name}…</span>
+                        <span className="px-3 py-1.5 rounded-full bg-emerald-400 text-gray-950 text-sm font-black">{t('cc.lockedIn', { name: rival.name })}</span>
                     </div>
                 )}
 
@@ -262,11 +261,11 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
                 {/* VS intro */}
                 {match.status === 'intro' && (
                     <div className="absolute inset-0 bg-[#040714]/90 flex flex-col items-center justify-center gap-6 px-4">
-                        <p className="text-xs font-black uppercase tracking-[0.3em] text-emerald-300">New duel</p>
+                        <p className="text-xs font-black uppercase tracking-[0.3em] text-emerald-300">{t('cc.newDuel')}</p>
                         <div className="flex items-center gap-4 sm:gap-8">
                             <div className="flex flex-col items-center gap-2 w-28 sm:w-36">
                                 <Avatar color={myPlayer.color} name={myPlayer.name} size={72} />
-                                <span className="font-black truncate max-w-full">{myPlayer.name || 'You'}</span>
+                                <span className="font-black truncate max-w-full">{myPlayer.name || t('cc.you')}</span>
                             </div>
                             <Swords size={40} className="text-amber-300 shrink-0" />
                             <div className="flex flex-col items-center gap-2 w-28 sm:w-36">
@@ -277,7 +276,7 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
                             </div>
                         </div>
                         <p className="text-gray-400 text-sm text-center max-w-xs">
-                            {match.rounds} rounds. Blast the right answer first to score.{rival.bot ? ' Nobody else was free, so a bot stepped in!' : ''}
+                            {t('cc.duelIntro', { count: match.rounds })}{rival.bot ? ` ${t('cc.botStepped')}` : ''}
                         </p>
                     </div>
                 )}
@@ -286,13 +285,13 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
                 {match.status === 'result' && last && (
                     <div className="absolute inset-x-0 bottom-0 p-4 flex justify-center pointer-events-none pb-safe">
                         <div className="w-full max-w-md rounded-3xl bg-[#0b1128]/95 border border-white/10 p-5 text-center shadow-2xl">
-                            {last.outcome === me && <p className="text-2xl font-black text-emerald-300">+1 · You got it first!</p>}
-                            {last.outcome === 'tie' && <p className="text-2xl font-black text-emerald-300">+1 · Same speed!</p>}
-                            {last.outcome === rivalId && <p className="text-2xl font-black text-amber-300">{rival.name} was faster</p>}
+                            {last.outcome === me && <p className="text-2xl font-black text-emerald-300">{t('cc.gotFirst')}</p>}
+                            {last.outcome === 'tie' && <p className="text-2xl font-black text-emerald-300">{t('cc.sameSpeed')}</p>}
+                            {last.outcome === rivalId && <p className="text-2xl font-black text-amber-300">{t('cc.wasFaster', { name: rival.name })}</p>}
                             {last.outcome === 'both-miss' && (
-                                <p className="text-2xl font-black text-rose-300">Both missed{last.deltas?.[me] ? ` · ${last.deltas[me]}` : ''}</p>
+                                <p className="text-2xl font-black text-rose-300">{t('cc.bothMissed')}{last.deltas?.[me] ? ` · ${last.deltas[me]}` : ''}</p>
                             )}
-                            {last.answer && <p className="mt-2 text-sm text-gray-300 break-words">Answer: <b className="text-white">{last.answer}</b></p>}
+                            {last.answer && <p className="mt-2 text-sm text-gray-300 break-words"><Slots text={t('cc.answer')} slots={{ answer: <b className="text-white">{last.answer}</b> }} /></p>}
                         </div>
                     </div>
                 )}
@@ -304,25 +303,25 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
                             {match.outcome?.winner === me ? (
                                 <>
                                     <Crown size={48} className="mx-auto text-amber-300" />
-                                    <p className="text-3xl font-black mt-2">You won the duel!</p>
+                                    <p className="text-3xl font-black mt-2">{t('cc.youWon')}</p>
                                 </>
                             ) : match.outcome?.winner ? (
                                 <>
                                     <Flag size={44} className="mx-auto text-gray-400" />
-                                    <p className="text-3xl font-black mt-2">{rival.name} won</p>
+                                    <p className="text-3xl font-black mt-2">{t('cc.won', { name: rival.name })}</p>
                                 </>
                             ) : (
                                 <>
                                     <Swords size={44} className="mx-auto text-sky-300" />
-                                    <p className="text-3xl font-black mt-2">{match.outcome?.reason === 'time' ? "Time's up!" : "It's a draw!"}</p>
+                                    <p className="text-3xl font-black mt-2">{match.outcome?.reason === 'time' ? t('cc.timeUp') : t('cc.draw')}</p>
                                 </>
                             )}
                             <p className="text-5xl font-black tabular-nums mt-4">{myScore} <span className="text-gray-500">:</span> {rivalScore}</p>
                             {match.outcome?.bonuses?.[me] > 0 && (
-                                <p className="mt-3 inline-block px-3 py-1 rounded-full bg-amber-400 text-gray-950 font-black">+{match.outcome.bonuses[me]} bonus</p>
+                                <p className="mt-3 inline-block px-3 py-1 rounded-full bg-amber-400 text-gray-950 font-black">{t('cc.bonus', { n: match.outcome.bonuses[me] })}</p>
                             )}
-                            {match.outcome?.reason === 'forfeit' && match.outcome?.winner === me && <p className="text-sm text-gray-400 mt-3">Your rival left the game.</p>}
-                            <p className="text-sm text-gray-400 mt-5">Next rival coming up…</p>
+                            {match.outcome?.reason === 'forfeit' && match.outcome?.winner === me && <p className="text-sm text-gray-400 mt-3">{t('cc.rivalLeft')}</p>}
+                            <p className="text-sm text-gray-400 mt-5">{t('cc.nextRival')}</p>
                         </div>
                     </div>
                 )}
@@ -335,6 +334,7 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
 
 const PlayerScreen = ({ code, playerId, onExit }) => {
     const navigate = useNavigate();
+    const t = useT();
     const { rt, error } = useRealtime();
     const meta = useRoomValue(rt, roomPath(code, 'meta'));
     const me = useRoomValue(rt, roomPath(code, 'players', playerId));
@@ -388,16 +388,16 @@ const PlayerScreen = ({ code, playerId, onExit }) => {
     const ranked = useMemo(() => rankPlayers(players), [players]);
     const myRank = ranked.findIndex(p => p.id === playerId) + 1;
 
-    if (error) return <Screen><WifiOff size={40} className="text-amber-300" /><p className="mt-3 font-bold">Could not connect. Check your internet.</p></Screen>;
+    if (error) return <Screen><WifiOff size={40} className="text-amber-300" /><p className="mt-3 font-bold">{t('roomErrors.connection')}</p></Screen>;
     if (!rt || meta === undefined || me === undefined) return <Screen><Spinner size={36} className="text-emerald-400" /></Screen>;
-    if (!meta) return <Screen><p className="font-bold text-lg">This game no longer exists.</p><Link to="/join" className="mt-6 px-6 py-3 rounded-2xl bg-emerald-500 text-gray-950 font-black">Join another game</Link></Screen>;
+    if (!meta) return <Screen><p className="font-bold text-lg">{t('cc.noGame')}</p><Link to="/join" className="mt-6 px-6 py-3 rounded-2xl bg-emerald-500 text-gray-950 font-black">{t('cc.joinAnother')}</Link></Screen>;
 
     if (!me || me.kicked) {
         return (
             <Screen>
                 <UserX size={44} className="text-rose-300" />
-                <p className="mt-3 text-xl font-black">You were removed from this game</p>
-                <button onClick={onExit} className="mt-6 px-6 py-3 rounded-2xl bg-white/10 font-bold">Back</button>
+                <p className="mt-3 text-xl font-black">{t('roomErrors.kicked')}</p>
+                <button onClick={onExit} className="mt-6 px-6 py-3 rounded-2xl bg-white/10 font-bold">{t('common.back')}</button>
             </Screen>
         );
     }
@@ -406,7 +406,7 @@ const PlayerScreen = ({ code, playerId, onExit }) => {
     const hostBanner = hostAway && (
         <div className="fixed inset-x-0 z-30 flex justify-center px-4 pointer-events-none" style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
             <span className="px-3 py-1.5 rounded-full bg-amber-400 text-gray-950 text-xs font-black flex items-center gap-1.5 shadow-lg">
-                <WifiOff size={13} /> Game paused: waiting for the teacher's screen…
+                <WifiOff size={13} /> {t('cc.paused')}
             </span>
         </div>
     );
@@ -418,13 +418,13 @@ const PlayerScreen = ({ code, playerId, onExit }) => {
             <Screen>
                 <MuteButton />
                 <Trophy size={48} className="text-amber-300" />
-                <p className="mt-3 text-sm font-bold uppercase tracking-widest text-gray-400">Game over</p>
-                {hostEnded && <p className="mt-1 text-sm text-amber-300 font-semibold max-w-xs">The teacher's screen was offline for too long, so the game ended.</p>}
+                <p className="mt-3 text-sm font-bold uppercase tracking-widest text-gray-400">{t('cc.gameOver')}</p>
+                {hostEnded && <p className="mt-1 text-sm text-amber-300 font-semibold max-w-xs">{t('cc.hostOffline')}</p>}
                 {myRank > 0 && <p className="text-6xl font-black mt-1">#{myRank}</p>}
-                <p className="text-xl font-bold mt-1">{me.name} · {me.score || 0} pts</p>
+                <p className="text-xl font-bold mt-1">{me.name} · {t('cc.points', { count: me.score || 0 })}</p>
                 <p className="text-sm text-gray-400 mt-1">
-                    {!showerMode && `${me.wins || 0} duel${me.wins === 1 ? '' : 's'} won · `}
-                    {me.answered ? Math.round(((me.correct || 0) / me.answered) * 100) : 0}% correct
+                    {!showerMode && `${t('cc.duelsWon', { count: me.wins || 0 })} · `}
+                    {t('cc.correctPct', { pct: me.answered ? Math.round(((me.correct || 0) / me.answered) * 100) : 0 })}
                 </p>
                 <ol className="mt-6 w-full max-w-xs space-y-1.5 text-left">
                     {ranked.slice(0, 3).map((p, i) => (
@@ -436,12 +436,12 @@ const PlayerScreen = ({ code, playerId, onExit }) => {
                     ))}
                 </ol>
                 {nextCode ? (
-                    <p className="mt-8 text-emerald-300 font-bold flex items-center gap-2"><Spinner size={18} /> Joining the next game…</p>
+                    <p className="mt-8 text-emerald-300 font-bold flex items-center gap-2"><Spinner size={18} /> {t('cc.joiningNext')}</p>
                 ) : (
                     <>
-                        <p className="mt-8 text-sm text-gray-400 max-w-xs">Stay on this screen: if your teacher starts another round, you'll join it automatically.</p>
+                        <p className="mt-8 text-sm text-gray-400 max-w-xs">{t('cc.stay')}</p>
                         <Link to="/join" onClick={() => leaveRoom(code, playerId)} className="mt-4 inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-emerald-500 text-gray-950 font-black">
-                            Join another game <ArrowRight size={18} />
+                            {t('cc.joinAnother')} <ArrowRight size={18} />
                         </Link>
                     </>
                 )}
@@ -495,23 +495,23 @@ const PlayerScreen = ({ code, playerId, onExit }) => {
 
             {meta.status === 'lobby' || showerMode ? (
                 <>
-                    <p className="mt-2 text-emerald-300 font-bold">You're in!</p>
-                    <p className="mt-6 text-gray-300 max-w-xs">Watch the big screen. The game starts when your teacher is ready.</p>
+                    <p className="mt-2 text-emerald-300 font-bold">{t('cc.youreIn')}</p>
+                    <p className="mt-6 text-gray-300 max-w-xs">{t('cc.watch')}</p>
                 </>
             ) : (
                 <>
                     <div className="mt-6 flex items-center gap-2 text-lg font-bold">
-                        <Hourglass size={20} className="text-sky-300 animate-pulse" /> Finding your next rival…
+                        <Hourglass size={20} className="text-sky-300 animate-pulse" /> {t('cc.findingRival')}
                     </div>
-                    {botIn !== null && botIn > 0 && <p className="mt-2 text-sm text-gray-400">A bot rival joins in {botIn}s if nobody is free.</p>}
+                    {botIn !== null && botIn > 0 && <p className="mt-2 text-sm text-gray-400">{t('cc.botIn', { s: botIn })}</p>}
                     <div className="mt-6 flex gap-3">
                         <div className="px-4 py-2 rounded-2xl bg-white/10">
-                            <p className="text-xs text-gray-400 font-bold uppercase">Score</p>
+                            <p className="text-xs text-gray-400 font-bold uppercase">{t('cc.score')}</p>
                             <p className="text-2xl font-black tabular-nums">{me.score || 0}</p>
                         </div>
                         {settings.studentLeaderboard !== false && myRank > 0 && (
                             <div className="px-4 py-2 rounded-2xl bg-white/10">
-                                <p className="text-xs text-gray-400 font-bold uppercase">Rank</p>
+                                <p className="text-xs text-gray-400 font-bold uppercase">{t('cc.rank')}</p>
                                 <p className="text-2xl font-black tabular-nums">#{myRank}</p>
                             </div>
                         )}
@@ -520,7 +520,7 @@ const PlayerScreen = ({ code, playerId, onExit }) => {
             )}
 
             <button onClick={leave} className="mt-10 inline-flex items-center gap-2 text-sm font-semibold text-gray-400 hover:text-white">
-                <LogOut size={16} /> Leave game
+                <LogOut size={16} /> {t('cc.leave')}
             </button>
         </Screen>
     );

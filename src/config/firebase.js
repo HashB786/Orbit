@@ -42,24 +42,30 @@ const getApp = () => {
     return appPromise;
 };
 
-let authPromise = null;
-// Invisible anonymous session: gives every device an id for ownership rules, no sign-up needed.
-// Later it can be linked to a Google account without losing anything.
-export const getAuthUser = () => {
-    if (!authPromise) {
-        authPromise = Promise.all([getApp(), import('firebase/auth')])
-            .then(async ([app, authModule]) => {
-                const auth = authModule.getAuth(app);
+let authApiPromise = null;
+// The Firebase Auth instance plus the module's functions, loaded on first use
+export const getAuthApi = () => {
+    if (!authApiPromise) {
+        authApiPromise = Promise.all([getApp(), import('firebase/auth')])
+            .then(async ([app, mod]) => {
+                const auth = mod.getAuth(app);
                 await auth.authStateReady();
-                if (!auth.currentUser) await authModule.signInAnonymously(auth);
-                return auth.currentUser;
+                return { auth, mod };
             })
             .catch(err => {
-                authPromise = null;
+                authApiPromise = null;
                 throw err;
             });
     }
-    return authPromise;
+    return authApiPromise;
+};
+
+// Whoever is signed in right now. Students and guests get an invisible anonymous session
+// (an id for the database rules, no sign-up). Teachers are signed in with Google or email.
+export const getAuthUser = async () => {
+    const { auth, mod } = await getAuthApi();
+    if (!auth.currentUser) await mod.signInAnonymously(auth);
+    return auth.currentUser;
 };
 
 let firestorePromise = null;

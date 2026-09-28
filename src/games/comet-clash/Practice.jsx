@@ -6,10 +6,12 @@ import { answerLabel } from '../../platform/questions/types';
 import { audio } from '../../platform/audio/audio';
 import { useTheme } from '../../context/ThemeContext';
 import { Playfield } from './playfield';
+import { roundHint } from './playerUi';
+import { useLanguage } from '../../context/LanguageContext';
+import { localeOf } from '../../i18n';
 
 const LIVES = 3;
 const ROUND_MS = 15000;
-const ORDINALS = ['1st', '2nd', '3rd', '4th', '5th', '6th'];
 
 const readBest = (key) => {
     try {
@@ -21,6 +23,8 @@ const readBest = (key) => {
 
 // Solo practice: endless rounds, 3 lives, combos. Missed questions return a few rounds later.
 const Practice = ({ set, questions, onExit }) => {
+    const { t, lang } = useLanguage();
+    const locale = localeOf(lang);
     const { performance } = useTheme();
     const canvasRef = useRef(null);
     const fieldRef = useRef(null);
@@ -197,16 +201,16 @@ const Practice = ({ set, questions, onExit }) => {
         <div className="app-height w-full flex flex-col bg-[#040714] text-white select-none overflow-hidden" onPointerDown={() => audio.unlock()}>
             <div className="shrink-0 bg-[#070b1d] border-b border-white/10 pt-safe">
                 <div className="flex items-center gap-2 sm:gap-4 px-2 sm:px-4 h-14">
-                    <button onClick={togglePause} aria-label="Pause" className="w-10 h-10 shrink-0 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center">
+                    <button onClick={togglePause} aria-label={t('solo.pause')} className="w-10 h-10 shrink-0 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center">
                         <Pause size={18} />
                     </button>
                     <div className="min-w-0">
-                        <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold leading-none">Score</div>
-                        <div className="font-black text-xl sm:text-2xl tabular-nums leading-tight">{hud.score.toLocaleString()}</div>
+                        <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold leading-none">{t('cc.score')}</div>
+                        <div className="font-black text-xl sm:text-2xl tabular-nums leading-tight">{hud.score.toLocaleString(locale)}</div>
                     </div>
                     {mult > 1 && <span className="px-2 py-1 rounded-lg bg-amber-400/15 text-amber-300 text-xs sm:text-sm font-black flex items-center gap-1"><Flame size={14} /> ×{mult}</span>}
                     <span className="hidden sm:inline text-xs font-bold text-gray-400 truncate">{set.title}</span>
-                    <div className="ml-auto flex items-center gap-0.5 sm:gap-1" aria-label={`${hud.lives} lives`}>
+                    <div className="ml-auto flex items-center gap-0.5 sm:gap-1" aria-label={t('solo.lives', { count: hud.lives })}>
                         {Array.from({ length: Math.max(LIVES, hud.lives) }).map((_, i) => (
                             <Heart key={i} size={18} className={i < hud.lives ? 'text-rose-400 fill-rose-400' : 'text-white/15'} />
                         ))}
@@ -218,9 +222,7 @@ const Practice = ({ set, questions, onExit }) => {
                             <p className="max-w-3xl mx-auto text-base sm:text-xl md:text-2xl font-bold leading-snug line-clamp-3 break-words">{round.prompt}</p>
                             {round.kind !== 'single' && (
                                 <p className="mt-1.5 text-xs sm:text-sm font-bold text-emerald-300">
-                                    {round.kind === 'multi'
-                                        ? `Blast every correct answer${progress ? ` · ${progress.found}/${progress.total}` : ''}`
-                                        : `Blast them in order${progress ? ` · next: ${ORDINALS[progress.found] || progress.found + 1}` : ' · 1st first'}`}
+                                    {roundHint(t, round.kind, progress)}
                                 </p>
                             )}
                         </>
@@ -234,11 +236,11 @@ const Practice = ({ set, questions, onExit }) => {
                 {phase === 'paused' && (
                     <div className="absolute inset-0 z-10 bg-[#040714]/85 flex items-center justify-center p-4">
                         <div className="w-full max-w-xs rounded-3xl bg-[#0b1128] border border-white/10 p-6 text-center shadow-2xl">
-                            <h2 className="text-2xl font-black mb-5">Paused</h2>
+                            <h2 className="text-2xl font-black mb-5">{t('solo.paused')}</h2>
                             <div className="space-y-2">
-                                <button autoFocus onClick={togglePause} className="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black flex items-center justify-center gap-2"><Play size={18} className="fill-current" /> Resume</button>
-                                <button onClick={() => setRunId(r => r + 1)} className="w-full py-3 rounded-2xl bg-white/10 hover:bg-white/15 font-bold flex items-center justify-center gap-2"><RotateCcw size={18} /> Restart</button>
-                                <button onClick={onExit} className="w-full py-3 rounded-2xl text-gray-300 hover:text-white hover:bg-white/5 font-bold flex items-center justify-center gap-2"><LogOut size={18} /> Quit</button>
+                                <button autoFocus onClick={togglePause} className="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black flex items-center justify-center gap-2"><Play size={18} className="fill-current" /> {t('solo.resume')}</button>
+                                <button onClick={() => setRunId(r => r + 1)} className="w-full py-3 rounded-2xl bg-white/10 hover:bg-white/15 font-bold flex items-center justify-center gap-2"><RotateCcw size={18} /> {t('solo.restart')}</button>
+                                <button onClick={onExit} className="w-full py-3 rounded-2xl text-gray-300 hover:text-white hover:bg-white/5 font-bold flex items-center justify-center gap-2"><LogOut size={18} /> {t('solo.quit')}</button>
                             </div>
                         </div>
                     </div>
@@ -248,22 +250,22 @@ const Practice = ({ set, questions, onExit }) => {
                     <div className="absolute inset-0 z-10 overflow-y-auto" style={SPACE_BG}>
                         <div className="max-w-2xl mx-auto px-4 py-8 text-center">
                             <Trophy size={40} className="mx-auto text-amber-300" />
-                            <p className="mt-3 text-xs font-bold uppercase tracking-widest text-gray-400">Final score</p>
-                            <p className="text-5xl sm:text-6xl font-black tabular-nums">{hud.score.toLocaleString()}</p>
+                            <p className="mt-3 text-xs font-bold uppercase tracking-widest text-gray-400">{t('solo.finalScore')}</p>
+                            <p className="text-5xl sm:text-6xl font-black tabular-nums">{hud.score.toLocaleString(locale)}</p>
                             {hud.score >= best && hud.score > 0
-                                ? <span className="inline-flex mt-3 px-3 py-1 rounded-full bg-amber-400 text-gray-950 text-xs font-black uppercase">New best!</span>
-                                : best > 0 && <p className="text-sm text-gray-400 mt-2">Best: {best.toLocaleString()}</p>}
-                            <p className="text-sm text-gray-400 mt-2">{hud.correct} correct out of {hud.rounds} rounds</p>
+                                ? <span className="inline-flex mt-3 px-3 py-1 rounded-full bg-amber-400 text-gray-950 text-xs font-black uppercase">{t('solo.newBest')}</span>
+                                : best > 0 && <p className="text-sm text-gray-400 mt-2">{t('solo.best', { score: best.toLocaleString(locale) })}</p>}
+                            <p className="text-sm text-gray-400 mt-2">{t('solo.correctOf', { correct: hud.correct, count: hud.rounds })}</p>
 
                             <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                <button onClick={() => setRunId(r => r + 1)} className="py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black flex items-center justify-center gap-2"><RotateCcw size={18} /> Play again</button>
-                                <button onClick={onExit} className="sm:col-span-2 py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 font-bold flex items-center justify-center gap-2"><LogOut size={18} /> Back to the set</button>
+                                <button onClick={() => setRunId(r => r + 1)} className="py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black flex items-center justify-center gap-2"><RotateCcw size={18} /> {t('hostGame.playAgain')}</button>
+                                <button onClick={onExit} className="sm:col-span-2 py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 font-bold flex items-center justify-center gap-2"><LogOut size={18} /> {t('solo.backToSet')}</button>
                             </div>
 
                             <section className="mt-8 text-left">
-                                <h2 className="text-sm font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2 mb-3"><BookOpen size={16} /> Questions to review</h2>
+                                <h2 className="text-sm font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2 mb-3"><BookOpen size={16} /> {t('solo.review')}</h2>
                                 {review.length === 0 ? (
-                                    <p className="rounded-2xl border border-emerald-400/30 bg-emerald-400/5 p-5 text-center text-emerald-300 font-semibold">Perfect run! Nothing to review.</p>
+                                    <p className="rounded-2xl border border-emerald-400/30 bg-emerald-400/5 p-5 text-center text-emerald-300 font-semibold">{t('solo.perfect')}</p>
                                 ) : (
                                     <ul className="space-y-2">
                                         {review.map((r, i) => (

@@ -1,11 +1,14 @@
 import React, { memo, useState } from 'react';
 import { ArrowUp, ArrowDown, Copy, Trash2, Plus, X, Check, AlertTriangle, ChevronDown } from 'lucide-react';
-import { QUESTION_TYPES, TYPE_IDS, LIMITS, validateQuestion, uid } from '../../platform/questions/types';
+import { TYPE_IDS, LIMITS, validateQuestion, uid } from '../../platform/questions/types';
 import { TYPE_ICONS, cx, btn } from '../ui';
+import { useT } from '../../context/LanguageContext';
+import Rich from '../../i18n/Rich';
 
 const optionInput = 'flex-1 min-w-0 bg-gray-50 dark:bg-[#070c21] border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2.5 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-colors text-sm';
 
 const TypePicker = ({ value, onChange }) => {
+    const t = useT();
     const [open, setOpen] = useState(false);
     const Icon = TYPE_ICONS[value];
     return (
@@ -18,29 +21,29 @@ const TypePicker = ({ value, onChange }) => {
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap bg-gray-100 dark:bg-white/[0.07] hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
                 {Icon && <Icon size={14} className="shrink-0" />}
-                <span className="sm:hidden">{QUESTION_TYPES[value].short}</span>
-                <span className="hidden sm:inline">{QUESTION_TYPES[value].label}</span>
+                <span className="sm:hidden">{t(`qtypes.${value}.short`)}</span>
+                <span className="hidden sm:inline">{t(`qtypes.${value}.label`)}</span>
                 <ChevronDown size={14} className="shrink-0" />
             </button>
             {open && (
                 <>
                     <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
                     <ul role="listbox" className="absolute z-20 left-0 top-full mt-1 w-56 bg-white dark:bg-[#0e1638] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl p-1">
-                        {TYPE_IDS.map(t => {
-                            const TIcon = TYPE_ICONS[t];
+                        {TYPE_IDS.map(type => {
+                            const TIcon = TYPE_ICONS[type];
                             return (
-                                <li key={t}>
+                                <li key={type}>
                                     <button
                                         type="button"
                                         role="option"
-                                        aria-selected={t === value}
-                                        onClick={() => { setOpen(false); if (t !== value) onChange(t); }}
-                                        className={cx('w-full flex items-start gap-2.5 px-3 py-2 rounded-lg text-left hover:bg-gray-50 dark:hover:bg-gray-800', t === value && 'bg-primary-50 dark:bg-primary-900/20')}
+                                        aria-selected={type === value}
+                                        onClick={() => { setOpen(false); if (type !== value) onChange(type); }}
+                                        className={cx('w-full flex items-start gap-2.5 px-3 py-2 rounded-lg text-left hover:bg-gray-50 dark:hover:bg-gray-800', type === value && 'bg-primary-50 dark:bg-primary-900/20')}
                                     >
                                         <TIcon size={16} className="mt-0.5 shrink-0 text-gray-500" />
                                         <span>
-                                            <span className="block text-sm font-semibold">{QUESTION_TYPES[t].label}</span>
-                                            <span className="block text-xs text-gray-500">{QUESTION_TYPES[t].hint}</span>
+                                            <span className="block text-sm font-semibold">{t(`qtypes.${type}.label`)}</span>
+                                            <span className="block text-xs text-gray-500">{t(`qtypes.${type}.hint`)}</span>
                                         </span>
                                     </button>
                                 </li>
@@ -54,6 +57,7 @@ const TypePicker = ({ value, onChange }) => {
 };
 
 const OptionsEditor = ({ q, onChange }) => {
+    const t = useT();
     const single = q.type === 'mc';
     const setOption = (id, patch) => onChange({
         ...q,
@@ -69,13 +73,13 @@ const OptionsEditor = ({ q, onChange }) => {
 
     return (
         <div className="space-y-2">
-            <p className="text-xs text-gray-500 dark:text-gray-400">{single ? 'Tap the circle next to the correct answer.' : 'Tick every correct answer.'}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{single ? t('editor.tapCorrect') : t('editor.tickCorrect')}</p>
             {q.options.map((o, i) => (
                 <div key={o.id} className="flex items-center gap-2">
                     <button
                         type="button"
                         onClick={() => setOption(o.id, { correct: single ? true : !o.correct })}
-                        aria-label={o.correct ? `Option ${i + 1} is correct` : `Mark option ${i + 1} correct`}
+                        aria-label={o.correct ? t('editor.optionIsCorrect', { n: i + 1 }) : t('editor.markOption', { n: i + 1 })}
                         aria-pressed={o.correct}
                         className={cx(
                             'w-9 h-9 shrink-0 flex items-center justify-center border-2 transition-colors',
@@ -95,61 +99,65 @@ const OptionsEditor = ({ q, onChange }) => {
                             }
                         }}
                         maxLength={LIMITS.option}
-                        placeholder={`Option ${i + 1}`}
+                        placeholder={t('editor.option', { n: i + 1 })}
                         className={cx(optionInput, o.correct && 'border-emerald-300 dark:border-emerald-800')}
                     />
-                    <button type="button" onClick={() => remove(o.id)} disabled={q.options.length <= 2} className={btn.icon} aria-label={`Remove option ${i + 1}`}>
+                    <button type="button" onClick={() => remove(o.id)} disabled={q.options.length <= 2} className={btn.icon} aria-label={t('editor.removeOption', { n: i + 1 })}>
                         <X size={16} />
                     </button>
                 </div>
             ))}
             {q.options.length < LIMITS.maxOptions && (
                 <button type="button" onClick={add} className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 dark:text-primary-400 px-1 py-1">
-                    <Plus size={16} /> Add option
+                    <Plus size={16} /> {t('editor.addOption')}
                 </button>
             )}
         </div>
     );
 };
 
-const TrueFalseEditor = ({ q, onChange }) => (
-    <div className="grid grid-cols-2 gap-2">
-        {[true, false].map(value => (
-            <button
-                key={String(value)}
-                type="button"
-                onClick={() => onChange({ ...q, answer: value })}
-                aria-pressed={q.answer === value}
-                className={cx(
-                    'py-3 rounded-xl border-2 font-bold transition-colors',
-                    q.answer === value
-                        ? 'bg-emerald-500 border-emerald-500 text-white'
-                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-emerald-400'
-                )}
-            >
-                {value ? 'True' : 'False'}
-            </button>
-        ))}
-    </div>
-);
+const TrueFalseEditor = ({ q, onChange }) => {
+    const t = useT();
+    return (
+        <div className="grid grid-cols-2 gap-2">
+            {[true, false].map(value => (
+                <button
+                    key={String(value)}
+                    type="button"
+                    onClick={() => onChange({ ...q, answer: value })}
+                    aria-pressed={q.answer === value}
+                    className={cx(
+                        'py-3 rounded-xl border-2 font-bold transition-colors',
+                        q.answer === value
+                            ? 'bg-emerald-500 border-emerald-500 text-white'
+                            : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-emerald-400'
+                    )}
+                >
+                    {value ? t('common.true') : t('common.false')}
+                </button>
+            ))}
+        </div>
+    );
+};
 
 const TypedEditor = ({ q, onChange }) => {
+    const t = useT();
     const set = (i, text) => onChange({ ...q, accepted: q.accepted.map((a, j) => (j === i ? text : a)) });
     const add = () => q.accepted.length < LIMITS.maxAccepted && onChange({ ...q, accepted: [...q.accepted, ''] });
     const remove = (i) => onChange({ ...q, accepted: q.accepted.filter((_, j) => j !== i) });
     return (
         <div className="space-y-2">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Capital letters and extra spaces don't matter. Add other spellings students may use.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('editor.typedHint')}</p>
             {q.accepted.map((a, i) => (
                 <div key={i} className="flex items-center gap-2">
-                    <span className="w-24 shrink-0 text-xs font-bold text-gray-400 uppercase">{i === 0 ? 'Answer' : 'Also accept'}</span>
-                    <input value={a} onChange={e => set(i, e.target.value)} maxLength={LIMITS.option} placeholder={i === 0 ? 'Correct answer' : 'Another spelling'} className={optionInput} />
-                    {i > 0 && <button type="button" onClick={() => remove(i)} className={btn.icon} aria-label="Remove accepted answer"><X size={16} /></button>}
+                    <span className="w-24 shrink-0 text-xs font-bold text-gray-400 uppercase">{i === 0 ? t('editor.answer') : t('editor.alsoAccept')}</span>
+                    <input value={a} onChange={e => set(i, e.target.value)} maxLength={LIMITS.option} placeholder={i === 0 ? t('editor.correctAnswer') : t('editor.anotherSpelling')} className={optionInput} />
+                    {i > 0 && <button type="button" onClick={() => remove(i)} className={btn.icon} aria-label={t('editor.removeAccepted')}><X size={16} /></button>}
                 </div>
             ))}
             {q.accepted.length < LIMITS.maxAccepted && (
                 <button type="button" onClick={add} className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 dark:text-primary-400 px-1 py-1">
-                    <Plus size={16} /> Accept another answer
+                    <Plus size={16} /> {t('editor.acceptAnother')}
                 </button>
             )}
         </div>
@@ -157,6 +165,7 @@ const TypedEditor = ({ q, onChange }) => {
 };
 
 const OrderEditor = ({ q, onChange }) => {
+    const t = useT();
     const set = (i, text) => onChange({ ...q, items: q.items.map((a, j) => (j === i ? text : a)) });
     const move = (i, dir) => {
         const items = [...q.items];
@@ -169,21 +178,21 @@ const OrderEditor = ({ q, onChange }) => {
     const remove = (i) => onChange({ ...q, items: q.items.filter((_, j) => j !== i) });
     return (
         <div className="space-y-2">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Write the items in the <b>correct</b> order. Students see them shuffled.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400"><Rich text={t('editor.orderHint')} /></p>
             {q.items.map((item, i) => (
                 <div key={i} className="flex items-center gap-2">
                     <span className="w-7 h-7 shrink-0 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 text-xs font-black flex items-center justify-center">{i + 1}</span>
-                    <input value={item} onChange={e => set(i, e.target.value)} maxLength={LIMITS.option} placeholder={`Item ${i + 1}`} className={optionInput} />
+                    <input value={item} onChange={e => set(i, e.target.value)} maxLength={LIMITS.option} placeholder={t('editor.item', { n: i + 1 })} className={optionInput} />
                     <div className="flex shrink-0">
-                        <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className={btn.icon} aria-label="Move up"><ArrowUp size={15} /></button>
-                        <button type="button" onClick={() => move(i, 1)} disabled={i === q.items.length - 1} className={btn.icon} aria-label="Move down"><ArrowDown size={15} /></button>
-                        <button type="button" onClick={() => remove(i)} disabled={q.items.length <= 2} className={btn.icon} aria-label={`Remove item ${i + 1}`}><X size={15} /></button>
+                        <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className={btn.icon} aria-label={t('editor.moveUp')}><ArrowUp size={15} /></button>
+                        <button type="button" onClick={() => move(i, 1)} disabled={i === q.items.length - 1} className={btn.icon} aria-label={t('editor.moveDown')}><ArrowDown size={15} /></button>
+                        <button type="button" onClick={() => remove(i)} disabled={q.items.length <= 2} className={btn.icon} aria-label={t('editor.removeItem', { n: i + 1 })}><X size={15} /></button>
                     </div>
                 </div>
             ))}
             {q.items.length < LIMITS.maxItems && (
                 <button type="button" onClick={add} className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 dark:text-primary-400 px-1 py-1">
-                    <Plus size={16} /> Add item
+                    <Plus size={16} /> {t('editor.addItem')}
                 </button>
             )}
         </div>
@@ -192,6 +201,7 @@ const OrderEditor = ({ q, onChange }) => {
 
 // One question in the editor. Memoized: typing in one card doesn't re-render the others.
 const QuestionCard = memo(({ q, index, total, showErrors, onChange, onType, onMove, onDuplicate, onRemove }) => {
+    const t = useT();
     const errors = validateQuestion(q);
     const change = (next) => onChange(q.id, next);
 
@@ -203,10 +213,10 @@ const QuestionCard = memo(({ q, index, total, showErrors, onChange, onType, onMo
                     <TypePicker value={q.type} onChange={(type) => onType(q.id, type)} />
                 </div>
                 <div className="flex items-center shrink-0">
-                    <button type="button" onClick={() => onMove(q.id, -1)} disabled={index === 0} className={btn.icon} aria-label="Move question up"><ArrowUp size={16} /></button>
-                    <button type="button" onClick={() => onMove(q.id, 1)} disabled={index === total - 1} className={btn.icon} aria-label="Move question down"><ArrowDown size={16} /></button>
-                    <button type="button" onClick={() => onDuplicate(q.id)} className={btn.icon} aria-label="Duplicate question"><Copy size={16} /></button>
-                    <button type="button" onClick={() => onRemove(q.id)} className={`${btn.icon} hover:!text-red-600`} aria-label="Delete question"><Trash2 size={16} /></button>
+                    <button type="button" onClick={() => onMove(q.id, -1)} disabled={index === 0} className={btn.icon} aria-label={t('editor.moveQuestionUp')}><ArrowUp size={16} /></button>
+                    <button type="button" onClick={() => onMove(q.id, 1)} disabled={index === total - 1} className={btn.icon} aria-label={t('editor.moveQuestionDown')}><ArrowDown size={16} /></button>
+                    <button type="button" onClick={() => onDuplicate(q.id)} className={btn.icon} aria-label={t('editor.duplicateQuestion')}><Copy size={16} /></button>
+                    <button type="button" onClick={() => onRemove(q.id)} className={`${btn.icon} hover:!text-red-600`} aria-label={t('editor.deleteQuestion')}><Trash2 size={16} /></button>
                 </div>
             </div>
 
@@ -215,9 +225,9 @@ const QuestionCard = memo(({ q, index, total, showErrors, onChange, onType, onMo
                 onChange={e => change({ ...q, prompt: e.target.value })}
                 maxLength={LIMITS.prompt}
                 rows={2}
-                placeholder={q.type === 'tf' ? 'Write a statement, e.g. "The Sun is a star."' : 'Write your question…'}
+                placeholder={q.type === 'tf' ? t('editor.statementPlaceholder') : t('editor.questionPlaceholder')}
                 className="w-full resize-y min-h-[3.25rem] bg-transparent text-base sm:text-lg font-semibold outline-none border-b-2 border-gray-100 dark:border-gray-800 focus:border-primary-500 pb-2 mb-4 transition-colors placeholder:text-gray-300 dark:placeholder:text-gray-600"
-                aria-label={`Question ${index + 1}`}
+                aria-label={t('editor.questionN', { n: index + 1 })}
             />
 
             {(q.type === 'mc' || q.type === 'multi') && <OptionsEditor q={q} onChange={change} />}
@@ -227,7 +237,7 @@ const QuestionCard = memo(({ q, index, total, showErrors, onChange, onType, onMo
 
             {showErrors && errors.length > 0 && (
                 <p className="mt-3 flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300">
-                    <AlertTriangle size={16} className="shrink-0 mt-0.5" /> {errors.join(' ')}
+                    <AlertTriangle size={16} className="shrink-0 mt-0.5" /> {errors.map(code => t(`validation.${code}`)).join(' ')}
                 </p>
             )}
         </article>

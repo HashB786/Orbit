@@ -4,17 +4,24 @@
 import { useSyncExternalStore } from 'react';
 import { isFirebaseConfigured, getFirestoreApi, getAuthUser } from '../../config/firebase';
 import { getDeviceId } from '../realtime';
+import { getAuthService } from '../auth';
 import { normalizeSet } from '../questions/normalize';
 import { tidyQuestion, isValidQuestion, uid } from '../questions/types';
 
 const MOCK_KEY = 'orbit.publicSets.mock';
 const COLLECTION = 'question_sets';
 
+// The signed-in teacher (offline test mode: the simulated account, or this browser)
 export const getOwnerId = async () => {
-    if (!isFirebaseConfigured) return getDeviceId();
+    if (!isFirebaseConfigured) {
+        const service = await getAuthService();
+        return service.current()?.uid || getDeviceId();
+    }
     const user = await getAuthUser();
     return user.uid;
 };
+
+const codedError = (code) => Object.assign(new Error(code), { code });
 
 const fromDoc = (docId, data) => normalizeSet({ ...data, id: `p_${docId}`, remoteId: docId, visibility: 'public' });
 
@@ -70,7 +77,7 @@ export const refreshPublicSets = async () => {
         state.loaded = true;
     } catch (err) {
         console.error('Could not load public sets:', err);
-        state.error = 'Could not load the public library. Check your internet connection.';
+        state.error = 'network';
     } finally {
         state.loading = false;
         emit();
@@ -105,7 +112,7 @@ export const fetchPublicSet = async (publicId) => {
 export const publishSet = async (set) => {
     const ownerId = await getOwnerId();
     const payload = toPayload(set, ownerId);
-    if (payload.questionCount === 0) throw new Error('Add at least one complete question before publishing.');
+    if (payload.questionCount === 0) throw codedError('no-valid-questions');
 
     if (!isFirebaseConfigured) {
         const list = readMock();
@@ -142,6 +149,20 @@ export const unpublishSet = async (remoteId) => {
         await deleteDoc(doc(db, COLLECTION, remoteId));
     }
     state.sets = state.sets.filter(s => s.remoteId !== remoteId);
+    emit();
+};
+
+// Every set a teacher published (used when deleting the account)
+export const deletePublicSetsOf = async (ownerId) => {
+    if (!ownerId) return;
+    if (!isFirebaseConfigured) {
+        writeMock(readMock().filter(d => d.ownerId !== ownerId));
+    } else {
+        const { db, collection, query, where, getDocs, deleteDoc } = await getFirestoreApi();
+        const snap = await getDocs(query(collection(db, COLLECTION), where('ownerId', '==', ownerId)));
+        await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+    }
+    state.sets = state.sets.filter(s => s.ownerId !== ownerId);
     emit();
 };
 

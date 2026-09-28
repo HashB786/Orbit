@@ -5,6 +5,7 @@ import { Spinner } from '../components/ui';
 import { useSet } from '../components/sets/useSet';
 import { getGame } from '../platform/games/registry';
 import { selectQuestions } from '../platform/questions/compat';
+import { useT } from '../context/LanguageContext';
 
 const PracticeGame = lazy(() => import('../games/comet-clash/Practice'));
 
@@ -12,6 +13,7 @@ const PracticeGame = lazy(() => import('../games/comet-clash/Practice'));
 const Practice = () => {
     const { setId } = useParams();
     const navigate = useNavigate();
+    const t = useT();
     const { set, loading } = useSet(setId);
     const questions = useMemo(() => (set ? selectQuestions(getGame('comet-clash'), set.questions) : []), [set]);
 
@@ -20,8 +22,8 @@ const Practice = () => {
         return (
             <SpaceScreen center>
                 <div className="max-w-sm text-center">
-                    <p className="text-lg font-bold">{set ? 'This set has no questions that can be practiced yet.' : 'Set not found.'}</p>
-                    <Link to={set ? `/set/${set.id}` : '/discover'} className="inline-block mt-6 px-6 py-3 rounded-2xl bg-emerald-500 text-gray-950 font-black">Go back</Link>
+                    <p className="text-lg font-bold">{set ? t('practice.nothing') : t('setView.notFound.title')}</p>
+                    <Link to={set ? `/set/${set.id}` : '/discover'} className="inline-block mt-6 px-6 py-3 rounded-2xl bg-emerald-500 text-gray-950 font-black">{t('common.back')}</Link>
                 </div>
             </SpaceScreen>
         );

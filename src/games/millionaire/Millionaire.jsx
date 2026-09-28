@@ -5,6 +5,7 @@ import { toChoiceRound, decoyPool, shuffle } from '../../platform/questions/roun
 import { SPACE_BG } from '../../components/SpaceScreen';
 import { audio } from '../../platform/audio/audio';
 import { useTheme } from '../../context/ThemeContext';
+import { useT } from '../../context/LanguageContext';
 
 // Prize ladders (index 0 = first question). Milestones are guaranteed once reached.
 const LADDERS = {
@@ -37,6 +38,7 @@ const buildRun = (questions, count) => {
 };
 
 const Millionaire = ({ questions = [], settings = {} }) => {
+    const t = useT();
     const { performance } = useTheme();
     const count = [5, 10, 15].includes(settings.questionCount) ? settings.questionCount : 15;
     const ladder = LADDERS[count];
@@ -173,7 +175,7 @@ const Millionaire = ({ questions = [], settings = {} }) => {
     if (!run.length) {
         return (
             <div className="w-full min-h-full text-white flex items-center justify-center p-6 text-center" style={SPACE_BG}>
-                <p className="text-lg font-bold">This set has no questions Millionaire can use.</p>
+                <p className="text-lg font-bold">{t('mil.noQuestions')}</p>
             </div>
         );
     }
@@ -193,17 +195,17 @@ const Millionaire = ({ questions = [], settings = {} }) => {
                 >
                     {isWin ? <Crown size={72} className="text-amber-300 mx-auto mb-4" /> : walked ? <Flag size={64} className="text-sky-300 mx-auto mb-4" /> : <Orbit size={64} className="text-rose-300 mx-auto mb-4" />}
                     <h2 className={`text-4xl md:text-5xl font-black mb-2 ${isWin ? 'text-amber-300' : ''}`}>
-                        {isWin ? 'Millionaire!' : walked ? 'Safe landing' : 'Lost in space'}
+                        {isWin ? t('mil.won') : walked ? t('mil.walked') : t('mil.lost')}
                     </h2>
                     <p className="text-gray-300 text-lg mb-8">
-                        {isWin ? 'Every question answered. Out of this world!' : walked ? 'You took the money and flew home.' : `You answered ${index} question${index === 1 ? '' : 's'} correctly.`}
+                        {isWin ? t('mil.wonText') : walked ? t('mil.walkedText') : t('mil.lostText', { count: index })}
                     </p>
                     <div className="rounded-2xl bg-white/5 border border-white/10 p-6 mb-8">
-                        <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-2">Winnings</p>
+                        <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-2">{t('mil.winnings')}</p>
                         <p className="text-4xl sm:text-5xl font-black text-amber-300 tabular-nums break-all">{prize}</p>
                     </div>
                     <button onClick={restart} className="w-full py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black transition-colors flex items-center justify-center gap-2">
-                        <RotateCcw size={20} /> Play again
+                        <RotateCcw size={20} /> {t('hostGame.playAgain')}
                     </button>
                 </motion.div>
             </div>
@@ -222,25 +224,25 @@ const Millionaire = ({ questions = [], settings = {} }) => {
                 <div className="flex justify-between items-center mb-4 sm:mb-6 pr-28 sm:pr-40 md:pr-0">
                     <div className="flex gap-3">
                         {allowFifty && (
-                            <button disabled={lifelines.fifty.used || isLocked || currentQ.options.length < 3} onClick={applyFiftyFifty} className={lifelineClass(lifelines.fifty.used)} aria-label="50:50 lifeline">
+                            <button disabled={lifelines.fifty.used || isLocked || currentQ.options.length < 3} onClick={applyFiftyFifty} className={lifelineClass(lifelines.fifty.used)} aria-label={t('mil.fifty')}>
                                 50:50
                                 {lifelines.fifty.used && <span className="absolute inset-x-2 top-1/2 h-0.5 bg-rose-400 rotate-[-20deg]" />}
                             </button>
                         )}
                         {allowAudience && (
-                            <button disabled={lifelines.audience.used || isLocked} onClick={applyAskAudience} className={lifelineClass(lifelines.audience.used)} aria-label="Ask the audience">
+                            <button disabled={lifelines.audience.used || isLocked} onClick={applyAskAudience} className={lifelineClass(lifelines.audience.used)} aria-label={t('mil.audience')}>
                                 <Users size={22} />
                                 {lifelines.audience.used && <span className="absolute inset-x-2 top-1/2 h-0.5 bg-rose-400 rotate-[-20deg]" />}
                             </button>
                         )}
                         {index > 0 && (
                             <button disabled={isLocked} onClick={() => { audio.sfx('click'); audio.stopMusic(); setGameState('walked'); }} className="hidden sm:flex items-center px-4 rounded-full border-2 border-white/15 text-sm font-bold text-gray-300 hover:text-white hover:border-white/40 disabled:opacity-40 transition-colors">
-                                Take the money
+                                {t('mil.takeMoney')}
                             </button>
                         )}
                     </div>
                     <div className="md:hidden text-right">
-                        <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Playing for</div>
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{t('mil.playingFor')}</div>
                         <div className="text-amber-300 font-black text-xl tabular-nums">{ladder[index]?.[0]}</div>
                     </div>
                 </div>
@@ -268,7 +270,7 @@ const Millionaire = ({ questions = [], settings = {} }) => {
                 {/* Question */}
                 <div className="flex-1 flex flex-col justify-end pb-2 sm:pb-6">
                     <p className="text-center text-xs font-black uppercase tracking-[0.25em] text-sky-300 mb-3">
-                        Question {index + 1} of {total} · for {ladder[index]?.[0]}
+                        {t('mil.questionFor', { n: index + 1, total, prize: ladder[index]?.[0] })}
                     </p>
                     <motion.div
                         key={index}

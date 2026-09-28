@@ -5,32 +5,39 @@ import SpaceScreen from '../components/SpaceScreen';
 import { Spinner } from '../components/ui';
 import { inspectRoom, joinRoom, getTabSession, getDeviceSession, getPlayer, isOnline, isValidCode, RoomError } from '../platform/rooms/rooms';
 import { MAX_NAME } from '../platform/rooms/names';
-import { getGame } from '../platform/games/registry';
+import { getGame, gameName as nameOfGame } from '../platform/games/registry';
 import { audio } from '../platform/audio/audio';
 import { useUser } from '../context/UserContext';
+import { useT } from '../context/LanguageContext';
+import LanguagePicker from '../components/LanguagePicker';
+import Slots from '../i18n/Slots';
 
 const NICK_KEY = 'orbit.lastNickname';
 
-const ErrorScreen = ({ message }) => (
-    <SpaceScreen center>
-        <div className="w-full max-w-sm text-center">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-400/15 text-amber-300 flex items-center justify-center mb-4"><AlertTriangle size={28} /></div>
-            <p className="text-lg font-bold">{message}</p>
-            <Link to="/join" className="inline-flex items-center justify-center gap-2 mt-6 w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black transition-colors">
-                Try another code <ArrowRight size={18} />
-            </Link>
-        </div>
-    </SpaceScreen>
-);
+const ErrorScreen = ({ message }) => {
+    const t = useT();
+    return (
+        <SpaceScreen center>
+            <div className="w-full max-w-sm text-center">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-400/15 text-amber-300 flex items-center justify-center mb-4"><AlertTriangle size={28} /></div>
+                <p className="text-lg font-bold">{message}</p>
+                <Link to="/join" className="inline-flex items-center justify-center gap-2 mt-6 w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black transition-colors">
+                    {t('play.tryAnother')} <ArrowRight size={18} />
+                </Link>
+            </div>
+        </SpaceScreen>
+    );
+};
 
 // Student flow: check the code -> nickname -> the game's player screen
 const PlayRoom = ({ code }) => {
     const navigate = useNavigate();
+    const t = useT();
     const { userData } = useUser();
 
     const [phase, setPhase] = useState('checking'); // checking | name | resume | joining | playing | error
     const [meta, setMeta] = useState(null);
-    const [error, setError] = useState('');
+    const [error, setError] = useState(null); // { reason } or { text }
     const [name, setName] = useState(() => {
         try {
             return localStorage.getItem(NICK_KEY) || userData.name || '';
@@ -38,12 +45,12 @@ const PlayRoom = ({ code }) => {
             return userData.name || '';
         }
     });
-    const [nameError, setNameError] = useState('');
+    const [nameError, setNameError] = useState(false);
     const [resumeCandidate, setResumeCandidate] = useState(null);
     const [player, setPlayer] = useState(null);
 
     const fail = (err) => {
-        setError(err instanceof RoomError ? err.message : 'Could not connect. Check your internet and try again.');
+        setError(err instanceof RoomError ? { reason: err.reason } : { reason: 'connection' });
         setPhase('error');
     };
 
@@ -63,7 +70,7 @@ const PlayRoom = ({ code }) => {
             setPhase('playing');
         } catch (err) {
             if (err instanceof RoomError && (err.reason === 'bad-name' || err.reason === 'name-taken')) {
-                setNameError(err.reason === 'name-taken' ? err.message : '');
+                setNameError(err.reason === 'name-taken');
                 setPhase('name');
                 return;
             }
@@ -73,7 +80,7 @@ const PlayRoom = ({ code }) => {
 
     useEffect(() => {
         if (!isValidCode(code)) {
-            setError("That doesn't look like a game code. Codes have 6 digits.");
+            setError({ reason: 'bad-code' });
             setPhase('error');
             return;
         }
@@ -83,7 +90,7 @@ const PlayRoom = ({ code }) => {
                 const m = await inspectRoom(code);
                 if (cancelled) return;
                 setMeta(m);
-                if (m.status === 'ended') throw new RoomError('ended', 'That game has already finished.');
+                if (m.status === 'ended') throw new RoomError('ended', '');
 
                 // Same tab (refresh): rejoin silently
                 const tab = getTabSession(code);
@@ -112,11 +119,15 @@ const PlayRoom = ({ code }) => {
         };
     }, [code, join]);
 
-    if (phase === 'error') return <ErrorScreen message={error} />;
+    // Translated at render time, so switching language on this screen updates the message too
+    if (phase === 'error') {
+        const known = ['not-found', 'ended', 'locked', 'started', 'full', 'kicked', 'bad-code', 'connection'];
+        return <ErrorScreen message={t(`roomErrors.${known.includes(error?.reason) ? error.reason : 'generic'}`)} />;
+    }
 
     if (phase === 'playing' && meta && player) {
         const game = getGame(meta.gameId);
-        if (!game?.Player) return <ErrorScreen message="This game can't be played on this version of Orbit. Try refreshing the page." />;
+        if (!game?.Player) return <ErrorScreen message={t('roomErrors.oldVersion')} />;
         const Player = game.Player;
         return (
             <Suspense fallback={<SpaceScreen center><Spinner size={32} /></SpaceScreen>}>
@@ -129,39 +140,42 @@ const PlayRoom = ({ code }) => {
         return (
             <SpaceScreen center>
                 <Spinner size={36} className="text-emerald-400" />
-                <p className="mt-4 text-gray-400 font-semibold">{phase === 'checking' ? 'Finding your game…' : 'Joining…'}</p>
+                <p className="mt-4 text-gray-400 font-semibold">{phase === 'checking' ? t('play.finding') : t('play.joining')}</p>
             </SpaceScreen>
         );
     }
 
     const randomNames = !!meta?.settings?.randomNames;
-    const gameName = getGame(meta?.gameId)?.name || 'Orbit';
+    const game = getGame(meta?.gameId);
+    const gameName = game ? nameOfGame(t, game) : 'Orbit';
+    const spacedCode = `${code.slice(0, 3)} ${code.slice(3)}`;
 
     return (
         <SpaceScreen center>
             <div className="w-full max-w-sm text-center">
+                <LanguagePicker className="mb-6" />
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">{gameName}</p>
                 <h1 className="text-2xl sm:text-3xl font-black mt-2 break-words">{meta?.setTitle}</h1>
-                <p className="text-gray-400 text-sm mt-1">Game {code.slice(0, 3)} {code.slice(3)}{meta?.hostName ? ` · hosted by ${meta.hostName}` : ''}</p>
+                <p className="text-gray-400 text-sm mt-1">{meta?.hostName ? t('play.gameBy', { code: spacedCode, name: meta.hostName }) : t('play.game', { code: spacedCode })}</p>
 
                 {phase === 'resume' && resumeCandidate ? (
                     <div className="mt-8 space-y-3">
-                        <p className="text-gray-300">Welcome back! Continue as <b className="text-white">{resumeCandidate.name}</b>?</p>
+                        <p className="text-gray-300"><Slots text={t('play.welcomeBack')} slots={{ name: <b className="text-white">{resumeCandidate.name}</b> }} /></p>
                         <button
                             onClick={() => { audio.unlock(); join({ resume: resumeCandidate }); }}
                             className="w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black text-lg transition-colors"
                         >
-                            Continue as {resumeCandidate.name}
+                            {t('play.continueAs', { name: resumeCandidate.name })}
                         </button>
                         <button onClick={() => setPhase('name')} className="w-full py-3 rounded-2xl text-gray-300 hover:text-white hover:bg-white/5 font-bold transition-colors">
-                            I'm someone else
+                            {t('play.someoneElse')}
                         </button>
                     </div>
                 ) : randomNames ? (
                     <div className="mt-8 space-y-3">
-                        <p className="text-gray-300 flex items-center justify-center gap-2"><Shuffle size={16} /> Your teacher gives everyone a fun random name.</p>
+                        <p className="text-gray-300 flex items-center justify-center gap-2"><Shuffle size={16} className="shrink-0" /> {t('play.randomNames')}</p>
                         <button onClick={() => { audio.unlock(); join(); }} className="w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black text-lg transition-colors">
-                            Join game
+                            {t('play.join')}
                         </button>
                     </div>
                 ) : (
@@ -173,22 +187,22 @@ const PlayRoom = ({ code }) => {
                             if (name.trim()) join({ nickname: name });
                         }}
                     >
-                        <label htmlFor="nickname" className="block text-gray-300 font-semibold">Pick a nickname</label>
+                        <label htmlFor="nickname" className="block text-gray-300 font-semibold">{t('play.pickNickname')}</label>
                         <input
                             id="nickname"
                             value={name}
-                            onChange={e => { setName(e.target.value.slice(0, MAX_NAME)); setNameError(''); }}
+                            onChange={e => { setName(e.target.value.slice(0, MAX_NAME)); setNameError(false); }}
                             aria-invalid={!!nameError}
                             aria-describedby={nameError ? 'nickname-error' : undefined}
                             autoFocus
                             autoComplete="off"
                             maxLength={MAX_NAME}
-                            placeholder="Your nickname"
+                            placeholder={t('play.nicknamePlaceholder')}
                             className={`w-full text-center text-xl font-bold bg-white/10 border-2 ${nameError ? 'border-rose-400' : 'border-white/15'} focus:border-emerald-400 rounded-2xl px-4 py-3.5 outline-none placeholder:text-white/40`}
                         />
-                        {nameError && <p id="nickname-error" role="alert" className="text-sm font-semibold text-rose-300">{nameError}</p>}
+                        {nameError && <p id="nickname-error" role="alert" className="text-sm font-semibold text-rose-300">{t('roomErrors.name-taken')}</p>}
                         <button type="submit" disabled={!name.trim()} className="w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-gray-950 font-black text-lg transition-colors">
-                            Join game
+                            {t('play.join')}
                         </button>
                     </form>
                 )}

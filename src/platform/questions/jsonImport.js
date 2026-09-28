@@ -2,7 +2,7 @@
 // Tolerant on purpose: code fences, trailing commas, curly quotes, different key names,
 // answers given as text, letters ("B") or indexes. Every skipped question gets a reason.
 
-import { LIMITS, QUESTION_TYPES, TYPE_IDS, normalizeAnswer, tidyQuestion, uid, validateQuestion } from './types';
+import { LIMITS, TYPE_IDS, normalizeAnswer, tidyQuestion, uid, validateQuestion } from './types';
 
 // ---------- the prompt teachers copy into ChatGPT ----------
 
@@ -207,25 +207,25 @@ const findQuestionList = (root) => {
     return arr || null;
 };
 
-const syntaxHint = (err) => {
-    const msg = String(err?.message || '');
-    const pos = msg.match(/position (\d+)/);
-    return `This isn't valid JSON${pos ? ` (problem near character ${pos[1]})` : ''}. Copy the whole answer from ChatGPT, starting with { or [.`;
+// Error codes are translated by the UI: importer.errors.*
+const syntaxError = (err) => {
+    const pos = String(err?.message || '').match(/position (\d+)/);
+    return { code: pos ? 'syntaxAt' : 'syntax', pos: pos ? Number(pos[1]) : null };
 };
 
 /**
  * Parse pasted JSON.
- * @returns {{ questions: object[], problems: {n:number, prompt:string, message:string}[], meta: {title?:string, description?:string, subject?:string}, error: string|null, total: number }}
+ * @returns {{ questions: object[], problems: {n:number, prompt:string, codes:string[]}[], meta: {title?:string, description?:string, subject?:string}, error: {code:string, pos?:number}|null, total: number }}
  */
 export const parseQuestionsJson = (text) => {
     const empty = { questions: [], problems: [], meta: {}, error: null, total: 0 };
     if (!cleanText(text)) return empty;
 
     const { value, error } = parseLoose(text);
-    if (error) return { ...empty, error: syntaxHint(error) };
+    if (error) return { ...empty, error: syntaxError(error) };
 
     const list = findQuestionList(value);
-    if (!list) return { ...empty, error: 'No questions found. The JSON should contain a "questions" list.' };
+    if (!list) return { ...empty, error: { code: 'noQuestions' } };
 
     const meta = {};
     if (value && !Array.isArray(value) && typeof value === 'object') {
@@ -242,13 +242,13 @@ export const parseQuestionsJson = (text) => {
     list.forEach((item, i) => {
         const q = fromLoose(item);
         if (!q) {
-            problems.push({ n: i + 1, prompt: '', message: 'Not a question object.' });
+            problems.push({ n: i + 1, prompt: '', codes: ['notQuestion'] });
             return;
         }
         const errors = validateQuestion(q);
-        if (q.type === 'tf' && typeof q.answer !== 'boolean') errors.push('The answer must be true or false.');
+        if (q.type === 'tf' && typeof q.answer !== 'boolean') errors.push('tfAnswer');
         if (errors.length) {
-            problems.push({ n: i + 1, prompt: q.prompt, message: errors.join(' ') });
+            problems.push({ n: i + 1, prompt: q.prompt, codes: errors });
             return;
         }
         questions.push(tidyQuestion(q));
@@ -258,5 +258,5 @@ export const parseQuestionsJson = (text) => {
 };
 
 export const typeCounts = (questions) =>
-    TYPE_IDS.map(type => ({ type, label: QUESTION_TYPES[type].short, count: questions.filter(q => q.type === type).length }))
+    TYPE_IDS.map(type => ({ type, count: questions.filter(q => q.type === type).length }))
         .filter(t => t.count > 0);

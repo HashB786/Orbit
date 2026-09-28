@@ -2,6 +2,7 @@
 
 import React, { useId } from 'react';
 import { Stars, rockPoints, starPath, Sparkle } from './shapes';
+import { useT } from '../../context/LanguageContext';
 
 const W = 320;
 const H = 180;
@@ -17,6 +18,7 @@ const Asteroid = ({ x, y, r, seed, label, glow }) => (
 );
 
 const CometClashArt = ({ id }) => {
+    const t = useT();
     // Ship at the centre, aiming at the correct asteroid (top right)
     const ship = { x: 150, y: 104 };
     const target = { x: 244, y: 70 };
@@ -57,13 +59,13 @@ const CometClashArt = ({ id }) => {
             <path d="M18,14 L66,44 L60,48 Z" fill={`url(#${id}-tail)`} />
             <circle cx="64" cy="46" r="4" fill="#ffffff" />
 
-            <Asteroid x={70} y={128} r={19} seed={3} label="Venus" />
-            <Asteroid x={112} y={42} r={16} seed={11} label="Earth" />
-            <Asteroid x={212} y={146} r={17} seed={5} label="Moon" />
+            <Asteroid x={70} y={128} r={19} seed={3} label={t('art.venus')} />
+            <Asteroid x={112} y={42} r={16} seed={11} label={t('art.earth')} />
+            <Asteroid x={212} y={146} r={17} seed={5} label={t('art.moon')} />
 
             {/* Laser + correct asteroid breaking apart */}
             <line x1={ship.x + 12} y1={ship.y - 5} x2={target.x - 18} y2={target.y + 6} stroke={`url(#${id}-laser)`} strokeWidth="3" strokeLinecap="round" />
-            <Asteroid x={target.x} y={target.y} r={22} seed={9} label="Mars" glow />
+            <Asteroid x={target.x} y={target.y} r={22} seed={9} label={t('art.mars')} glow />
             {[[-30, -8], [-26, 14], [28, -20], [30, 10], [8, -32], [-6, 30]].map(([dx, dy], i) => (
                 <rect key={i} x={target.x + dx} y={target.y + dy} width="3" height="3" fill="#6ee7b7" opacity={0.9 - i * 0.1} />
             ))}

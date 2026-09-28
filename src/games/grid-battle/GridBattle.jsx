@@ -6,6 +6,8 @@ import { shuffle } from '../../platform/questions/rounds';
 import { SPACE_BG } from '../../components/SpaceScreen';
 import { audio } from '../../platform/audio/audio';
 import { useTheme } from '../../context/ThemeContext';
+import { useT } from '../../context/LanguageContext';
+import Slots from '../../i18n/Slots';
 
 // --- TEAMS & TILES ---
 
@@ -19,15 +21,16 @@ const TEAMS = [
 ];
 const team = (i) => TEAMS[i % TEAMS.length];
 
-// Internal ids stay the same (bomb, wind...) so settings and history keep working
+// Internal ids stay the same (bomb, wind...) so settings and history keep working.
+// Texts: grid.tiles.<type>.label / title / text
 const TILES = {
-    question: { label: 'Question', icon: HelpCircle, color: '#60a5fa', sound: 'question' },
-    bomb: { label: 'Black hole', icon: Disc, color: '#f87171', sound: 'bomb', title: 'Black hole!', text: 'It swallowed a point. −1 for your team.' },
-    wind: { label: 'Solar wind', icon: Wind, color: '#94a3b8', sound: 'wind', title: 'Solar wind!', text: "Your team's score is blown back to zero." },
-    bonus: { label: 'Shooting star', icon: Star, color: '#fbbf24', sound: 'bonus', title: 'Shooting star!', text: '+1 point for your team. Make a wish!' },
-    grenade: { label: 'Meteor strike', icon: Flame, color: '#fb923c', sound: 'whoosh', title: 'Meteor strike!', text: 'Choose a team to hit: they lose 1 point.' },
-    skip: { label: 'Wormhole', icon: Tornado, color: '#a78bfa', sound: 'skip', title: 'Wormhole!', text: 'Your turn gets pulled into another dimension. No points.' },
-    blank: { label: 'Empty space', icon: CircleOff, color: '#64748b', sound: 'blank', title: 'Empty space', text: 'Nothing out here. Pick again!' }
+    question: { icon: HelpCircle, color: '#60a5fa', sound: 'question' },
+    bomb: { icon: Disc, color: '#f87171', sound: 'bomb' },
+    wind: { icon: Wind, color: '#94a3b8', sound: 'wind' },
+    bonus: { icon: Star, color: '#fbbf24', sound: 'bonus' },
+    grenade: { icon: Flame, color: '#fb923c', sound: 'whoosh' },
+    skip: { icon: Tornado, color: '#a78bfa', sound: 'skip' },
+    blank: { icon: CircleOff, color: '#64748b', sound: 'blank' }
 };
 
 const LETTERS = 'ABCDEF';
@@ -82,6 +85,7 @@ const optionClass = (revealed, correct) => (revealed && correct
 
 // Shows any question type on the big screen; the teacher reveals and judges the answer
 const QuestionReveal = ({ card, revealed, onReveal }) => {
+    const t = useT();
     const q = card.data;
     return (
         <div className="space-y-5">
@@ -89,7 +93,7 @@ const QuestionReveal = ({ card, revealed, onReveal }) => {
 
             {(q.type === 'mc' || q.type === 'multi') && (
                 <div className="space-y-2">
-                    {q.type === 'multi' && <p className="text-xs font-bold uppercase tracking-wider text-sky-300">More than one answer is correct</p>}
+                    {q.type === 'multi' && <p className="text-xs font-bold uppercase tracking-wider text-sky-300">{t('grid.multi')}</p>}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left">
                         {(card.options || q.options).map((o, i) => (
                             <div key={o.id || i} className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-colors ${optionClass(revealed, o.correct)}`}>
@@ -106,7 +110,7 @@ const QuestionReveal = ({ card, revealed, onReveal }) => {
                 <div className="grid grid-cols-2 gap-2 max-w-sm mx-auto">
                     {[true, false].map(v => (
                         <div key={String(v)} className={`py-3 rounded-2xl border font-black text-lg ${optionClass(revealed, (q.answer !== false) === v)}`}>
-                            {v ? 'True' : 'False'}
+                            {v ? t('common.true') : t('common.false')}
                         </div>
                     ))}
                 </div>
@@ -123,7 +127,7 @@ const QuestionReveal = ({ card, revealed, onReveal }) => {
                 </ol>
             ) : (
                 <div className="space-y-2">
-                    <p className="text-xs font-bold uppercase tracking-wider text-rose-300">Put these in the right order</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-rose-300">{t('grid.order')}</p>
                     <div className="flex flex-wrap justify-center gap-2">
                         {(card.order || q.items).map((item, i) => (
                             <span key={i} className="px-3 py-2 rounded-2xl border border-white/15 bg-white/[0.03] font-semibold text-white">{item}</span>
@@ -134,7 +138,7 @@ const QuestionReveal = ({ card, revealed, onReveal }) => {
 
             {q.type === 'typed' && revealed && (
                 <div className="bg-emerald-400/10 p-5 rounded-2xl border border-emerald-400/40">
-                    <div className="text-xs text-emerald-300 font-bold uppercase mb-2 tracking-wider">Correct answer</div>
+                    <div className="text-xs text-emerald-300 font-bold uppercase mb-2 tracking-wider">{t('editor.correctAnswer')}</div>
                     <div className="text-2xl font-bold text-white break-words">{answerLabel(q)}</div>
                 </div>
             )}
@@ -144,7 +148,7 @@ const QuestionReveal = ({ card, revealed, onReveal }) => {
                     onClick={onReveal}
                     className="px-6 py-3 rounded-full bg-white/10 hover:bg-white/15 text-gray-200 font-bold text-sm transition-colors border border-white/10"
                 >
-                    Reveal answer
+                    {t('grid.reveal')}
                 </button>
             )}
         </div>
@@ -153,15 +157,15 @@ const QuestionReveal = ({ card, revealed, onReveal }) => {
 
 // Glowing icon with an orbit ring, used in the tile pop-up
 const TileBadge = ({ type, size = 96 }) => {
-    const t = TILES[type];
-    const Icon = t.icon;
+    const tile = TILES[type];
+    const Icon = tile.icon;
     return (
         <div className="relative shrink-0" style={{ width: size, height: size }}>
-            <div className="absolute inset-0 rounded-full" style={{ background: `radial-gradient(circle, ${t.color}55, transparent 70%)` }} />
+            <div className="absolute inset-0 rounded-full" style={{ background: `radial-gradient(circle, ${tile.color}55, transparent 70%)` }} />
             <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full" aria-hidden>
-                <ellipse cx="50" cy="50" rx="46" ry="18" fill="none" stroke={t.color} strokeOpacity="0.5" strokeWidth="2" transform="rotate(-25 50 50)" />
+                <ellipse cx="50" cy="50" rx="46" ry="18" fill="none" stroke={tile.color} strokeOpacity="0.5" strokeWidth="2" transform="rotate(-25 50 50)" />
             </svg>
-            <div className="absolute inset-[22%] rounded-full flex items-center justify-center text-gray-950" style={{ background: t.color, boxShadow: `0 0 30px ${t.color}88` }}>
+            <div className="absolute inset-[22%] rounded-full flex items-center justify-center text-gray-950" style={{ background: tile.color, boxShadow: `0 0 30px ${tile.color}88` }}>
                 <Icon size={size * 0.28} />
             </div>
         </div>
@@ -170,6 +174,7 @@ const TileBadge = ({ type, size = 96 }) => {
 
 // --- MAIN COMPONENT ---
 const GridBattle = ({ questions = [], settings = {} }) => {
+    const t = useT();
     const { performance } = useTheme();
     const config = {
         rows: settings.rows ?? 5,
@@ -254,7 +259,7 @@ const GridBattle = ({ questions = [], settings = {} }) => {
             setGrid(newGrid);
             setScoreHistory([...scoreHistory, [...teamScores]]);
             setGameLog([...gameLog, { round: gameLog.length + 1, team: currentTeam, type: 'blank', points: 0, result: 'retry' }]);
-            setFlash(`Empty space: ${team(currentTeam).name}, pick again!`);
+            setFlash(t('grid.emptyFlash', { team: team(currentTeam).name }));
             later(() => setFlash(null), 1800);
             if (allRevealed(newGrid)) later(finish, 900);
             return;
@@ -329,7 +334,7 @@ const GridBattle = ({ questions = [], settings = {} }) => {
             {/* Team pods */}
             <div className="shrink-0 flex items-center gap-2 sm:gap-3 px-2 sm:pl-6 sm:pr-40 pt-16 sm:pt-3 pb-4 overflow-x-auto">
                 {teamScores.map((score, idx) => {
-                    const t = team(idx);
+                    const tm = team(idx);
                     const isTargetable = grenadeTargetMode && idx !== currentTeam;
                     const isCurrent = idx === currentTeam && !grenadeTargetMode;
                     return (
@@ -342,16 +347,16 @@ const GridBattle = ({ questions = [], settings = {} }) => {
                                 ${isTargetable ? 'border-orange-400 bg-orange-500/15 animate-pulse cursor-pointer' : ''}
                                 ${isCurrent ? 'bg-white/10' : ''}
                                 ${!isTargetable && !isCurrent ? 'border-white/10 bg-white/[0.03] opacity-60' : ''}`}
-                            style={isCurrent ? { borderColor: t.color, boxShadow: `0 0 24px ${t.color}55` } : undefined}
+                            style={isCurrent ? { borderColor: tm.color, boxShadow: `0 0 24px ${tm.color}55` } : undefined}
                         >
-                            <span className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-gray-950 font-black" style={{ background: t.color }}>
+                            <span className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-gray-950 font-black" style={{ background: tm.color }}>
                                 {isTargetable ? <Flame size={18} /> : <Rocket size={16} />}
                             </span>
                             <span className="text-left leading-tight">
-                                <span className="block text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-300">{t.name}</span>
+                                <span className="block text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-300">{tm.name}</span>
                                 <span className="block text-xl sm:text-3xl font-black tabular-nums">{score}</span>
                             </span>
-                            {isCurrent && <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[10px] font-black text-gray-950 whitespace-nowrap" style={{ background: t.color }}>TURN</span>}
+                            {isCurrent && <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[10px] font-black text-gray-950 whitespace-nowrap" style={{ background: tm.color }}>{t('grid.turn')}</span>}
                         </button>
                     );
                 })}
@@ -360,7 +365,7 @@ const GridBattle = ({ questions = [], settings = {} }) => {
             {grenadeTargetMode && (
                 <div className="shrink-0 flex justify-center px-4 -mt-1 mb-2">
                     <div className="bg-orange-500 text-gray-950 px-5 py-2 rounded-full font-black text-sm sm:text-lg text-center shadow-[0_0_30px_rgba(249,115,22,0.5)]">
-                        ☄️ {team(currentTeam).name}: tap a team to strike!
+                        ☄️ {t('grid.strike', { team: team(currentTeam).name })}
                     </div>
                 </div>
             )}
@@ -376,8 +381,8 @@ const GridBattle = ({ questions = [], settings = {} }) => {
                     }}
                 >
                     {grid.map((row, r) => row.map((cell, c) => {
-                        const t = TILES[cell.type];
-                        const Icon = t.icon;
+                        const tile = TILES[cell.type];
+                        const Icon = tile.icon;
                         const picker = cell.history?.team;
                         return (
                             <motion.button
@@ -385,19 +390,19 @@ const GridBattle = ({ questions = [], settings = {} }) => {
                                 whileHover={{ scale: cell.revealed ? 1 : 1.04 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => handleCellClick(r, c)}
-                                aria-label={cell.revealed ? `${t.label} (revealed)` : `Tile ${r * config.cols + c + 1}`}
+                                aria-label={cell.revealed ? t('grid.revealedTile', { label: t(`grid.tiles.${cell.type}.label`) }) : t('grid.tile', { n: r * config.cols + c + 1 })}
                                 className={`relative rounded-xl sm:rounded-2xl font-bold flex items-center justify-center overflow-hidden border transition-colors
                                     ${cell.revealed ? 'border-white/5' : 'border-white/10 hover:border-sky-300/50 cursor-pointer'}
                                     ${cell.history?.result === 'void' ? 'opacity-40 grayscale' : ''}`}
                                 style={{
                                     background: cell.revealed
-                                        ? `radial-gradient(circle at 50% 40%, ${t.color}33, rgba(11,17,40,0.9) 70%)`
+                                        ? `radial-gradient(circle at 50% 40%, ${tile.color}33, rgba(11,17,40,0.9) 70%)`
                                         : 'radial-gradient(circle at 30% 25%, rgba(125,211,252,0.18), rgba(15,23,51,0.95) 60%)'
                                 }}
                             >
                                 {cell.revealed ? (
                                     <motion.div initial={{ scale: 0, rotate: 120 }} animate={{ scale: 1, rotate: 0 }} className="flex flex-col items-center justify-center gap-1">
-                                        <Icon style={{ width: 'clamp(18px, 3.2vw, 40px)', height: 'clamp(18px, 3.2vw, 40px)', color: t.color }} />
+                                        <Icon style={{ width: 'clamp(18px, 3.2vw, 40px)', height: 'clamp(18px, 3.2vw, 40px)', color: tile.color }} />
                                         {picker !== undefined && picker !== null && (
                                             <span className="hidden sm:block w-2 h-2 rounded-full" style={{ background: team(picker).color }} />
                                         )}
@@ -434,12 +439,12 @@ const GridBattle = ({ questions = [], settings = {} }) => {
                         >
                             <div className="flex items-center justify-between px-5 pt-4">
                                 <span className="text-xs font-bold uppercase tracking-widest" style={{ color: tile.color }}>
-                                    {activeCard.mode === 'inspect' ? 'Tile history' : `${team(currentTeam).name}'s pick`}
+                                    {activeCard.mode === 'inspect' ? t('grid.history') : t('grid.pick', { team: team(currentTeam).name })}
                                 </span>
                                 <button
                                     onClick={activeCard.mode === 'play' ? () => setActiveCard(prev => ({ ...prev, closeConfirm: !prev.closeConfirm })) : () => setActiveCard(null)}
                                     className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white"
-                                    aria-label="Close"
+                                    aria-label={t('common.close')}
                                 >
                                     <X size={20} />
                                 </button>
@@ -449,12 +454,12 @@ const GridBattle = ({ questions = [], settings = {} }) => {
                                 <div className="absolute inset-0 z-50 bg-[#0b1128]/95 flex flex-col items-center justify-center p-8">
                                     <div className="w-full max-w-sm space-y-6 text-center">
                                         <div className="space-y-2">
-                                            <h3 className="text-2xl font-black">This tile isn't finished</h3>
-                                            <p className="text-gray-400 text-sm">What should happen to it?</p>
+                                            <h3 className="text-2xl font-black">{t('grid.unfinished')}</h3>
+                                            <p className="text-gray-400 text-sm">{t('grid.unfinishedText')}</p>
                                         </div>
                                         <div className="grid grid-cols-1 gap-3">
                                             <button onClick={() => setActiveCard(prev => ({ ...prev, closeConfirm: false }))} className="w-full py-4 bg-white text-gray-950 rounded-2xl font-bold">
-                                                Keep playing it
+                                                {t('grid.keep')}
                                             </button>
                                             <button
                                                 onClick={() => {
@@ -465,7 +470,7 @@ const GridBattle = ({ questions = [], settings = {} }) => {
                                                 }}
                                                 className="w-full py-4 bg-amber-400/10 text-amber-300 border border-amber-400/30 rounded-2xl font-bold"
                                             >
-                                                Hide it again
+                                                {t('grid.hide')}
                                             </button>
                                             <button
                                                 onClick={() => {
@@ -477,7 +482,7 @@ const GridBattle = ({ questions = [], settings = {} }) => {
                                                 }}
                                                 className="w-full py-4 bg-rose-500/10 text-rose-300 border border-rose-500/30 rounded-2xl font-bold"
                                             >
-                                                Skip it (no points)
+                                                {t('grid.skip')}
                                             </button>
                                         </div>
                                     </div>
@@ -493,25 +498,25 @@ const GridBattle = ({ questions = [], settings = {} }) => {
                                             {activeCard.mode === 'play' && (
                                                 <div className="flex gap-2 sm:gap-4 justify-center">
                                                     <button onClick={() => handleEventResolution('incorrect')} className="flex-1 px-3 sm:px-6 py-4 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/40 rounded-2xl font-black flex items-center justify-center gap-2 transition-colors">
-                                                        <X size={20} /> Wrong
+                                                        <X size={20} /> {t('grid.wrong')}
                                                     </button>
                                                     <button onClick={() => handleEventResolution('correct')} className="flex-1 px-3 sm:px-6 py-4 bg-emerald-400/10 hover:bg-emerald-400/20 text-emerald-300 border border-emerald-400/40 rounded-2xl font-black flex items-center justify-center gap-2 transition-colors">
-                                                        <Check size={20} /> Correct (+1)
+                                                        <Check size={20} /> {t('grid.correct')}
                                                     </button>
                                                 </div>
                                             )}
                                         </div>
                                     ) : (
                                         <div className="space-y-5">
-                                            <h3 className="text-3xl sm:text-5xl font-black" style={{ color: tile.color }}>{tile.title}</h3>
+                                            <h3 className="text-3xl sm:text-5xl font-black" style={{ color: tile.color }}>{t(`grid.tiles.${activeCard.type}.title`)}</h3>
                                             <p className="text-lg text-gray-300 max-w-md mx-auto">
                                                 {activeCard.type === 'grenade' && activeCard.mode === 'inspect'
-                                                    ? `Hit ${team(activeCard.history?.target ?? 0).name}`
-                                                    : tile.text}
+                                                    ? t('grid.hit', { team: team(activeCard.history?.target ?? 0).name })
+                                                    : t(`grid.tiles.${activeCard.type}.text`)}
                                             </p>
                                             {activeCard.mode === 'play' && (
                                                 <button onClick={() => handleEventResolution('ok')} className="w-full sm:w-auto px-12 py-4 rounded-2xl font-black text-lg text-gray-950 transition-transform hover:scale-105" style={{ background: tile.color }}>
-                                                    {activeCard.type === 'grenade' ? 'Choose a target' : 'Continue'}
+                                                    {activeCard.type === 'grenade' ? t('grid.chooseTarget') : t('common.continue')}
                                                 </button>
                                             )}
                                         </div>
@@ -519,8 +524,8 @@ const GridBattle = ({ questions = [], settings = {} }) => {
 
                                     {activeCard.mode === 'inspect' && activeCard.history?.team !== undefined && (
                                         <p className="text-sm text-gray-400">
-                                            Picked by <b style={{ color: team(activeCard.history.team).color }}>{team(activeCard.history.team).name}</b>
-                                            {activeCard.type === 'question' && ` · ${activeCard.history.result === 'correct' ? 'answered correctly' : 'answered wrong'}`}
+                                            <Slots text={t('grid.pickedBy')} slots={{ team: <b style={{ color: team(activeCard.history.team).color }}>{team(activeCard.history.team).name}</b> }} />
+                                            {activeCard.type === 'question' && ` · ${activeCard.history.result === 'correct' ? t('grid.answeredRight') : t('grid.answeredWrong')}`}
                                         </p>
                                     )}
                                 </div>
@@ -537,7 +542,7 @@ const GridBattle = ({ questions = [], settings = {} }) => {
                         <div>
                             <Trophy size={64} className="text-amber-300 mx-auto" />
                             <h1 className="text-4xl sm:text-6xl font-black mt-2">
-                                {leaderboard[0] && leaderboard[1] && leaderboard[0].score === leaderboard[1].score ? "It's a tie!" : `${team(leaderboard[0].i).name} wins!`}
+                                {leaderboard[0] && leaderboard[1] && leaderboard[0].score === leaderboard[1].score ? t('grid.tie') : t('hostGame.duel.wins', { name: team(leaderboard[0].i).name })}
                             </h1>
                         </div>
 
@@ -560,16 +565,16 @@ const GridBattle = ({ questions = [], settings = {} }) => {
                         </div>
 
                         <div className="bg-white/5 p-4 sm:p-6 rounded-3xl border border-white/10">
-                            <h3 className="text-lg font-bold text-gray-300 mb-4 text-left">How the scores changed</h3>
+                            <h3 className="text-lg font-bold text-gray-300 mb-4 text-left">{t('grid.graph')}</h3>
                             <StatsGraph history={scoreHistory} teams={config.teams} />
                         </div>
 
                         <div className="flex flex-wrap gap-3 justify-center">
                             <button onClick={() => setMode('game')} className="px-8 py-4 bg-white/10 hover:bg-white/15 font-bold rounded-2xl flex items-center gap-2">
-                                <GridIcon size={20} /> Review board
+                                <GridIcon size={20} /> {t('grid.reviewBoard')}
                             </button>
                             <button onClick={startGame} className="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black rounded-2xl">
-                                New board
+                                {t('grid.newBoard')}
                             </button>
                         </div>
                     </div>
@@ -581,6 +586,7 @@ const GridBattle = ({ questions = [], settings = {} }) => {
 
 // --- SCORE GRAPH ---
 const StatsGraph = ({ history, teams }) => {
+    const t = useT();
     const maxRound = history.length - 1;
     const allScores = history.flat();
     const minScore = Math.min(0, ...allScores);
@@ -592,7 +598,7 @@ const StatsGraph = ({ history, teams }) => {
     const getX = (round) => padding + (round / maxRound) * (width - padding * 2);
     const getY = (score) => height - padding - ((score - minScore) / range) * (height - padding * 2);
 
-    if (maxRound < 1) return <div className="text-gray-500">Not enough turns for a graph yet.</div>;
+    if (maxRound < 1) return <div className="text-gray-500">{t('grid.noGraph')}</div>;
 
     return (
         <div className="w-full overflow-x-auto">
@@ -602,17 +608,17 @@ const StatsGraph = ({ history, teams }) => {
                     return <line key={i} x1={padding} y1={y} x2={width - padding} y2={y} stroke="white" strokeOpacity="0.06" />;
                 })}
                 <line x1={padding} y1={getY(0)} x2={width - padding} y2={getY(0)} stroke="white" strokeOpacity="0.2" strokeDasharray="4" />
-                {Array.from({ length: teams }).map((_, t) => (
-                    <g key={t}>
+                {Array.from({ length: teams }).map((_, ti) => (
+                    <g key={ti}>
                         <polyline
-                            points={history.map((scores, round) => `${getX(round)},${getY(scores[t])}`).join(' ')}
+                            points={history.map((scores, round) => `${getX(round)},${getY(scores[ti])}`).join(' ')}
                             fill="none"
-                            stroke={team(t).color}
+                            stroke={team(ti).color}
                             strokeWidth="3"
                             strokeLinecap="round"
                             strokeLinejoin="round"
                         />
-                        <circle cx={getX(maxRound)} cy={getY(history[maxRound][t])} r="5" fill={team(t).color} stroke="#0b1128" strokeWidth="2" />
+                        <circle cx={getX(maxRound)} cy={getY(history[maxRound][ti])} r="5" fill={team(ti).color} stroke="#0b1128" strokeWidth="2" />
                     </g>
                 ))}
             </svg>

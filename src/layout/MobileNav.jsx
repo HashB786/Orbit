@@ -8,11 +8,11 @@ const MobileNav = () => {
     const { t } = useLanguage();
 
     const navItems = [
-        { path: '/', icon: Home, label: t('home') },
-        { path: '/discover', icon: Compass, label: t('discover') },
-        { path: '/create', icon: PenSquare, label: t('create') },
-        { path: '/games', icon: Gamepad2, label: t('games') },
-        { path: '/settings', icon: Settings, label: t('settings') },
+        { path: '/', icon: Home, label: t('nav.home') },
+        { path: '/discover', icon: Compass, label: t('nav.discover') },
+        { path: '/create', icon: PenSquare, label: t('nav.create') },
+        { path: '/games', icon: Gamepad2, label: t('nav.games') },
+        { path: '/settings', icon: Settings, label: t('nav.settings') },
     ];
 
     return (

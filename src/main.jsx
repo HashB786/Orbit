@@ -5,15 +5,27 @@ import './styles/index.css'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import { LanguageProvider } from './context/LanguageContext.jsx'
 import { UserProvider } from './context/UserContext.jsx'
+import { AuthProvider } from './context/AuthContext.jsx'
+import { detectLanguage, loadLanguage, setCurrentLanguage } from './i18n'
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-    <React.StrictMode>
-        <LanguageProvider>
-            <ThemeProvider>
-                <UserProvider>
-                    <App />
-                </UserProvider>
-            </ThemeProvider>
-        </LanguageProvider>
-    </React.StrictMode>,
-)
+const start = (lang) => {
+    setCurrentLanguage(lang);
+    ReactDOM.createRoot(document.getElementById('root')).render(
+        <React.StrictMode>
+            <LanguageProvider initial={lang}>
+                <ThemeProvider>
+                    <AuthProvider>
+                        <UserProvider>
+                            <App />
+                        </UserProvider>
+                    </AuthProvider>
+                </ThemeProvider>
+            </LanguageProvider>
+        </React.StrictMode>,
+    );
+};
+
+// Load Uzbek/Russian before the first paint (a small file); fall back to English if it fails
+const lang = detectLanguage();
+if (lang === 'en') start('en');
+else loadLanguage(lang).then(() => start(lang), () => start('en'));

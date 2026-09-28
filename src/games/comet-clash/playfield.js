@@ -8,11 +8,12 @@
 
 import { createRng } from './rng';
 import { audio } from '../../platform/audio/audio';
+import { t } from '../../i18n';
 
 const TAU = Math.PI * 2;
 const FONT = 'Inter, system-ui, -apple-system, "Segoe UI", sans-serif';
 const SPEEDS = { calm: 0.65, normal: 1, fast: 1.4 };
-const ORDINALS = ['1st', '2nd', '3rd', '4th', '5th', '6th'];
+const ordinal = (i) => (i < 6 ? t(`cc.ordinal.${i + 1}`) : t('cc.ordinalN', { n: i + 1 }));
 
 const KEYS = {
     left: ['ArrowLeft', 'KeyA'],
@@ -525,7 +526,7 @@ export class Playfield {
             rock.dying = 0.001;
             r.found++;
             if (r.kind === 'order') {
-                this.addFloater(rock.x, rock.y, `${ORDINALS[r.nextOrder] || r.nextOrder + 1} ✓`, '#34d399', 1.1);
+                this.addFloater(rock.x, rock.y, `${ordinal(r.nextOrder)} ✓`, '#34d399', 1.1);
                 r.nextOrder++;
             } else if (r.kind === 'multi') {
                 this.addFloater(rock.x, rock.y, `✓ ${r.found}/${r.total}`, '#34d399', 1.1);
@@ -547,7 +548,7 @@ export class Playfield {
         if (r.kind === 'order' && rock.correct) {
             // Right item, wrong moment: it stays, but you pay for the mistake
             rock.flash = 0.6;
-            this.addFloater(rock.x, rock.y, 'Not yet!', '#fbbf24', 0.9);
+            this.addFloater(rock.x, rock.y, t('cc.notYet'), '#fbbf24', 0.9);
         } else {
             this.splitRock(rock);
             this.addFloater(rock.x, rock.y, '✗', '#f87171', 0.9, 1.4);
@@ -808,7 +809,7 @@ export class Playfield {
             ctx.font = `800 ${Math.round(12 + 3 * this.scale)}px ${FONT}`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(`Stunned ${ship.stun.toFixed(1)}s`, cx, cy + size * 2.6);
+            ctx.fillText(t('cc.stunned', { s: ship.stun.toFixed(1) }), cx, cy + size * 2.6);
         }
     }
 }

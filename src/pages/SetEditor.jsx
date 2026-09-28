@@ -5,12 +5,17 @@ import QuestionCard from '../components/editor/QuestionCard';
 import ImportModal from '../components/editor/ImportModal';
 import { Modal, ConfirmDialog, EmptyState, btn, inputClass, cx, TYPE_ICONS } from '../components/ui';
 import { toast } from '../components/ui/toast';
-import { QUESTION_TYPES, TYPE_IDS, createQuestion, convertQuestion, isValidQuestion, uid } from '../platform/questions/types';
+import { TYPE_IDS, createQuestion, convertQuestion, isValidQuestion, uid } from '../platform/questions/types';
 import { demoQuestion } from '../platform/questions/demos';
 import { saveSet, findLocalSet } from '../platform/sets/store';
 import { publishSet, unpublishSet } from '../platform/sets/publicSets';
 import { SUBJECTS } from '../platform/sets/search';
 import { useUser } from '../context/UserContext';
+import { useT } from '../context/LanguageContext';
+import { subjectName } from '../components/sets/SetCard';
+
+// Store / library errors carry a code; anything else is a network problem
+const saveErrorKey = (err) => (err?.code === 'no-valid-questions' ? 'editor.noValid' : err?.code === 'no-owner' ? 'auth.syncError' : 'editor.network');
 
 const blankSet = () => ({
     id: null,
@@ -28,6 +33,7 @@ const SetEditor = () => {
     const { setId } = useParams();
     const [params] = useSearchParams();
     const navigate = useNavigate();
+    const t = useT();
     const { userData, updateUserData } = useUser();
 
     const existing = setId ? findLocalSet(setId) : null;
@@ -129,7 +135,7 @@ const SetEditor = () => {
 
     const addExamples = (typeList) => {
         update(d => append(d, typeList.map(demoQuestion)));
-        toast(typeList.length === 1 ? `Example added (${QUESTION_TYPES[typeList[0]].label}). Edit it to make it yours.` : 'One example of each type added. Edit them to make them yours.');
+        toast(typeList.length === 1 ? t('editor.exampleAdded', { type: t(`qtypes.${typeList[0]}.label`) }) : t('editor.examplesAdded'));
         scrollToEnd();
     };
 
@@ -143,7 +149,7 @@ const SetEditor = () => {
     const save = useCallback(async ({ quiet = false } = {}) => {
         if (!draft.title.trim()) {
             setShowErrors(true);
-            toast('Give your set a title first.', 'error');
+            toast(t('editor.needTitle'), 'error');
             return null;
         }
         setBusy(true);
@@ -154,7 +160,7 @@ const SetEditor = () => {
                 try {
                     await publishSet(saved);
                 } catch {
-                    toast('Saved here, but the public copy could not be updated.', 'error');
+                    toast(t('editor.publicCopyFailed'), 'error');
                 }
             }
             setDraft(saved);
@@ -162,14 +168,12 @@ const SetEditor = () => {
             clearDraft();
             setShowErrors(true);
             if (!quiet) {
-                toast(stats.incomplete
-                    ? `Saved. ${stats.incomplete} incomplete question${stats.incomplete === 1 ? '' : 's'} will be skipped in games.`
-                    : 'Saved!');
+                toast(stats.incomplete ? t('editor.savedIncomplete', { count: stats.incomplete }) : t('editor.saved'));
             }
             if (!setId) navigate(`/create/${saved.id}`, { replace: true });
             return saved;
         } catch (err) {
-            toast(err.message || 'Could not save.', 'error');
+            toast(t(saveErrorKey(err)), 'error');
             return null;
         } finally {
             setBusy(false);
@@ -201,10 +205,10 @@ const SetEditor = () => {
             setDirty(false);
             clearDraft();
             setPublishOpen(false);
-            toast('Published! It now appears in Discover.');
+            toast(t('editor.published'));
             if (!setId) navigate(`/create/${saved.id}`, { replace: true });
         } catch (err) {
-            toast(err.message || 'Publishing failed. Check your connection.', 'error');
+            toast(t(saveErrorKey(err)), 'error');
         } finally {
             setBusy(false);
         }
@@ -216,9 +220,9 @@ const SetEditor = () => {
             await unpublishSet(draft.remoteId);
             const saved = saveSet({ ...draft, remoteId: null, visibility: 'private' });
             setDraft(saved);
-            toast('Removed from the public library.');
+            toast(t('editor.unpublished'));
         } catch {
-            toast('Could not unpublish. Check your connection.', 'error');
+            toast(t('editor.network'), 'error');
         } finally {
             setBusy(false);
         }
@@ -236,7 +240,7 @@ const SetEditor = () => {
             return next;
         });
         setImportOpen(false);
-        toast(`Imported ${imported.length} question${imported.length === 1 ? '' : 's'}. Check them, then Save.`);
+        toast(t('editor.imported', { count: imported.length }));
         scrollToEnd();
     };
 
@@ -244,8 +248,8 @@ const SetEditor = () => {
 
     if (setId && !editable) {
         return (
-            <EmptyState icon={AlertTriangle} title="This set can't be edited here" action={<Link to={`/set/${setId}`} className={btn.primary}>Open the set</Link>}>
-                Only your own sets can be edited. Open it and choose "Copy &amp; edit" to make your own version.
+            <EmptyState icon={AlertTriangle} title={t('editor.notEditable')} action={<Link to={`/set/${setId}`} className={btn.primary}>{t('editor.openSet')}</Link>}>
+                {t('editor.notEditableText')}
             </EmptyState>
         );
     }
@@ -255,38 +259,38 @@ const SetEditor = () => {
             {/* Sticky toolbar */}
             <div className="sticky -top-4 md:-top-8 z-20 pb-3">
                 <div className="flex items-center gap-2 rounded-2xl border border-gray-200/80 dark:border-white/10 bg-white/95 dark:bg-[#0b1230]/95 shadow-[0_12px_30px_-18px_rgba(5,8,22,0.7)] p-2 pl-1">
-                <button onClick={goBack} className={btn.icon} aria-label="Back"><ArrowLeft size={20} /></button>
-                <span className="flex-1 min-w-0 font-display font-bold text-lg truncate">{draft.title || 'New set'}</span>
-                {dirty && <span className="hidden sm:inline text-xs text-amber-600 dark:text-amber-400 font-semibold">Unsaved</span>}
+                <button onClick={goBack} className={btn.icon} aria-label={t('common.back')}><ArrowLeft size={20} /></button>
+                <span className="flex-1 min-w-0 font-display font-bold text-lg truncate">{draft.title || t('create.newSet')}</span>
+                {dirty && <span className="hidden sm:inline text-xs text-amber-600 dark:text-amber-400 font-semibold">{t('editor.unsaved')}</span>}
                 {draft.id && !dirty && (
-                    <Link to={`/host/${draft.id}`} className={cx(btn.secondary, 'px-3')}><Play size={16} /> <span className="hidden sm:inline">Host</span></Link>
+                    <Link to={`/host/${draft.id}`} className={cx(btn.secondary, 'px-3')}><Play size={16} /> <span className="hidden sm:inline">{t('common.host')}</span></Link>
                 )}
-                <button onClick={() => save()} disabled={busy} className={btn.primary}><Save size={18} /> Save</button>
+                <button onClick={() => save()} disabled={busy} className={btn.primary}><Save size={18} /> {t('common.save')}</button>
                 </div>
             </div>
 
             {/* Details */}
             <section className="orbit-card p-4 sm:p-5 space-y-4 mt-2">
                 <div>
-                    <label htmlFor="set-title" className="block text-sm font-semibold mb-1.5">Title</label>
+                    <label htmlFor="set-title" className="block text-sm font-semibold mb-1.5">{t('editor.title')}</label>
                     <input
                         id="set-title"
                         value={draft.title}
                         onChange={e => update(d => ({ ...d, title: e.target.value.slice(0, 80) }))}
-                        placeholder="e.g. Photosynthesis basics"
+                        placeholder={t('editor.titlePlaceholder')}
                         className={cx(inputClass, 'text-lg font-bold', showErrors && !draft.title.trim() && 'border-red-400')}
                     />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="sm:col-span-2">
-                        <label htmlFor="set-desc" className="block text-sm font-semibold mb-1.5">Description <span className="text-gray-400 font-normal">(optional)</span></label>
-                        <input id="set-desc" value={draft.description} onChange={e => update(d => ({ ...d, description: e.target.value.slice(0, 200) }))} placeholder="What is this set about?" className={inputClass} />
+                        <label htmlFor="set-desc" className="block text-sm font-semibold mb-1.5">{t('editor.description')} <span className="text-gray-400 font-normal">{t('editor.optional')}</span></label>
+                        <input id="set-desc" value={draft.description} onChange={e => update(d => ({ ...d, description: e.target.value.slice(0, 200) }))} placeholder={t('editor.descriptionPlaceholder')} className={inputClass} />
                     </div>
                     <div>
-                        <label htmlFor="set-subject" className="block text-sm font-semibold mb-1.5">Subject</label>
+                        <label htmlFor="set-subject" className="block text-sm font-semibold mb-1.5">{t('discover.subject')}</label>
                         <select id="set-subject" value={draft.subject} onChange={e => update(d => ({ ...d, subject: e.target.value }))} className={inputClass}>
-                            <option value="">Choose…</option>
-                            {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                            <option value="">{t('editor.choose')}</option>
+                            {SUBJECTS.map(s => <option key={s} value={s}>{subjectName(t, s)}</option>)}
                         </select>
                     </div>
                 </div>
@@ -294,24 +298,24 @@ const SetEditor = () => {
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
                     <div className="flex items-center gap-2 text-sm">
                         {draft.visibility === 'public'
-                            ? <span className="inline-flex items-center gap-1.5 font-semibold text-sky-600 dark:text-sky-400"><Globe size={16} /> Public in Discover</span>
-                            : <span className="inline-flex items-center gap-1.5 font-semibold text-gray-500"><Lock size={15} /> Private</span>}
+                            ? <span className="inline-flex items-center gap-1.5 font-semibold text-sky-600 dark:text-sky-400"><Globe size={16} /> {t('editor.publicInDiscover')}</span>
+                            : <span className="inline-flex items-center gap-1.5 font-semibold text-gray-500"><Lock size={15} /> {t('sets.private')}</span>}
                     </div>
                     <div className="flex gap-2">
-                        <button onClick={() => setImportOpen(true)} className={btn.secondary}><Sparkles size={16} className="text-violet-400" /> Import</button>
+                        <button onClick={() => setImportOpen(true)} className={btn.secondary}><Sparkles size={16} className="text-violet-400" /> {t('editor.import')}</button>
                         {draft.visibility === 'public'
-                            ? <button onClick={unpublish} disabled={busy} className={btn.secondary}><Lock size={16} /> Unpublish</button>
-                            : <button onClick={() => setPublishOpen(true)} disabled={busy || stats.valid === 0} className={btn.secondary}><Globe size={16} /> Publish</button>}
+                            ? <button onClick={unpublish} disabled={busy} className={btn.secondary}><Lock size={16} /> {t('editor.unpublish')}</button>
+                            : <button onClick={() => setPublishOpen(true)} disabled={busy || stats.valid === 0} className={btn.secondary}><Globe size={16} /> {t('editor.publish')}</button>}
                     </div>
                 </div>
             </section>
 
             {/* Questions */}
             <div className="flex items-center justify-between mt-6 mb-3">
-                <h2 className="font-display text-xl font-bold">Questions <span className="text-gray-400 font-semibold">({draft.questions.length})</span></h2>
+                <h2 className="font-display text-xl font-bold">{t('setView.questions')} <span className="text-gray-400 font-semibold">({draft.questions.length})</span></h2>
                 {stats.incomplete > 0 && draft.questions.length > 0 && (
                     <button onClick={() => setShowErrors(true)} className="text-xs font-semibold text-amber-600 dark:text-amber-400">
-                        {stats.incomplete} incomplete
+                        {t('editor.incomplete', { count: stats.incomplete })}
                     </button>
                 )}
             </div>
@@ -332,30 +336,31 @@ const SetEditor = () => {
                     />
                 ))}
                 {draft.questions.length === 0 && (
-                    <p className="text-center text-sm text-gray-500 py-6">No questions yet. Add one below.</p>
+                    <p className="text-center text-sm text-gray-500 py-6">{t('editor.noQuestions')}</p>
                 )}
             </div>
 
             {/* Add question */}
             <div ref={bottomRef} className="mt-4 rounded-3xl border-2 border-dashed border-gray-300/80 dark:border-white/10 bg-white/50 dark:bg-white/[0.02] p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                    <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1.5"><Plus size={16} /> Add a question</p>
+                    <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1.5"><Plus size={16} /> {t('editor.addQuestion')}</p>
                     <div className="flex flex-wrap gap-1.5">
-                        <button onClick={() => addExamples(TYPE_IDS)} className={cx(btn.ghost, 'text-sm py-1.5')}><Wand2 size={15} className="text-violet-400" /> One example of each</button>
-                        <button onClick={() => setImportOpen(true)} className={cx(btn.ghost, 'text-sm py-1.5')}><Sparkles size={15} className="text-violet-400" /> From ChatGPT</button>
+                        <button onClick={() => addExamples(TYPE_IDS)} className={cx(btn.ghost, 'text-sm py-1.5')}><Wand2 size={15} className="text-violet-400" /> {t('editor.examplesEach')}</button>
+                        <button onClick={() => setImportOpen(true)} className={cx(btn.ghost, 'text-sm py-1.5')}><Sparkles size={15} className="text-violet-400" /> {t('editor.fromChatGPT')}</button>
                     </div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                    {TYPE_IDS.map(t => {
-                        const Icon = TYPE_ICONS[t];
+                    {TYPE_IDS.map(type => {
+                        const Icon = TYPE_ICONS[type];
+                        const label = t(`qtypes.${type}.label`);
                         return (
-                            <div key={t} className="flex flex-col rounded-2xl bg-white dark:bg-white/[0.04] border border-gray-200/80 dark:border-white/[0.07] overflow-hidden">
-                                <button onClick={() => addQuestion(t)} title={`Add an empty ${QUESTION_TYPES[t].label.toLowerCase()} question`} className="flex-1 flex flex-col items-center gap-1.5 px-2 pt-3 pb-2 hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:text-primary-700 dark:hover:text-primary-200 transition-colors">
+                            <div key={type} className="flex flex-col rounded-2xl bg-white dark:bg-white/[0.04] border border-gray-200/80 dark:border-white/[0.07] overflow-hidden">
+                                <button onClick={() => addQuestion(type)} title={t('editor.addEmpty', { type: label })} className="flex-1 flex flex-col items-center gap-1.5 px-2 pt-3 pb-2 hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:text-primary-700 dark:hover:text-primary-200 transition-colors">
                                     <Icon size={20} />
-                                    <span className="text-xs font-bold text-center leading-tight">{QUESTION_TYPES[t].label}</span>
+                                    <span className="text-xs font-bold text-center leading-tight">{label}</span>
                                 </button>
-                                <button onClick={() => addExamples([t])} className="text-[11px] font-semibold py-1.5 border-t border-gray-200/80 dark:border-white/[0.07] text-gray-500 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors">
-                                    + Example
+                                <button onClick={() => addExamples([type])} className="text-[11px] font-semibold py-1.5 border-t border-gray-200/80 dark:border-white/[0.07] text-gray-500 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors">
+                                    + {t('editor.example')}
                                 </button>
                             </div>
                         );
@@ -371,20 +376,20 @@ const SetEditor = () => {
             <Modal
                 open={publishOpen}
                 onClose={() => setPublishOpen(false)}
-                title="Publish to Discover"
+                title={t('editor.publishTitle')}
                 size="sm"
-                footer={<><button className={btn.secondary} onClick={() => setPublishOpen(false)}>Cancel</button><button className={btn.primary} disabled={!authorName.trim() || busy} onClick={publish}><Globe size={16} /> Publish</button></>}
+                footer={<><button className={btn.secondary} onClick={() => setPublishOpen(false)}>{t('common.cancel')}</button><button className={btn.primary} disabled={!authorName.trim() || busy} onClick={publish}><Globe size={16} /> {t('editor.publish')}</button></>}
             >
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">Anyone can find, play and copy public sets. {stats.incomplete > 0 && `${stats.incomplete} incomplete question${stats.incomplete === 1 ? ' is' : 's are'} left out.`}</p>
-                <label htmlFor="author" className="block text-sm font-semibold mb-1.5">Shown as author</label>
-                <input id="author" value={authorName} onChange={e => setAuthorName(e.target.value.slice(0, 40))} placeholder="Your name" className={inputClass} />
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">{t('editor.publishText')} {stats.incomplete > 0 && t('editor.leftOut', { count: stats.incomplete })}</p>
+                <label htmlFor="author" className="block text-sm font-semibold mb-1.5">{t('editor.author')}</label>
+                <input id="author" value={authorName} onChange={e => setAuthorName(e.target.value.slice(0, 40))} placeholder={t('auth.namePlaceholder')} className={inputClass} />
             </Modal>
 
             <ConfirmDialog
                 open={leaveOpen}
-                title="Leave without saving?"
-                message="Your changes to this set will be lost."
-                confirmLabel="Leave"
+                title={t('editor.leaveTitle')}
+                message={t('editor.leaveText')}
+                confirmLabel={t('editor.leave')}
                 danger
                 onCancel={() => setLeaveOpen(false)}
                 onConfirm={() => {

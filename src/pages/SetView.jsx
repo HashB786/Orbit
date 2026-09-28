@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Play, Pencil, Copy, Trash2, Eye, EyeOff, Target, Link as LinkIcon, Globe, Lock, Sparkles } from 'lucide-react';
 import QuestionPreview from '../components/sets/QuestionPreview';
-import { subjectEmoji } from '../components/sets/SetCard';
+import { subjectEmoji, subjectName } from '../components/sets/SetCard';
 import { useSet } from '../components/sets/useSet';
 import { PageSpinner, EmptyState, ConfirmDialog, TypeBadge, btn, cx } from '../components/ui';
 import { toast } from '../components/ui/toast';
@@ -11,10 +11,14 @@ import { unpublishSet } from '../platform/sets/publicSets';
 import { FEATURED_IDS } from '../platform/sets/featured';
 import { TYPE_IDS, isValidQuestion } from '../platform/questions/types';
 import { useUser } from '../context/UserContext';
+import { useAuth } from '../context/AuthContext';
+import { useT } from '../context/LanguageContext';
 
 const SetView = () => {
     const { setId } = useParams();
     const navigate = useNavigate();
+    const t = useT();
+    const auth = useAuth();
     const { userData } = useUser();
     const { set, loading, error, isMine } = useSet(setId);
     const [showAnswers, setShowAnswers] = useState(false);
@@ -23,27 +27,42 @@ const SetView = () => {
     if (loading) return <PageSpinner />;
     if (!set) {
         return (
-            <EmptyState icon={Target} title={error === 'network' ? "Couldn't load this set" : 'Set not found'} action={<Link to="/discover" className={btn.primary}>Browse sets</Link>}>
-                {error === 'network' ? 'Check your internet connection and try again.' : 'It may have been deleted or unpublished.'}
+            <EmptyState
+                icon={error === 'private' ? Lock : Target}
+                title={t(`setView.${error === 'network' || error === 'private' ? error : 'notFound'}.title`)}
+                action={error === 'private'
+                    ? <Link to={`/signin?next=${encodeURIComponent(`/set/${setId}`)}`} className={btn.primary}>{t('auth.signInButton')}</Link>
+                    : <Link to="/discover" className={btn.primary}>{t('setView.browse')}</Link>}
+            >
+                {t(`setView.${error === 'network' || error === 'private' ? error : 'notFound'}.text`)}
             </EmptyState>
         );
     }
 
-    const types = TYPE_IDS.filter(t => set.questions.some(q => q.type === t));
+    const types = TYPE_IDS.filter(id => set.questions.some(q => q.type === id));
     const playable = set.questions.filter(isValidQuestion).length;
     const featured = FEATURED_IDS.has(set.id);
 
     const copyAndEdit = () => {
-        const copy = duplicateSet(set, userData.name);
-        toast('Copied to your sets');
-        navigate(`/create/${copy.id}`);
+        // Copies are saved to a teacher account; send everyone else to sign in first
+        if (!auth.isTeacher) {
+            navigate(`/signin?next=${encodeURIComponent(`/set/${setId}`)}`);
+            return;
+        }
+        try {
+            const copy = duplicateSet(set, userData.name, t('common.copyOf'));
+            toast(t('setView.copied'));
+            navigate(`/create/${copy.id}`);
+        } catch {
+            toast(t('auth.syncError'), 'error');
+        }
     };
 
     const share = async () => {
         const url = `${window.location.origin}/set/${set.remoteId ? `p_${set.remoteId}` : set.id}`;
         try {
             await navigator.clipboard.writeText(url);
-            toast('Link copied');
+            toast(t('setView.linkCopied'));
         } catch {
             toast(url, 'info');
         }
@@ -54,17 +73,17 @@ const SetView = () => {
         try {
             if (set.remoteId) await unpublishSet(set.remoteId);
             deleteSet(set.id);
-            toast('Set deleted');
+            toast(t('setView.deleted'));
             navigate('/create');
         } catch {
-            toast('Could not remove the public copy. Try again.', 'error');
+            toast(t('create.unpublishFailed'), 'error');
         }
     };
 
     return (
         <div className="max-w-3xl mx-auto space-y-6 md:pb-16">
             {/* Opened from a shared link there is no history to go back to */}
-            <button onClick={() => (window.history.state?.idx > 0 ? navigate(-1) : navigate('/discover'))} className={cx(btn.ghost, '-ml-3')}><ArrowLeft size={18} /> Back</button>
+            <button onClick={() => (window.history.state?.idx > 0 ? navigate(-1) : navigate('/discover'))} className={cx(btn.ghost, '-ml-3')}><ArrowLeft size={18} /> {t('common.back')}</button>
 
             <header className="orbit-card p-5 sm:p-6 flex flex-col sm:flex-row gap-5 sm:items-center">
                 <span className="relative w-20 h-20 shrink-0 flex items-center justify-center text-4xl" aria-hidden>
@@ -75,38 +94,38 @@ const SetView = () => {
                 <div className="min-w-0">
                     <h1 className="orbit-title text-2xl md:text-4xl break-words pb-0.5">{set.title}</h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                        {featured && <span className="inline-flex items-center gap-1 text-amber-600 font-semibold"><Sparkles size={14} /> Featured</span>}
+                        {featured && <span className="inline-flex items-center gap-1 text-amber-600 font-semibold"><Sparkles size={14} /> {t('sets.featured')}</span>}
                         {isMine && (set.visibility === 'public'
-                            ? <span className="inline-flex items-center gap-1 text-sky-600 font-semibold"><Globe size={14} /> Public</span>
-                            : <span className="inline-flex items-center gap-1"><Lock size={13} /> Private</span>)}
-                        <span>{set.questions.length} questions</span>
-                        {set.subject && <span>· {set.subject}</span>}
-                        {set.author && <span>· by {set.author}</span>}
+                            ? <span className="inline-flex items-center gap-1 text-sky-600 font-semibold"><Globe size={14} /> {t('sets.public')}</span>
+                            : <span className="inline-flex items-center gap-1"><Lock size={13} /> {t('sets.private')}</span>)}
+                        <span>{t('common.questions', { count: set.questions.length })}</span>
+                        {set.subject && <span>· {subjectName(t, set.subject)}</span>}
+                        {set.author && <span>· {t('common.by', { name: set.author })}</span>}
                     </p>
                     {set.description && <p className="text-gray-600 dark:text-gray-300 mt-2">{set.description}</p>}
-                    <div className="flex flex-wrap gap-1.5 mt-3">{types.map(t => <TypeBadge key={t} type={t} short={false} />)}</div>
+                    <div className="flex flex-wrap gap-1.5 mt-3">{types.map(id => <TypeBadge key={id} type={id} short={false} />)}</div>
                 </div>
             </header>
 
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
                 <Link to={`/host/${set.id}`} className={cx(btn.primary, 'col-span-2 sm:col-span-1', playable === 0 && 'pointer-events-none opacity-50')} aria-disabled={playable === 0}>
-                    <Play size={18} className="fill-current" /> Host a game
+                    <Play size={18} className="fill-current" /> {t('setView.host')}
                 </Link>
                 <Link to={`/practice/${set.id}`} className={cx(btn.secondary, playable === 0 && 'pointer-events-none opacity-50')}>
-                    <Target size={18} /> Practice
+                    <Target size={18} /> {t('common.practice')}
                 </Link>
                 {isMine
-                    ? <Link to={`/create/${set.id}`} className={btn.secondary}><Pencil size={18} /> Edit</Link>
-                    : <button onClick={copyAndEdit} className={btn.secondary}><Copy size={18} /> Copy &amp; edit</button>}
-                {(isMine ? set.remoteId : !featured) && <button onClick={share} className={btn.secondary}><LinkIcon size={18} /> Share</button>}
-                {isMine && <button onClick={() => setConfirmDelete(true)} className={cx(btn.secondary, 'hover:!text-red-600')}><Trash2 size={18} /> Delete</button>}
+                    ? <Link to={`/create/${set.id}`} className={btn.secondary}><Pencil size={18} /> {t('common.edit')}</Link>
+                    : <button onClick={copyAndEdit} className={btn.secondary}><Copy size={18} /> {t('setView.copyEdit')}</button>}
+                {(isMine ? set.remoteId : !featured) && <button onClick={share} className={btn.secondary}><LinkIcon size={18} /> {t('common.share')}</button>}
+                {isMine && <button onClick={() => setConfirmDelete(true)} className={cx(btn.secondary, 'hover:!text-red-600')}><Trash2 size={18} /> {t('common.delete')}</button>}
             </div>
 
             <section>
                 <div className="flex items-center justify-between mb-3">
-                    <h2 className="font-display text-xl font-bold">Questions</h2>
+                    <h2 className="font-display text-xl font-bold">{t('setView.questions')}</h2>
                     <button onClick={() => setShowAnswers(v => !v)} className={btn.ghost}>
-                        {showAnswers ? <EyeOff size={16} /> : <Eye size={16} />} {showAnswers ? 'Hide answers' : 'Show answers'}
+                        {showAnswers ? <EyeOff size={16} /> : <Eye size={16} />} {showAnswers ? t('setView.hideAnswers') : t('setView.showAnswers')}
                     </button>
                 </div>
                 <ol className="space-y-2">
@@ -116,9 +135,9 @@ const SetView = () => {
 
             <ConfirmDialog
                 open={confirmDelete}
-                title="Delete this set?"
-                message={set.remoteId ? 'It will also be removed from the public library.' : 'This cannot be undone.'}
-                confirmLabel="Delete"
+                title={t('create.deleteTitle')}
+                message={set.remoteId ? t('setView.deletePublic') : t('setView.deletePrivate')}
+                confirmLabel={t('common.delete')}
                 danger
                 onConfirm={remove}
                 onCancel={() => setConfirmDelete(false)}

@@ -1,0 +1,97 @@
+// Game descriptions (games.*) and host settings (gs.*)
+export const games = {
+    live: 'Live · students join with a code',
+    liveShort: 'Live · join with code',
+    board: 'Smart board · one screen',
+    boardShort: 'Smart board',
+    cc: {
+        name: 'Comet Clash',
+        tagline: 'Blast the asteroid with the right answer: 1v1 Duels, or everyone at once in a Meteor Shower.',
+        how: [
+            'Students join with the code on their own phones or laptops.',
+            'Duels: two students race on the same question. First to blast the answer +1, both miss −1, and the duel winner gets a bonus.',
+            'Meteor Shower: everyone answers every question. Up to 100 points for speed, −100 for not finding it.',
+            'Missed questions come back later, and you get a class report at the end.'
+        ],
+        notes: {
+            typed: 'Shown as asteroids: the answer plus decoys from the rest of the set.',
+            multi: 'Blast every correct asteroid.',
+            order: 'Blast the asteroids in the right order.'
+        }
+    },
+    grid: {
+        name: 'Grid Battle',
+        tagline: 'Space teams explore a board of tiles: questions, black holes, shooting stars and meteor strikes.',
+        how: [
+            'Split the class into up to 6 space teams and put the board on the big screen.',
+            'Teams take turns picking a tile. Questions are answered out loud and you judge them.',
+            'Hidden tiles: black holes (−1), solar winds (reset), shooting stars (+1), meteor strikes (hit a team) and wormholes (lose a turn).'
+        ],
+        notes: {
+            typed: 'The answer is revealed on screen for you to judge.'
+        }
+    },
+    millionaire: {
+        name: 'Who Wants to Be a Millionaire?',
+        tagline: 'Climb the money tree on the big screen with lifelines and dramatic reveals.',
+        how: [
+            'Play as a whole class or pick a contestant.',
+            'Each correct answer climbs the money tree. One wrong answer ends the run.',
+            'Use 50:50 and Ask the Audience when you get stuck.'
+        ],
+        notes: {
+            typed: 'Shown as four options: the answer plus decoys from the rest of the set.',
+            multi: 'Millionaire always has exactly one right answer.',
+            order: 'Millionaire always has exactly one right answer.'
+        }
+    }
+};
+
+export const gs = {
+    cc: {
+        mode: {
+            label: 'Mode',
+            options: { duel: 'Duels', shower: 'Meteor Shower' },
+            helpShower: 'Everyone plays every question. The fastest correct player gets 100; the others get 100 × fastest time ÷ their time.',
+            helpDuel: 'Two random students face off; everyone is re-paired until time runs out.'
+        },
+        duration: { label: 'Game length' },
+        showerQuestions: { label: 'Questions' },
+        rounds: { label: 'Rounds per duel' },
+        roundTime: { label: 'Seconds per question' },
+        winBonus: { label: 'Duel win bonus' },
+        missPenalty: { label: 'When both miss', options: { 0: 'No penalty', '-1': '−1 each', '-2': '−2 each' } },
+        missPoints: { label: 'Didn\'t find the answer' },
+        negativeScores: { label: 'Total scores can go below zero' },
+        suddenDeath: { label: 'Sudden-death round on a tie' },
+        bots: { label: 'Bot rival when nobody is free', help: 'Bots never appear on the leaderboard. Beating one gives half the win bonus.' },
+        botWait: { label: 'Seconds before a bot joins' },
+        speed: { label: 'Asteroid speed', options: { calm: 'Calm', normal: 'Normal', fast: 'Fast' } },
+        hostTimeout: {
+            label: 'If your screen goes offline',
+            options: { 0: 'Wait for me (never end)', 60: 'End the game after 1 min', 180: 'End the game after 3 min', 300: 'End the game after 5 min' },
+            help: 'While your screen is offline the game pauses. Come back in time and it continues where it stopped.'
+        },
+        lateJoin: { label: 'Allow joining after the start' },
+        randomNames: { label: 'Fun random nicknames', help: 'Students get a generated name like "Cosmic Otter" instead of typing one.' },
+        studentLeaderboard: { label: 'Show rank on student screens' },
+        studentMusic: { label: 'Music on student devices', help: 'Soft background music on phones. Each student can mute it.' },
+        studentSound: { label: 'Sound effects on student devices' }
+    },
+    grid: {
+        teams: { label: 'Teams' },
+        rows: { label: 'Rows' },
+        cols: { label: 'Columns' },
+        bombs: { label: 'Black holes (−1 point)' },
+        winds: { label: 'Solar winds (score reset)' },
+        bonuses: { label: 'Shooting stars (+1 point)' },
+        grenades: { label: 'Meteor strikes (hit a team)' },
+        skips: { label: 'Wormholes (lose a turn)' }
+    },
+    millionaire: {
+        questionCount: { label: 'Questions to the top' },
+        fiftyFifty: { label: '50:50 lifeline' },
+        askAudience: { label: 'Ask the Audience lifeline' },
+        suspense: { label: 'Answer reveal', options: { quick: 'Quick', dramatic: 'Dramatic' } }
+    }
+};

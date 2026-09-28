@@ -4,12 +4,13 @@ import { roomPath } from '../../platform/rooms/rooms';
 import { audio } from '../../platform/audio/audio';
 import { useTheme } from '../../context/ThemeContext';
 import { Playfield } from './playfield';
-import { Avatar, MuteButton } from './playerUi';
-
-const ORDINALS = ['1st', '2nd', '3rd', '4th', '5th', '6th'];
+import { Avatar, MuteButton, roundHint } from './playerUi';
+import { useT } from '../../context/LanguageContext';
+import Slots from '../../i18n/Slots';
 
 // A student's screen during a Meteor Shower: every question, same time as the whole class
 const ShowerPlay = ({ rt, code, shower, me, meId, myRank, total, settings }) => {
+    const t = useT();
     const { performance } = useTheme();
     const canvasRef = useRef(null);
     const fieldRef = useRef(null);
@@ -132,7 +133,7 @@ const ShowerPlay = ({ rt, code, shower, me, meId, myRank, total, settings }) => 
                         <Avatar color={me.color} name={me.name} size={30} />
                         <span className="font-black text-2xl tabular-nums">{me.score || 0}</span>
                     </div>
-                    <span className="text-xs sm:text-sm font-bold text-gray-400 whitespace-nowrap">Question {Math.max(1, round)} / {total}</span>
+                    <span className="text-xs sm:text-sm font-bold text-gray-400 whitespace-nowrap">{t('shower.question', { n: Math.max(1, round), total })}</span>
                     <span className="flex items-center justify-end gap-2 min-w-[2.5rem]">
                         <span className="text-sm font-black text-amber-300 tabular-nums">{settings.studentLeaderboard !== false && myRank > 0 ? `#${myRank}` : ''}</span>
                         <MuteButton inline />
@@ -144,9 +145,7 @@ const ShowerPlay = ({ rt, code, shower, me, meId, myRank, total, settings }) => 
                             <p className="max-w-3xl mx-auto text-base sm:text-xl md:text-2xl font-bold leading-snug line-clamp-3 break-words">{q.prompt}</p>
                             {q.kind !== 'single' && !note && (
                                 <p className="mt-1.5 text-xs sm:text-sm font-bold text-emerald-300">
-                                    {q.kind === 'multi'
-                                        ? `Blast every correct answer${progress ? ` · ${progress.found}/${progress.total}` : ''}`
-                                        : `Blast them in order${progress ? ` · next: ${ORDINALS[progress.found] || progress.found + 1}` : ' · 1st first'}`}
+                                    {roundHint(t, q.kind, progress)}
                                 </p>
                             )}
                         </>
@@ -166,7 +165,7 @@ const ShowerPlay = ({ rt, code, shower, me, meId, myRank, total, settings }) => 
                 {status === 'round' && note && (
                     <div className="pointer-events-none absolute top-3 inset-x-0 flex justify-center px-4">
                         <span className={`px-3 py-1.5 rounded-full text-sm font-black ${note === 'done' ? 'bg-emerald-400 text-gray-950' : 'bg-white/15 text-white'}`}>
-                            {note === 'done' ? 'Locked in! Waiting for the class…' : "Time's up! Waiting for the class…"}
+                            {note === 'done' ? t('shower.lockedIn') : t('shower.timeUp')}
                         </span>
                     </div>
                 )}
@@ -174,9 +173,9 @@ const ShowerPlay = ({ rt, code, shower, me, meId, myRank, total, settings }) => 
                 {(!status || status === 'intro') && (
                     <div className="absolute inset-0 bg-[#040714]/95 flex flex-col items-center justify-center gap-3 px-6 text-center">
                         <Sparkles size={44} className="text-emerald-300" />
-                        <p className="text-xs font-black uppercase tracking-[0.3em] text-emerald-300">Meteor Shower</p>
-                        <p className="text-3xl font-black">Get ready!</p>
-                        <p className="text-gray-400 max-w-xs">Everyone answers every question. Be the fastest to find it for 100 points.</p>
+                        <p className="text-xs font-black uppercase tracking-[0.3em] text-emerald-300">{t('shower.name')}</p>
+                        <p className="text-3xl font-black">{t('shower.getReady')}</p>
+                        <p className="text-gray-400 max-w-xs">{t('shower.introText')}</p>
                     </div>
                 )}
 
@@ -184,16 +183,16 @@ const ShowerPlay = ({ rt, code, shower, me, meId, myRank, total, settings }) => 
                     <div className="absolute inset-x-0 bottom-0 p-4 flex justify-center pointer-events-none pb-safe">
                         <div className="w-full max-w-md rounded-3xl bg-[#0b1128]/95 border border-white/10 p-5 text-center shadow-2xl">
                             {myDelta === undefined ? (
-                                <p className="text-xl font-black text-gray-300">Next question coming up</p>
+                                <p className="text-xl font-black text-gray-300">{t('shower.nextQuestion')}</p>
                             ) : myDelta > 0 ? (
                                 <p className="text-4xl font-black text-emerald-300 tabular-nums">+{myDelta}</p>
                             ) : (
                                 <p className="text-4xl font-black text-rose-300 tabular-nums">{myDelta}</p>
                             )}
-                            {myDelta === 100 && shower.last.fastest?.pid === meId && <p className="text-amber-300 font-bold mt-1">Fastest in the class!</p>}
-                            <p className="mt-2 text-sm text-gray-300 break-words">Answer: <b className="text-white">{shower.last.answer}</b></p>
+                            {myDelta === 100 && shower.last.fastest?.pid === meId && <p className="text-amber-300 font-bold mt-1">{t('shower.fastest')}</p>}
+                            <p className="mt-2 text-sm text-gray-300 break-words"><Slots text={t('cc.answer')} slots={{ answer: <b className="text-white">{shower.last.answer}</b> }} /></p>
                             {settings.studentLeaderboard !== false && myRank > 0 && (
-                                <p className="mt-2 text-sm font-bold text-gray-400 flex items-center justify-center gap-1.5"><Trophy size={14} className="text-amber-300" /> You're #{myRank}</p>
+                                <p className="mt-2 text-sm font-bold text-gray-400 flex items-center justify-center gap-1.5"><Trophy size={14} className="text-amber-300" /> {t('shower.yourRank', { rank: myRank })}</p>
                             )}
                         </div>
                     </div>

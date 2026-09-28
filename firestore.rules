@@ -1,26 +1,56 @@
 rules_version = '2';
 
-// Public question sets (Discover tab).
-// Anyone can read. Creating, editing and deleting require the (invisible) anonymous sign-in
-// and only work on your own sets. Anyone signed in may add +1 to "plays".
+// Orbit Firestore rules.
+// - Teachers (Google or email accounts with a verified email) create, publish and host.
+// - Students and guests are anonymous: they may read public sets, never write.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /question_sets/{setId} {
-      function validSet() {
-        let d = request.resource.data;
-        return d.title is string && d.title.size() > 0 && d.title.size() <= 80
-          && d.questions is list && d.questions.size() > 0 && d.questions.size() <= 200
-          && d.ownerId == request.auth.uid;
-      }
 
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Google and email accounts have an email; anonymous guests (students) never do.
+    // (Checked through the token's email rather than sign_in_provider, which can still say
+    // 'anonymous' right after a guest session is upgraded to an account.)
+    function isAccount() {
+      return signedIn() && request.auth.token.get('email', '') != '';
+    }
+
+    // Google accounts are verified automatically; email accounts after clicking the link
+    function isTeacher() {
+      return isAccount() && request.auth.token.get('email_verified', false) == true;
+    }
+
+    function validSet(d) {
+      return d.title is string && d.title.size() > 0 && d.title.size() <= 80
+        && d.questions is list && d.questions.size() <= 300;
+    }
+
+    // Public library (Discover)
+    match /question_sets/{setId} {
       allow read: if true;
-      allow create: if request.auth != null && validSet();
-      allow update: if request.auth != null && (
-        (resource.data.ownerId == request.auth.uid && validSet())
+      allow create: if isTeacher() && validSet(request.resource.data)
+        && request.resource.data.questions.size() > 0
+        && request.resource.data.ownerId == request.auth.uid;
+      allow update: if signedIn() && (
+        (isTeacher() && resource.data.ownerId == request.auth.uid
+          && validSet(request.resource.data) && request.resource.data.ownerId == request.auth.uid)
+        // Anyone hosting a set may count one play
         || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['plays'])
             && request.resource.data.plays == resource.data.plays + 1)
       );
-      allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow delete: if isAccount() && resource.data.ownerId == request.auth.uid;
+    }
+
+    // Teacher profile (name, email, accepted terms) and private sets
+    match /users/{uid} {
+      allow read, write: if isAccount() && request.auth.uid == uid;
+
+      match /sets/{setId} {
+        allow read, delete: if isAccount() && request.auth.uid == uid;
+        allow create, update: if isTeacher() && request.auth.uid == uid && validSet(request.resource.data);
+      }
     }
   }
 }

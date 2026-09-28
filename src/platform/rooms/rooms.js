@@ -12,6 +12,7 @@
 import { getRealtime, getTabId } from '../realtime';
 import { cleanName, randomName, colorFor } from './names';
 import { roomPath, HEARTBEAT_MS } from './shared';
+import { t } from '../../i18n';
 
 export { roomPath, isOnline, OFFLINE_AFTER_MS, HEARTBEAT_MS } from './shared';
 
@@ -24,19 +25,11 @@ export class RoomError extends Error {
     }
 }
 
-const ROOM_ERRORS = {
-    'not-found': "We couldn't find a game with that code. Check the numbers and try again.",
-    ended: 'That game has already finished.',
-    locked: 'The teacher has locked this game.',
-    started: 'This game has already started and is not accepting new players.',
-    full: 'This game is full.',
-    kicked: 'You were removed from this game.',
-    'bad-name': 'Please enter a nickname.',
-    'name-taken': 'This nickname is already taken. Try another one.'
-};
+// Messages are translated when thrown; screens can also switch on err.reason
+const ROOM_ERRORS = ['not-found', 'ended', 'locked', 'started', 'full', 'kicked', 'bad-name', 'name-taken'];
 
 const fail = (reason) => {
-    throw new RoomError(reason, ROOM_ERRORS[reason] || 'Something went wrong.');
+    throw new RoomError(reason, t(`roomErrors.${ROOM_ERRORS.includes(reason) ? reason : 'generic'}`));
 };
 
 export const isValidCode = (code) => /^\d{6}$/.test(String(code));
@@ -55,14 +48,14 @@ export const createRoom = async ({ gameId, set, settings, hostName, setId = null
         });
         if (committed) code = candidate;
     }
-    if (!code) throw new Error('Could not reserve a room code. Please try again.');
+    if (!code) throw new Error(t('roomErrors.noCode'));
 
     await rt.set(roomPath(code), {
         meta: {
             code,
             gameId,
             hostId: rt.clientId,
-            hostName: cleanName(hostName) || 'Teacher',
+            hostName: cleanName(hostName) || t('play.teacher'),
             status: 'lobby',
             locked: false,
             createdAt: rt.now(),
@@ -74,7 +67,37 @@ export const createRoom = async ({ gameId, set, settings, hostName, setId = null
         set: { title: set.title, questions: set.questions },
         host: { connected: true, lastSeen: rt.now() }
     });
+    cleanUpOldRooms(rt, code);
     return code;
+};
+
+// Game rooms are temporary (see the Privacy Policy): each new room removes this teacher's
+// rooms that are more than a week old
+const ROOM_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+const myRoomsKey = (uid) => `orbit.myRooms.${uid}`;
+
+const cleanUpOldRooms = (rt, newCode) => {
+    const owner = rt.clientId;
+    let list = [];
+    try {
+        list = JSON.parse(localStorage.getItem(myRoomsKey(owner)) || '[]');
+    } catch {
+        list = [];
+    }
+    const now = rt.now();
+    const keep = [];
+    for (const room of Array.isArray(list) ? list : []) {
+        if (room?.code && now - room.createdAt > ROOM_MAX_AGE) {
+            rt.remove(roomPath(room.code)).catch(() => {});
+            rt.remove(`codes/${room.code}`).catch(() => {});
+        } else if (room?.code) keep.push(room);
+    }
+    keep.push({ code: newCode, createdAt: now });
+    try {
+        localStorage.setItem(myRoomsKey(owner), JSON.stringify(keep.slice(-200)));
+    } catch {
+        /* ignore */
+    }
 };
 
 // New room with the same set and settings. Students still on the old room's final screen
@@ -82,7 +105,7 @@ export const createRoom = async ({ gameId, set, settings, hostName, setId = null
 export const playAgain = async (oldCode) => {
     const rt = await getRealtime();
     const [meta, set] = await Promise.all([rt.get(roomPath(oldCode, 'meta')), rt.get(roomPath(oldCode, 'set'))]);
-    if (!meta || !set) throw new Error('The old game could not be found.');
+    if (!meta || !set) throw new Error(t('roomErrors.oldGame'));
     const questions = Array.isArray(set.questions) ? set.questions : Object.values(set.questions || {});
     const code = await createRoom({
         gameId: meta.gameId,
