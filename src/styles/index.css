@@ -33,8 +33,22 @@
         --color-primary-950: 23 37 84;
     }
 
+    html {
+        -webkit-text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent;
+    }
+
     body {
         @apply antialiased text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-dark-bg transition-colors duration-500 overflow-x-hidden;
+    }
+
+    /* Honour the OS "reduce motion" setting for CSS animations too */
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
     }
 }
 
@@ -54,6 +68,41 @@
 
     .text-glow {
         text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+    }
+
+    /* Full viewport height that ignores the mobile browser address bar */
+    .app-height {
+        height: 100vh;
+        height: 100dvh;
+    }
+
+    /* Keep content clear of the iPhone home indicator / notch */
+    .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .pt-safe {
+        padding-top: env(safe-area-inset-top);
+    }
+
+    /* Countdown numbers pop in once */
+    .animate-ping-once {
+        animation: orbit-ping-once 0.4s ease-out both;
+    }
+
+    @keyframes orbit-ping-once {
+        0% { transform: scale(1.7); opacity: 0; }
+        45% { opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Hover-only controls must stay visible on touch screens */
+    @media (hover: none) {
+        .touch-visible {
+            opacity: 1 !important;
+            --tw-scale-x: 1 !important;
+            --tw-scale-y: 1 !important;
+        }
     }
 }
 

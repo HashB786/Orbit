@@ -1,0 +1,57 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "codes": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && !data.exists() && newData.child('hostId').val() === auth.uid"
+      }
+    },
+
+    "rooms": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && ((!data.exists() && newData.child('meta/hostId').val() === auth.uid && root.child('codes').child($code).child('hostId').val() === auth.uid) || data.child('meta/hostId').val() === auth.uid)",
+
+        "players": {
+          "$playerId": {
+            "name": {
+              ".write": "auth != null && $playerId.beginsWith(auth.uid + '_') && !data.exists()",
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 16"
+            },
+            "color": {
+              ".write": "auth != null && $playerId.beginsWith(auth.uid + '_') && !data.exists()",
+              ".validate": "newData.isString() && newData.val().length <= 16"
+            },
+            "joinedAt": {
+              ".write": "auth != null && $playerId.beginsWith(auth.uid + '_') && !data.exists()",
+              ".validate": "newData.isNumber()"
+            },
+            "connected": {
+              ".write": "auth != null && $playerId.beginsWith(auth.uid + '_')",
+              ".validate": "newData.isBoolean()"
+            },
+            "lastSeen": {
+              ".write": "auth != null && $playerId.beginsWith(auth.uid + '_')",
+              ".validate": "newData.isNumber()"
+            }
+          }
+        },
+
+        "matches": {
+          "$matchId": {
+            "results": {
+              "$round": {
+                "$playerId": {
+                  ".write": "auth != null && $playerId.beginsWith(auth.uid + '_') && !data.exists() && !root.child('rooms').child($code).child('players').child($playerId).child('kicked').exists()"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

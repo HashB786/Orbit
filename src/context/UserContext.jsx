@@ -1,39 +1,30 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+// The only profile data for now: the display name used as author name and default nickname.
+// (Google sign-in for teachers comes later; joining a game never needs an account.)
 const UserContext = createContext();
 
+const read = () => {
+    try {
+        const stored = JSON.parse(localStorage.getItem('userSettings') || '{}');
+        return { name: typeof stored.name === 'string' ? stored.name : '' };
+    } catch {
+        return { name: '' };
+    }
+};
+
 export const UserProvider = ({ children }) => {
-    const [userData, setUserData] = useState(() => {
-        try {
-            const stored = localStorage.getItem('userSettings');
-            return stored ? JSON.parse(stored) : {
-                name: '',
-                grade: '', // e.g., "8"
-                classColor: 'green', // "green" or "blue"
-                isOnboarded: false
-            };
-        } catch (e) {
-            return {
-                name: '',
-                grade: '',
-                classColor: 'green',
-                isOnboarded: false
-            };
-        }
-    });
+    const [userData, setUserData] = useState(read);
 
     useEffect(() => {
-        localStorage.setItem('userSettings', JSON.stringify(userData));
-
-        // Sync with legacy "lastClass" for Timetable compatibility
-        if (userData.grade && userData.classColor) {
-            localStorage.setItem('lastClass', `${userData.grade}_${userData.classColor}`);
+        try {
+            localStorage.setItem('userSettings', JSON.stringify(userData));
+        } catch {
+            /* ignore */
         }
     }, [userData]);
 
-    const updateUserData = (updates) => {
-        setUserData(prev => ({ ...prev, ...updates }));
-    };
+    const updateUserData = (updates) => setUserData(prev => ({ ...prev, ...updates }));
 
     return (
         <UserContext.Provider value={{ userData, updateUserData }}>

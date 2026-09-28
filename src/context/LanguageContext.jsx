@@ -4,99 +4,72 @@ const LanguageContext = createContext();
 
 const translations = {
     en: {
-        home: 'Dashboard',
-        timetable: 'Timetable',
-        todo: 'To-Do',
+        home: 'Home',
+        discover: 'Discover',
+        create: 'Create',
+        games: 'Games',
         settings: 'Settings',
+        joinGame: 'Join a game',
         profile: 'Profile',
         appearance: 'Appearance',
-        dangerZone: 'Danger Zone',
-        deleteAccount: 'Delete Account',
-        save: 'Save',
-        custom: 'Custom',
-        sorted: 'Sorted',
-        filters: 'Filters',
-        priority: 'Priority',
-        deadline: 'Deadline',
-        categories: 'Categories',
-        welcome: 'Welcome back',
-        selectClass: 'Select Class',
-        upcoming: 'Coming Up',
-        now: 'Happening Now',
-        noClasses: 'No classes right now',
-        addTask: 'Add a new task...',
-        emptyTodo: 'All caught up! Time to relax.',
         theme: 'Appearance',
         language: 'Language',
+        sound: 'Sound',
+        save: 'Save',
+        welcome: 'Welcome back'
     },
     uz: {
-        home: 'Boshqaruv',
-        timetable: 'Dars Jadvali',
-        todo: 'Vazifalar',
+        home: 'Bosh sahifa',
+        discover: 'Kashf etish',
+        create: 'Yaratish',
+        games: "O'yinlar",
         settings: 'Sozlamalar',
+        joinGame: "O'yinga qo'shilish",
         profile: 'Profil',
-        appearance: 'Ko\'rinish',
-        dangerZone: 'Xavfli Hudud',
-        deleteAccount: 'Hisobni O\'chirish',
-        save: 'Saqlash',
-        custom: 'Boshqacha',
-        sorted: 'Saralangan',
-        filters: 'Filterlar',
-        priority: 'Muhimlik',
-        deadline: 'Muddat',
-        categories: 'Kategoriyalar',
-        welcome: 'Xush kelibsiz',
-        selectClass: 'Sinfni Tanlang',
-        upcoming: 'Navbatdagi',
-        now: 'Hozirgi Dars',
-        noClasses: 'Hozir dars yo\'q',
-        addTask: 'Yangi vazifa qo\'shish...',
-        emptyTodo: 'Hammasi bajarildi! Dam olish vaqti.',
-        theme: 'Ko\'rinish',
+        appearance: "Ko'rinish",
+        theme: "Ko'rinish",
         language: 'Til',
+        sound: 'Ovoz',
+        save: 'Saqlash',
+        welcome: 'Xush kelibsiz'
     },
     ru: {
         home: 'Главная',
-        timetable: 'Расписание',
-        todo: 'Задачи',
+        discover: 'Обзор',
+        create: 'Создать',
+        games: 'Игры',
         settings: 'Настройки',
+        joinGame: 'Войти в игру',
         profile: 'Профиль',
         appearance: 'Внешний вид',
-        dangerZone: 'Опасная зона',
-        deleteAccount: 'Удалить аккаунт',
-        save: 'Сохранить',
-        custom: 'Свой порядок',
-        sorted: 'Сортировка',
-        filters: 'Фильтры',
-        priority: 'Приоритет',
-        deadline: 'Срок',
-        categories: 'Категории',
-        welcome: 'Добро пожаловать',
-        selectClass: 'Выберите класс',
-        upcoming: 'Далее',
-        now: 'Сейчас',
-        noClasses: 'Сейчас нет уроков',
-        addTask: 'Добавить задачу...',
-        emptyTodo: 'Всё сделано! Время отдыхать.',
         theme: 'Тема',
         language: 'Язык',
-    },
+        sound: 'Звук',
+        save: 'Сохранить',
+        welcome: 'С возвращением'
+    }
 };
 
 export const LanguageProvider = ({ children }) => {
     const [lang, setLang] = useState(() => {
-        const saved = localStorage.getItem('language');
-        return (saved && translations[saved]) ? saved : 'en';
+        try {
+            const saved = localStorage.getItem('language');
+            return saved && translations[saved] ? saved : 'en';
+        } catch {
+            return 'en';
+        }
     });
 
     useEffect(() => {
-        localStorage.setItem('language', lang);
+        try {
+            localStorage.setItem('language', lang);
+        } catch {
+            /* ignore */
+        }
+        document.documentElement.lang = lang;
     }, [lang]);
 
-    const t = (key) => {
-        const translation = translations[lang][key];
-        return translation || key;
-    };
+    const t = (key) => translations[lang][key] || translations.en[key] || key;
 
     return (
         <LanguageContext.Provider value={{ lang, setLang, t }}>

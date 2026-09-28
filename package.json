@@ -1,53 +1,28 @@
 {
-  "name": "student-helper-web",
+  "name": "orbit",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "electron:dev": "electron .",
-    "electron:build": "electron-builder build --win --x64"
-  },
-  "build": {
-    "appId": "com.orbithelper.app",
-    "productName": "Orbit Helper",
-    "directories": {
-      "output": "dist_electron"
-    },
-    "files": [
-      "dist/**/*",
-      "electron/**/*"
-    ],
-    "win": {
-      "target": "portable"
-    }
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@react-three/drei": "^9.122.0",
-    "@react-three/fiber": "^8.18.0",
     "canvas-confetti": "^1.9.4",
-    "clsx": "^2.1.0",
-    "date-fns": "^4.1.0",
     "firebase": "^12.9.0",
     "framer-motion": "^11.0.3",
     "lucide-react": "^0.330.0",
+    "qrcode-generator": "^1.5.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.0",
-    "tailwind-merge": "^2.2.1",
-    "three": "^0.160.1",
-    "use-sound": "^5.0.0"
+    "react-router-dom": "^6.22.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.17",
-    "electron": "^41.3.0",
-    "electron-builder": "^26.8.1",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "vite": "^5.1.0"

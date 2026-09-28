@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// Public question sets (Discover tab).
+// Anyone can read. Creating, editing and deleting require the (invisible) anonymous sign-in
+// and only work on your own sets. Anyone signed in may add +1 to "plays".
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /question_sets/{setId} {
+      function validSet() {
+        let d = request.resource.data;
+        return d.title is string && d.title.size() > 0 && d.title.size() <= 80
+          && d.questions is list && d.questions.size() > 0 && d.questions.size() <= 200
+          && d.ownerId == request.auth.uid;
+      }
+
+      allow read: if true;
+      allow create: if request.auth != null && validSet();
+      allow update: if request.auth != null && (
+        (resource.data.ownerId == request.auth.uid && validSet())
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['plays'])
+            && request.resource.data.plays == resource.data.plays + 1)
+      );
+      allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+    }
+  }
+}

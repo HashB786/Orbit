@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Palette, Globe, Layers, Save, Monitor, Zap, Sparkles, Layout, Trash2, Battery, Cpu } from 'lucide-react';
+import { User, Palette, Globe, Monitor, Zap, Trash2, Battery, Volume2, VolumeX, Music, Play } from 'lucide-react';
+import { audio } from '../platform/audio/audio';
 
 const Settings = () => {
     const [activeTab, setActiveTab] = useState('profile');
@@ -12,27 +13,28 @@ const Settings = () => {
     const tabs = [
         { id: 'profile', label: 'Profile', icon: User, color: 'text-blue-500' },
         { id: 'appearance', label: 'Appearance', icon: Palette, color: 'text-purple-500' },
+        { id: 'sound', label: 'Sound', icon: Volume2, color: 'text-emerald-500' },
         { id: 'animations', label: 'Animations', icon: Zap, color: 'text-amber-500' },
         { id: 'language', label: 'Language', icon: Globe, color: 'text-orange-500' },
         { id: 'danger', label: 'Danger Zone', icon: Trash2, color: 'text-red-500' }
     ];
 
     return (
-        <div className="flex flex-col md:flex-row gap-6 h-[calc(100vh-140px)] min-h-[600px]">
-            {/* Sidebar Navigation */}
-            <div className="w-full md:w-64 flex-shrink-0">
-                <div className="sticky top-0 space-y-2">
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-teal-500 mb-6 px-2">
-                        Settings
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6 md:h-[calc(100vh-140px)] md:min-h-[600px]">
+            {/* Sidebar Navigation (horizontal tab strip on phones) */}
+            <div className="w-full md:w-64 flex-shrink-0 min-w-0">
+                <div className="md:sticky top-0 space-y-2">
+                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-teal-500 mb-4 md:mb-6 px-2">
+                        {t('settings')}
                     </h1>
 
-                    <nav className="space-y-1">
+                    <nav className="flex md:flex-col gap-1 overflow-x-auto pb-1 md:pb-0 -mx-1 px-1">
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${activeTab === tab.id
-                                    ? 'bg-white dark:bg-dark-surface shadow-md text-primary-600 dark:text-primary-400 scale-[1.02]'
+                                className={`shrink-0 md:w-full flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-xl transition-all font-medium whitespace-nowrap ${activeTab === tab.id
+                                    ? 'bg-white dark:bg-dark-surface shadow-md text-primary-600 dark:text-primary-400 md:scale-[1.02]'
                                     : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-surface/50 dark:text-gray-400'
                                     }`}
                             >
@@ -47,7 +49,7 @@ const Settings = () => {
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar md:pr-4">
+            <div className="flex-1 min-w-0 md:overflow-y-auto custom-scrollbar md:pr-4">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={activeTab}
@@ -59,6 +61,7 @@ const Settings = () => {
                     >
                         {activeTab === 'profile' && <ProfileSettings />}
                         {activeTab === 'appearance' && <AppearanceSettings />}
+                        {activeTab === 'sound' && <SoundSettings />}
                         {activeTab === 'animations' && <AnimationSettings />}
                         {activeTab === 'language' && <LanguageSettings />}
                         {activeTab === 'danger' && <DangerZone />}
@@ -78,56 +81,89 @@ const ProfileSettings = () => {
         <div className="space-y-6">
             <div className="bg-white dark:bg-dark-surface p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
                 <div className="flex items-center gap-4 mb-6">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-teal-400 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                        {userData.name.charAt(0) || 'U'}
+                    <div className="w-16 h-16 shrink-0 bg-gradient-to-br from-primary-400 to-teal-400 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                        {userData.name.charAt(0).toUpperCase() || '?'}
                     </div>
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Public Profile</h2>
-                        <p className="text-sm text-gray-500">How you appear to others</p>
-                    </div>
-                </div>
-
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Display Name</label>
-                        <input
-                            value={userData.name}
-                            onChange={(e) => updateUserData({ name: e.target.value })}
-                            className="w-full bg-gray-50 dark:bg-dark-bg border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
-                            placeholder="Enter your name"
-                        />
+                    <div className="min-w-0">
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Your name</h2>
+                        <p className="text-sm text-gray-500">Shown as the author of sets you publish, and filled in as your nickname when you join a game.</p>
                     </div>
                 </div>
+                <label htmlFor="display-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Display name</label>
+                <input
+                    id="display-name"
+                    value={userData.name}
+                    onChange={(e) => updateUserData({ name: e.target.value.slice(0, 40) })}
+                    className="w-full bg-gray-50 dark:bg-dark-bg border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                    placeholder="Enter your name"
+                />
             </div>
 
-            <div className="bg-white dark:bg-dark-surface p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
-                <h3 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">Academic Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Grade Level</label>
-                        <select
-                            value={userData.grade}
-                            onChange={(e) => updateUserData({ grade: e.target.value })}
-                            className="w-full bg-gray-50 dark:bg-dark-bg border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 outline-none focus:border-primary-500"
-                        >
-                            {[5, 6, 7, 8, 9, 10, 11].map(g => (
-                                <option key={g} value={g}>{g}-Grade</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Class Stream</label>
-                        <select
-                            value={userData.classColor}
-                            onChange={(e) => updateUserData({ classColor: e.target.value })}
-                            className="w-full bg-gray-50 dark:bg-dark-bg border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 outline-none focus:border-primary-500"
-                        >
-                            <option value="green">Green Stream</option>
-                            <option value="blue">Blue Stream</option>
-                        </select>
-                    </div>
-                </div>
+            <div className="bg-primary-50/60 dark:bg-primary-900/10 p-5 rounded-2xl border border-primary-100 dark:border-primary-900/30 text-sm text-gray-600 dark:text-gray-300">
+                <b className="text-gray-900 dark:text-white">No account needed.</b> Your sets are saved in this browser. Teacher sign-in with Google is coming, so sets can follow you to any device. Students never need an account to join a game.
             </div>
+        </div>
+    );
+};
+
+const Slider = ({ label, icon: Icon, value, onChange }) => (
+    <div>
+        <div className="flex items-center justify-between mb-2">
+            <label className="font-semibold text-sm flex items-center gap-2"><Icon size={16} className="text-gray-400" /> {label}</label>
+            <span className="text-sm font-bold tabular-nums text-gray-500">{Math.round(value * 100)}%</span>
+        </div>
+        <input
+            type="range"
+            min="0"
+            max="100"
+            value={Math.round(value * 100)}
+            onChange={e => onChange(Number(e.target.value) / 100)}
+            className="w-full accent-[rgb(var(--color-primary-600))]"
+            aria-label={label}
+        />
+    </div>
+);
+
+const SoundSettings = () => {
+    const settings = useSyncExternalStore(audio.subscribe, audio.getSettings);
+    const [playing, setPlaying] = useState(false);
+    // Stop the preview when leaving this tab
+    useEffect(() => () => audio.stopMusic(), []);
+
+    const preview = () => {
+        audio.unlock();
+        if (playing) {
+            audio.stopMusic();
+            setPlaying(false);
+        } else {
+            audio.playMusic('battle');
+            audio.sfx('correct');
+            setPlaying(true);
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="bg-white dark:bg-dark-surface p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 space-y-6">
+                <div className="flex items-center justify-between gap-4">
+                    <div>
+                        <h3 className="font-bold text-lg">Sound</h3>
+                        <p className="text-sm text-gray-500">All music and effects are generated live by Orbit, nothing to download.</p>
+                    </div>
+                    <button
+                        onClick={() => { audio.unlock(); audio.updateSettings({ muted: !settings.muted }); }}
+                        className={`shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-colors ${settings.muted ? 'bg-red-50 text-red-600 dark:bg-red-900/20' : 'bg-gray-100 dark:bg-gray-800'}`}
+                    >
+                        {settings.muted ? <VolumeX size={18} /> : <Volume2 size={18} />} {settings.muted ? 'Muted' : 'On'}
+                    </button>
+                </div>
+                <Slider label="Music" icon={Music} value={settings.music} onChange={v => audio.updateSettings({ music: v })} />
+                <Slider label="Sound effects" icon={Zap} value={settings.sfx} onChange={v => { audio.updateSettings({ sfx: v }); audio.unlock(); audio.sfx('hit'); }} />
+                <button onClick={preview} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-500 text-white font-bold transition-colors">
+                    <Play size={16} className="fill-current" /> {playing ? 'Stop preview' : 'Preview battle music'}
+                </button>
+            </div>
+            <p className="text-sm text-gray-500 px-1">In live games, the teacher's screen plays the music. Students' devices only play short sound effects, so a class of phones stays calm.</p>
         </div>
     );
 };
@@ -484,14 +520,14 @@ const DangerZone = () => {
                 Destructive actions that cannot be undone. Please be certain.
             </p>
 
-            <div className="flex items-center justify-between bg-white dark:bg-dark-surface p-4 rounded-xl border border-red-100 dark:border-red-900/20">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-dark-surface p-4 rounded-xl border border-red-100 dark:border-red-900/20">
                 <div>
-                    <h4 className="font-bold text-gray-900 dark:text-gray-200">Delete Account & Data</h4>
-                    <p className="text-xs text-gray-500">Permanently removes all local storage data.</p>
+                    <h4 className="font-bold text-gray-900 dark:text-gray-200">Delete all Orbit data in this browser</h4>
+                    <p className="text-xs text-gray-500">Removes your sets, settings and saved scores from this browser. Published sets stay public.</p>
                 </div>
                 <button
                     onClick={() => {
-                        if (window.confirm('Are you sure? All your tasks and settings will be lost forever.')) {
+                        if (window.confirm('Delete all your sets and settings from this browser? This cannot be undone.')) {
                             localStorage.clear();
                             window.location.reload();
                         }
