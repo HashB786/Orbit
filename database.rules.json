@@ -6,14 +6,14 @@
     "codes": {
       "$code": {
         ".read": "auth != null",
-        ".write": "auth != null && ((!data.exists() && newData.child('hostId').val() === auth.uid && auth.token.email_verified === true) || (data.child('hostId').val() === auth.uid && !newData.exists()))"
+        ".write": "auth != null && ((!data.exists() && newData.child('hostId').val() === auth.uid && auth.token.email != null) || (data.child('hostId').val() === auth.uid && !newData.exists()))"
       }
     },
 
     "rooms": {
       "$code": {
         ".read": "auth != null",
-        ".write": "auth != null && ((!data.exists() && newData.child('meta/hostId').val() === auth.uid && root.child('codes').child($code).child('hostId').val() === auth.uid && auth.token.email_verified === true) || data.child('meta/hostId').val() === auth.uid)",
+        ".write": "auth != null && ((!data.exists() && newData.child('meta/hostId').val() === auth.uid && root.child('codes').child($code).child('hostId').val() === auth.uid && auth.token.email != null) || data.child('meta/hostId').val() === auth.uid)",
 
         "players": {
           "$playerId": {

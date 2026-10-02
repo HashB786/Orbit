@@ -4,11 +4,11 @@ import { useSetsState } from '../../platform/sets/store';
 import { PageSpinner, Spinner } from '../ui';
 import SpaceScreen from '../SpaceScreen';
 import AuthPanel from './AuthPanel';
-import { VerifyEmail, AcceptTerms } from './AccountSteps';
+import { AcceptTerms } from './AccountSteps';
 
-// level='account'  — sign-in + terms only; no email verification needed (creating sets)
-// level='teacher'  — sign-in + verify + terms (hosting games, default)
-const RequireTeacher = ({ children, reason = 'create', fullscreen = false, level = 'teacher' }) => {
+// Pages for creating and hosting: sign-in, then the terms, until the account is set up.
+// Joining a game never goes through this.
+const RequireTeacher = ({ children, reason = 'create', fullscreen = false }) => {
     const auth = useAuth();
     const sets = useSetsState();
 
@@ -24,11 +24,10 @@ const RequireTeacher = ({ children, reason = 'create', fullscreen = false, level
         ? <SpaceScreen center><Spinner size={36} className="text-emerald-400" /></SpaceScreen>
         : <PageSpinner />;
 
-    const needs = level === 'account' ? auth.needsForCreate : auth.needs;
+    const needs = auth.needs;
 
     if (auth.status !== 'ready' || needs === 'loading') return loading;
     if (needs === 'signin') return frame(<AuthPanel reason={reason} />);
-    if (needs === 'verify') return frame(<VerifyEmail />);
     if (needs === 'terms') return frame(<AcceptTerms />);
     // Editors read the user's sets on first render, so wait until they've loaded
     if (!sets.ready || sets.owner !== auth.user.uid) return loading;

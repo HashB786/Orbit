@@ -2,7 +2,7 @@ rules_version = '2';
 
 // Orbit Firestore rules.
 // - Any signed-in account (Google or email) can create and manage sets.
-// - Hosting games (RTDB) still requires email_verified — see database.rules.json.
+// - Hosting games (RTDB) also just needs an account — see database.rules.json.
 // - Students and guests are anonymous: they may read public sets, never write.
 service cloud.firestore {
   match /databases/{database}/documents {

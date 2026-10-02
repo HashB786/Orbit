@@ -1,4 +1,4 @@
-// Teacher accounts on Firebase Authentication: Google, or email + password with a verification email.
+// Accounts on Firebase Authentication: Google, or email + password.
 // Students never come here: they keep the invisible anonymous session.
 
 import { getAuthApi, getFirestoreApi } from '../../config/firebase';
@@ -33,18 +33,6 @@ export const createFirebaseAuth = async () => {
         const provider = new mod.GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
         return provider;
-    };
-
-    // Verification link comes back to Orbit; if this domain isn't allowed yet, send a plain link
-    const sendVerification = async (user = auth.currentUser) => {
-        if (!user) throw error('auth/no-current-user');
-        try {
-            await mod.sendEmailVerification(user, { url: `${window.location.origin}/signin?verified=1` });
-        } catch (err) {
-            if (err.code === 'auth/unauthorized-continue-uri' || err.code === 'auth/invalid-continue-uri') {
-                await mod.sendEmailVerification(user);
-            } else throw err;
-        }
     };
 
     return {
@@ -95,7 +83,6 @@ export const createFirebaseAuth = async () => {
                 user = (await mod.createUserWithEmailAndPassword(auth, email, password)).user;
             }
             if (name) await mod.updateProfile(user, { displayName: name });
-            await sendVerification(user);
             emit();
             return toUser(user);
         },
@@ -103,19 +90,6 @@ export const createFirebaseAuth = async () => {
         async signIn(email, password) {
             const res = await mod.signInWithEmailAndPassword(auth, email, password);
             return toUser(res.user);
-        },
-
-        sendVerification: () => sendVerification(),
-
-        // After the teacher clicks the email link: reload the account and refresh the token,
-        // so the database rules see email_verified = true
-        async refresh() {
-            const user = auth.currentUser;
-            if (!user) return null;
-            await user.reload();
-            if (user.emailVerified) await user.getIdToken(true);
-            emit();
-            return toUser(auth.currentUser);
         },
 
         resetPassword: (email) => mod.sendPasswordResetEmail(auth, email),

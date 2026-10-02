@@ -1,6 +1,6 @@
 // Offline test mode: simulated teacher accounts kept in this browser, with the same interface and
-// error codes as the Firebase version. "Google" gives a ready test account, and the verification
-// email is simulated by a button. Never used when Firebase is configured.
+// error codes as the Firebase version. "Google" gives a ready test account.
+// Never used when Firebase is configured.
 
 const ACCOUNTS = 'orbit.local.accounts';
 const SESSION = 'orbit.local.session';
@@ -106,21 +106,6 @@ export const createLocalAuth = () => {
             const hasPassword = account && (account.provider === 'password' || account.providers?.includes('password'));
             if (!hasPassword || account.pass !== await hash(password)) throw error('auth/invalid-credential');
             return startSession(account);
-        },
-
-        async sendVerification() {},
-
-        // The offline stand-in for clicking the link in the email
-        simulateVerify() {
-            const account = currentAccount();
-            if (!account) return;
-            saveAccount({ ...account, verified: true });
-            emit();
-        },
-
-        async refresh() {
-            emit();
-            return toUser(currentAccount());
         },
 
         async linkPassword(password) {

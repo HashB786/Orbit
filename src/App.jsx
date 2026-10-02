@@ -34,10 +34,10 @@ const page = (Component, props) => (
     </Suspense>
 );
 
-// Hosting needs a verified teacher account; creating sets needs any account
-const teacherPage = (Component, reason, level = 'teacher') => (
+// Creating and hosting need an account; joining with a code never does
+const teacherPage = (Component, reason) => (
     <Suspense fallback={<PageSpinner />}>
-        <RequireTeacher reason={reason} level={level}>
+        <RequireTeacher reason={reason}>
             <Component />
         </RequireTeacher>
     </Suspense>
@@ -70,9 +70,9 @@ function App() {
                         <Route path="/" element={<Layout />}>
                             <Route index element={<Home />} />
                             <Route path="discover" element={page(Discover)} />
-                            <Route path="create" element={teacherPage(Create, 'create', 'account')} />
-                            <Route path="create/new" element={teacherPage(SetEditor, 'create', 'account')} />
-                            <Route path="create/:setId" element={teacherPage(SetEditor, 'create', 'account')} />
+                            <Route path="create" element={teacherPage(Create, 'create')} />
+                            <Route path="create/new" element={teacherPage(SetEditor, 'create')} />
+                            <Route path="create/:setId" element={teacherPage(SetEditor, 'create')} />
                             <Route path="set/:setId" element={page(SetView)} />
                             <Route path="games" element={page(Games)} />
                             <Route path="host/:setId" element={teacherPage(HostSetup, 'host')} />

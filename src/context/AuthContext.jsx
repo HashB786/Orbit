@@ -106,15 +106,6 @@ export const AuthProvider = ({ children }) => {
             setState(prev => (prev.user?.uid === user.uid ? { ...prev, profile } : prev));
             return user;
         }),
-        sendVerification: () => run(s => s.sendVerification()),
-        refresh: () => run(async (s) => {
-            const user = await s.refresh();
-            if (user) await handleUser(user, s);
-            return user;
-        }),
-        simulateVerify: () => run(async (s) => {
-            s.simulateVerify?.();
-        }),
         resetPassword: (email) => run(s => s.resetPassword(email)),
         linkPassword: (password) => run(s => s.linkPassword(password)),
         markChangelogSeen: () => run(async (s) => {
@@ -170,15 +161,12 @@ export const AuthProvider = ({ children }) => {
                 /* ignore */
             }
         })
-    }), [run, start, handleUser, state.profile]);
+    }), [run, start, state.profile]);
 
     const user = state.user;
-    const verified = !!user?.emailVerified;
     const termsOk = state.profile?.termsVersion === TERMS_VERSION;
-    // Any signed-in user with accepted terms can create sets (no email verification needed)
+    // Any signed-in user with accepted terms can create and host
     const isCreator = !!user && termsOk;
-    // Hosting games also requires email verification
-    const isTeacher = !!user && verified && termsOk;
     // Google accounts must also have a password before they can use the site
     const needsPassword = !!user && user.provider === 'google'
         && !(user.providers || []).includes('password');
@@ -190,14 +178,11 @@ export const AuthProvider = ({ children }) => {
         user,
         profile: state.profile,
         isCreator,
-        isTeacher,
         needsPassword,
-        // needs for creating sets: no email verification required
-        needsForCreate: !user ? 'signin' : state.profile === null ? 'loading' : !termsOk ? 'terms' : null,
-        // needs for hosting: email verification required
-        needs: !user ? 'signin' : !verified ? 'verify' : state.profile === null ? 'loading' : !termsOk ? 'terms' : null,
+        // The next sign-up step before creating or hosting
+        needs: !user ? 'signin' : state.profile === null ? 'loading' : !termsOk ? 'terms' : null,
         displayName: state.profile?.name || user?.name || ''
-    }), [actions, state.status, state.profile, user, verified, termsOk, isCreator, isTeacher, needsPassword]);
+    }), [actions, state.status, state.profile, user, termsOk, isCreator, needsPassword]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
     User, Palette, Globe, Zap, Trash2, Volume2, VolumeX, Music, Play, Check, Settings as SettingsIcon, Battery, Gauge, Sparkles,
-    LogIn, LogOut, UserPlus, Mail, ShieldCheck, AlertTriangle
+    LogIn, LogOut, UserPlus, Mail, ShieldCheck
 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
@@ -196,7 +196,7 @@ const AccountSettings = () => {
         toast(t('account.nameSaved'));
     };
 
-    const unfinished = auth.needs === 'verify' || auth.needs === 'terms';
+    const unfinished = auth.needs === 'terms';
 
     return (
         <div className="space-y-4">
@@ -211,16 +211,14 @@ const AccountSettings = () => {
                                 {auth.user.provider === 'google' ? <GoogleIcon size={11} /> : <Mail size={11} />}
                                 {t(`account.provider.${auth.user.provider === 'google' ? 'google' : 'password'}`)}
                             </span>
-                            {auth.user.emailVerified
-                                ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"><ShieldCheck size={11} /> {t('account.verified')}</span>
-                                : <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-400/15 text-amber-700 dark:text-amber-300"><AlertTriangle size={11} /> {t('account.notVerified')}</span>}
+                            {auth.user.emailVerified && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"><ShieldCheck size={11} /> {t('account.verified')}</span>}
                         </div>
                     </div>
                 </div>
                 {unfinished && (
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300/60 dark:border-amber-400/20 bg-amber-50 dark:bg-amber-400/[0.06] p-3.5">
-                        <p className="text-sm text-amber-800 dark:text-amber-200">{t(auth.needs === 'verify' ? 'account.finishVerify' : 'account.finishTerms')}</p>
-                        <Link to={`/signin?next=/settings${auth.needs === 'verify' ? '&verify=1' : ''}`} className={cx(btn.primary, 'py-2')}>{t('common.continue')}</Link>
+                        <p className="text-sm text-amber-800 dark:text-amber-200">{t('account.finishTerms')}</p>
+                        <Link to="/signin?next=/settings" className={cx(btn.primary, 'py-2')}>{t('common.continue')}</Link>
                     </div>
                 )}
             </Panel>

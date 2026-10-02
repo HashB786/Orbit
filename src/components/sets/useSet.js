@@ -26,8 +26,8 @@ export const useSet = (setId) => {
 
     if (local) return { set: local, loading: false, error: null, isMine: local.id.startsWith('l_') };
     if (setId?.startsWith('l_')) {
-        // A teacher's own set: wait for the account and its sets before saying "not found"
-        const settling = auth.status === 'loading' || (!!auth.user?.emailVerified && (!sets.ready || sets.owner !== auth.user.uid));
+        // A user's own set: wait for the account and its sets before saying "not found"
+        const settling = auth.status === 'loading' || (!!auth.user && (!sets.ready || sets.owner !== auth.user.uid));
         if (settling) return { set: null, loading: true, error: null, isMine: false };
         return { set: null, loading: false, error: auth.user ? 'not-found' : 'private', isMine: false };
     }
