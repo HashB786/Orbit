@@ -125,7 +125,17 @@ export const createFirebaseAuth = async () => {
             const user = auth.currentUser;
             if (!user || !user.email) throw error('auth/no-current-user');
             const credential = mod.EmailAuthProvider.credential(user.email, password);
-            await mod.linkWithCredential(user, credential);
+            try {
+                await mod.linkWithCredential(user, credential);
+            } catch (err) {
+                if (err.code === 'auth/requires-recent-login') {
+                    await mod.reauthenticateWithPopup(user, googleProvider());
+                    await mod.linkWithCredential(user, credential);
+                } else if (err.code !== 'auth/provider-already-linked') {
+                    throw err;
+                }
+            }
+            await user.reload();
             await user.getIdToken(true);
             emit();
             return toUser(auth.currentUser);

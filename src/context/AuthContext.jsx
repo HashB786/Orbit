@@ -117,14 +117,6 @@ export const AuthProvider = ({ children }) => {
         }),
         resetPassword: (email) => run(s => s.resetPassword(email)),
         linkPassword: (password) => run(s => s.linkPassword(password)),
-        skipPasswordSetup: () => run(async (s) => {
-            const user = s.current();
-            if (!user) return;
-            const profile = { ...(state.profile || {}), skipPasswordSetup: true };
-            setState(prev => ({ ...prev, profile }));
-            cacheProfile(user.uid, profile);
-            await s.saveProfile(user.uid, { skipPasswordSetup: true }).catch(() => {});
-        }),
         markChangelogSeen: () => run(async (s) => {
             const user = s.current();
             if (!user) return;
@@ -187,11 +179,9 @@ export const AuthProvider = ({ children }) => {
     const isCreator = !!user && termsOk;
     // Hosting games also requires email verification
     const isTeacher = !!user && verified && termsOk;
-    // Google-only accounts that haven't set a backup password and haven't skipped the prompt
+    // Google accounts must also have a password before they can use the site
     const needsPassword = !!user && user.provider === 'google'
-        && !(user.providers || []).includes('password')
-        && !state.profile?.skipPasswordSetup
-        && termsOk;
+        && !(user.providers || []).includes('password');
 
     const value = useMemo(() => ({
         ...actions,
@@ -201,10 +191,11 @@ export const AuthProvider = ({ children }) => {
         profile: state.profile,
         isCreator,
         isTeacher,
+        needsPassword,
         // needs for creating sets: no email verification required
-        needsForCreate: !user ? 'signin' : state.profile === null ? 'loading' : !termsOk ? 'terms' : needsPassword ? 'setPassword' : null,
+        needsForCreate: !user ? 'signin' : state.profile === null ? 'loading' : !termsOk ? 'terms' : null,
         // needs for hosting: email verification required
-        needs: !user ? 'signin' : !verified ? 'verify' : state.profile === null ? 'loading' : !termsOk ? 'terms' : needsPassword ? 'setPassword' : null,
+        needs: !user ? 'signin' : !verified ? 'verify' : state.profile === null ? 'loading' : !termsOk ? 'terms' : null,
         displayName: state.profile?.name || user?.name || ''
     }), [actions, state.status, state.profile, user, verified, termsOk, isCreator, isTeacher, needsPassword]);
 

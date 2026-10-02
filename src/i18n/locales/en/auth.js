@@ -33,11 +33,10 @@ export default {
         switchLink: 'Sign in'
     },
     setPassword: {
-        title: 'Set a backup password',
-        text: 'Add a password so you can also sign in with your email if Google is unavailable.',
+        title: 'Create a password',
+        text: 'Every Orbit account needs a password. You can then sign in with Google or with your email and this password.',
         submit: 'Save password',
-        saved: 'Password set. You can now sign in with email too.',
-        skip: 'Skip for now'
+        saved: 'Password set. You can now sign in with email too.'
     },
     reset: {
         title: 'Reset your password',

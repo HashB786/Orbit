@@ -3,7 +3,7 @@ import { Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { PageSpinner } from '../components/ui';
 import AuthPanel from '../components/auth/AuthPanel';
-import { VerifyEmail, AcceptTerms, SetPassword } from '../components/auth/AccountSteps';
+import { VerifyEmail, AcceptTerms } from '../components/auth/AccountSteps';
 
 // /signin?next=/create  (also where the verification email link comes back to)
 const SignIn = () => {
@@ -12,7 +12,7 @@ const SignIn = () => {
     const next = params.get('next');
     const safeNext = next && next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\') ? next : '/create';
     // Only hosting needs a verified email; creating and copying sets just need an account
-    const needs = /^\/(host|room|board)\//.test(safeNext) ? auth.needs : auth.needsForCreate;
+    const needs = params.has('verify') || /^\/(host|room|board)\//.test(safeNext) ? auth.needs : auth.needsForCreate;
 
     useEffect(() => {
         auth.start().then(() => {
@@ -27,8 +27,7 @@ const SignIn = () => {
         <div className="flex justify-center py-4 md:py-10">
             {needs === 'verify' ? <VerifyEmail />
                 : needs === 'terms' ? <AcceptTerms />
-                    : needs === 'setPassword' ? <SetPassword />
-                        : <AuthPanel initialMode={params.get('mode') === 'signup' ? 'signup' : 'signin'} />}
+                    : <AuthPanel initialMode={params.get('mode') === 'signup' ? 'signup' : 'signin'} />}
         </div>
     );
 };

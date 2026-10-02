@@ -33,11 +33,10 @@ export default {
         switchLink: 'Kirish'
     },
     setPassword: {
-        title: 'Zaxira parol oʻrnating',
-        text: 'Parol qoʻshsangiz, Google ishlamasa ham email orqali kirishingiz mumkin.',
+        title: 'Parol yarating',
+        text: 'Har bir Orbit akkauntiga parol kerak. Shundan soʻng Google yoki email va shu parol bilan kirishingiz mumkin.',
         submit: 'Parolni saqlash',
-        saved: 'Parol saqlandi. Endi email orqali ham kirishingiz mumkin.',
-        skip: 'Hozircha oʻtkazib yuborish'
+        saved: 'Parol saqlandi. Endi email orqali ham kirishingiz mumkin.'
     },
     reset: {
         title: 'Parolni tiklash',

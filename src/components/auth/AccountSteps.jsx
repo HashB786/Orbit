@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { MailCheck, RefreshCw, LogOut, Info, Wand2, KeyRound, Sparkles, ChevronRight, X } from 'lucide-react';
 import { IconOrb, btn, inputClass, cx } from '../ui';
+import SpaceScreen from '../SpaceScreen';
 import { toast } from '../ui/toast';
 import { useAuth } from '../../context/AuthContext';
 import { useT } from '../../context/LanguageContext';
@@ -156,7 +157,7 @@ export const AcceptTerms = () => {
     );
 };
 
-// Optional backup-password setup for Google-only accounts
+// Required password for Google-only accounts
 export const SetPassword = () => {
     const t = useT();
     const auth = useAuth();
@@ -178,10 +179,6 @@ export const SetPassword = () => {
         }
     };
 
-    const skip = async () => {
-        await auth.skipPasswordSetup();
-    };
-
     return (
         <form onSubmit={submit} className="orbit-card w-full max-w-md p-6 sm:p-8" noValidate>
             <div className="text-center">
@@ -193,17 +190,28 @@ export const SetPassword = () => {
             <div className="mt-6 space-y-4">
                 <div>
                     <label htmlFor="set-pw" className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1.5">{t('auth.passwordNew')}</label>
-                    <PasswordInput id="set-pw" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" />
+                    <PasswordInput id="set-pw" value={password} onChange={setPassword} autoComplete="new-password" />
                     <p className="text-xs text-gray-400 mt-1">{t('auth.passwordHint')}</p>
                 </div>
                 {error && <ErrorNote>{error}</ErrorNote>}
                 <button type="submit" disabled={busy || password.length < 8} className={cx(btn.primary, 'w-full py-3')}>
                     <KeyRound size={17} /> {t('auth.setPassword.submit')}
                 </button>
-                <button type="button" onClick={skip} className={cx(btn.ghost, 'w-full')}>{t('auth.setPassword.skip')}</button>
+                <button type="button" onClick={() => auth.signOut()} className={cx(btn.ghost, 'w-full')}>
+                    <LogOut size={16} /> {t('auth.verify.other')}
+                </button>
             </div>
         </form>
     );
+};
+
+// Signed-in Google accounts without a password see only this until they create one.
+// The legal pages stay readable.
+export const PasswordGate = ({ children }) => {
+    const auth = useAuth();
+    const { pathname } = useLocation();
+    if (!auth.needsPassword || /^\/(terms|privacy)\/?$/.test(pathname)) return children;
+    return <SpaceScreen center><SetPassword /></SpaceScreen>;
 };
 
 // Full-screen game pages: never cover them with a popup
@@ -215,8 +223,8 @@ export const WhatsNew = () => {
     const auth = useAuth();
     const { pathname } = useLocation();
 
-    // Only after sign-up steps (terms, backup password) are done
-    const open = !!auth.user && auth.needsForCreate === null
+    // Only after sign-up steps (terms, password) are done
+    const open = !!auth.user && auth.needsForCreate === null && !auth.needsPassword
         && auth.profile?.seenChangelog !== CHANGELOG_VERSION
         && !GAME_ROUTES.test(pathname);
 

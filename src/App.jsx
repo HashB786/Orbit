@@ -6,7 +6,7 @@ import Home from './pages/Home';
 import { PageSpinner } from './components/ui';
 import { Toaster } from './components/ui/toast';
 import { useTheme } from './context/ThemeContext';
-import { WhatsNew } from './components/auth/AccountSteps';
+import { WhatsNew, PasswordGate } from './components/auth/AccountSteps';
 
 // Everything except the home page is its own chunk, so phones download only what they open
 const Discover = lazy(() => import('./pages/Discover'));
@@ -65,29 +65,31 @@ function App() {
     return (
         <MotionConfig reducedMotion={performance.reducedMotion ? 'always' : 'user'}>
             <Router>
-                <Routes>
-                    <Route path="/" element={<Layout />}>
-                        <Route index element={<Home />} />
-                        <Route path="discover" element={page(Discover)} />
-                        <Route path="create" element={teacherPage(Create, 'create', 'account')} />
-                        <Route path="create/new" element={teacherPage(SetEditor, 'create', 'account')} />
-                        <Route path="create/:setId" element={teacherPage(SetEditor, 'create', 'account')} />
-                        <Route path="set/:setId" element={page(SetView)} />
-                        <Route path="games" element={page(Games)} />
-                        <Route path="host/:setId" element={teacherPage(HostSetup, 'host')} />
-                        <Route path="settings" element={page(Settings)} />
-                        <Route path="signin" element={page(SignIn)} />
-                        <Route path="terms" element={page(Legal, { doc: 'terms' })} />
-                        <Route path="privacy" element={page(Legal, { doc: 'privacy' })} />
-                        <Route path="HashBhideout" element={page(Admin)} />
-                        <Route path="*" element={page(NotFound)} />
-                    </Route>
-                    <Route path="join" element={fullscreen(Join)} />
-                    <Route path="play/:code" element={fullscreen(Play)} />
-                    <Route path="room/:code" element={fullscreenTeacher(HostRoom)} />
-                    <Route path="board/:gameId" element={fullscreenTeacher(Board)} />
-                    <Route path="practice/:setId" element={fullscreen(Practice)} />
-                </Routes>
+                <PasswordGate>
+                    <Routes>
+                        <Route path="/" element={<Layout />}>
+                            <Route index element={<Home />} />
+                            <Route path="discover" element={page(Discover)} />
+                            <Route path="create" element={teacherPage(Create, 'create', 'account')} />
+                            <Route path="create/new" element={teacherPage(SetEditor, 'create', 'account')} />
+                            <Route path="create/:setId" element={teacherPage(SetEditor, 'create', 'account')} />
+                            <Route path="set/:setId" element={page(SetView)} />
+                            <Route path="games" element={page(Games)} />
+                            <Route path="host/:setId" element={teacherPage(HostSetup, 'host')} />
+                            <Route path="settings" element={page(Settings)} />
+                            <Route path="signin" element={page(SignIn)} />
+                            <Route path="terms" element={page(Legal, { doc: 'terms' })} />
+                            <Route path="privacy" element={page(Legal, { doc: 'privacy' })} />
+                            <Route path="HashBhideout" element={page(Admin)} />
+                            <Route path="*" element={page(NotFound)} />
+                        </Route>
+                        <Route path="join" element={fullscreen(Join)} />
+                        <Route path="play/:code" element={fullscreen(Play)} />
+                        <Route path="room/:code" element={fullscreenTeacher(HostRoom)} />
+                        <Route path="board/:gameId" element={fullscreenTeacher(Board)} />
+                        <Route path="practice/:setId" element={fullscreen(Practice)} />
+                    </Routes>
+                </PasswordGate>
                 <Toaster />
                 <WhatsNew />
             </Router>

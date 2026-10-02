@@ -220,7 +220,7 @@ const AccountSettings = () => {
                 {unfinished && (
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300/60 dark:border-amber-400/20 bg-amber-50 dark:bg-amber-400/[0.06] p-3.5">
                         <p className="text-sm text-amber-800 dark:text-amber-200">{t(auth.needs === 'verify' ? 'account.finishVerify' : 'account.finishTerms')}</p>
-                        <Link to="/signin?next=/settings" className={cx(btn.primary, 'py-2')}>{t('common.continue')}</Link>
+                        <Link to={`/signin?next=/settings${auth.needs === 'verify' ? '&verify=1' : ''}`} className={cx(btn.primary, 'py-2')}>{t('common.continue')}</Link>
                     </div>
                 )}
             </Panel>
