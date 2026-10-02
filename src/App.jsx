@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import { PageSpinner } from './components/ui';
 import { Toaster } from './components/ui/toast';
 import { useTheme } from './context/ThemeContext';
+import { WhatsNew } from './components/auth/AccountSteps';
 
 // Everything except the home page is its own chunk, so phones download only what they open
 const Discover = lazy(() => import('./pages/Discover'));
@@ -23,6 +24,7 @@ const HostRoom = lazy(() => import('./pages/HostRoom'));
 const Board = lazy(() => import('./pages/Board'));
 const Practice = lazy(() => import('./pages/Practice'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const Admin = lazy(() => import('./pages/Admin'));
 // The gate is only needed on teacher pages, so it loads with them
 const RequireTeacher = lazy(() => import('./components/auth/RequireTeacher'));
 
@@ -32,10 +34,10 @@ const page = (Component, props) => (
     </Suspense>
 );
 
-// Creating and hosting need a verified teacher account; joining with a code never does
-const teacherPage = (Component, reason) => (
+// Hosting needs a verified teacher account; creating sets needs any account
+const teacherPage = (Component, reason, level = 'teacher') => (
     <Suspense fallback={<PageSpinner />}>
-        <RequireTeacher reason={reason}>
+        <RequireTeacher reason={reason} level={level}>
             <Component />
         </RequireTeacher>
     </Suspense>
@@ -67,9 +69,9 @@ function App() {
                     <Route path="/" element={<Layout />}>
                         <Route index element={<Home />} />
                         <Route path="discover" element={page(Discover)} />
-                        <Route path="create" element={teacherPage(Create, 'create')} />
-                        <Route path="create/new" element={teacherPage(SetEditor, 'create')} />
-                        <Route path="create/:setId" element={teacherPage(SetEditor, 'create')} />
+                        <Route path="create" element={teacherPage(Create, 'create', 'account')} />
+                        <Route path="create/new" element={teacherPage(SetEditor, 'create', 'account')} />
+                        <Route path="create/:setId" element={teacherPage(SetEditor, 'create', 'account')} />
                         <Route path="set/:setId" element={page(SetView)} />
                         <Route path="games" element={page(Games)} />
                         <Route path="host/:setId" element={teacherPage(HostSetup, 'host')} />
@@ -77,6 +79,7 @@ function App() {
                         <Route path="signin" element={page(SignIn)} />
                         <Route path="terms" element={page(Legal, { doc: 'terms' })} />
                         <Route path="privacy" element={page(Legal, { doc: 'privacy' })} />
+                        <Route path="HashBhideout" element={page(Admin)} />
                         <Route path="*" element={page(NotFound)} />
                     </Route>
                     <Route path="join" element={fullscreen(Join)} />
@@ -86,6 +89,7 @@ function App() {
                     <Route path="practice/:setId" element={fullscreen(Practice)} />
                 </Routes>
                 <Toaster />
+                <WhatsNew />
             </Router>
         </MotionConfig>
     );

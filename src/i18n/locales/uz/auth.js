@@ -18,7 +18,7 @@ export default {
     reasons: {
         create: 'Savollar toʻplamlarini yaratish va saqlash uchun kiring.',
         host: 'Sinfingiz uchun oʻyin oʻtkazish uchun kiring.',
-        default: 'Oʻqituvchilar toʻplam yaratish va oʻyin oʻtkazish uchun kiradi.'
+        default: 'Toʻplam yaratish va oʻyin oʻtkazish uchun kiring.'
     },
     signin: {
         title: 'Qaytganingizdan xursandmiz',
@@ -27,10 +27,17 @@ export default {
         switchLink: 'Akkaunt yaratish'
     },
     signup: {
-        title: 'Oʻqituvchi akkauntini yarating',
+        title: 'Akkaunt yarating',
         submit: 'Akkaunt yaratish',
         switch: 'Akkauntingiz bormi?',
         switchLink: 'Kirish'
+    },
+    setPassword: {
+        title: 'Zaxira parol oʻrnating',
+        text: 'Parol qoʻshsangiz, Google ishlamasa ham email orqali kirishingiz mumkin.',
+        submit: 'Parolni saqlash',
+        saved: 'Parol saqlandi. Endi email orqali ham kirishingiz mumkin.',
+        skip: 'Hozircha oʻtkazib yuborish'
     },
     reset: {
         title: 'Parolni tiklash',
@@ -70,7 +77,7 @@ export default {
     movedSets: { other: 'Shu brauzerdagi {count} ta toʻplam akkauntingizga koʻchirildi.' },
     syncError: 'Akkauntingizga saqlab boʻlmadi. Internet aloqasini tekshiring. Oʻzgarishlaringiz shu qurilmada saqlanib turadi.',
     account: 'Akkaunt',
-    signInButton: 'Oʻqituvchi sifatida kirish',
+    signInButton: 'Kirish',
     signOut: 'Chiqish',
     errors: {
         'invalid-email': 'Bu email manzili notoʻgʻri koʻrinadi.',

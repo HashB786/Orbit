@@ -36,6 +36,7 @@ export const normalizeSet = (raw, overrides = {}) => {
         title: String(raw?.title ?? raw?.name ?? 'Untitled set').trim() || 'Untitled set',
         description: String(raw?.description ?? '').trim(),
         subject: String(raw?.subject ?? '').trim(),
+        grade: String(raw?.grade ?? '').trim(),
         author: String(raw?.author ?? '').trim(),
         ownerId: raw?.ownerId || null,
         visibility: raw?.visibility === 'public' ? 'public' : 'private',

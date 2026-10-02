@@ -18,7 +18,7 @@ export default {
     reasons: {
         create: 'Sign in to create and save question sets.',
         host: 'Sign in to host games for your class.',
-        default: 'Teachers sign in to create sets and host games.'
+        default: 'Sign in to create sets and host games.'
     },
     signin: {
         title: 'Welcome back',
@@ -27,10 +27,17 @@ export default {
         switchLink: 'Create an account'
     },
     signup: {
-        title: 'Create your teacher account',
+        title: 'Create your account',
         submit: 'Create account',
         switch: 'Already have an account?',
         switchLink: 'Sign in'
+    },
+    setPassword: {
+        title: 'Set a backup password',
+        text: 'Add a password so you can also sign in with your email if Google is unavailable.',
+        submit: 'Save password',
+        saved: 'Password set. You can now sign in with email too.',
+        skip: 'Skip for now'
     },
     reset: {
         title: 'Reset your password',
@@ -62,7 +69,7 @@ export default {
     },
     terms: {
         title: 'One last step',
-        text: 'Please confirm your name and accept Orbit\'s terms to start creating and hosting games.',
+        text: 'Please confirm your name and accept Orbit\'s terms to start creating sets and hosting games.',
         submit: 'Continue'
     },
     welcome: 'Signed in as {name}.',
@@ -73,7 +80,7 @@ export default {
     },
     syncError: 'Couldn\'t save to your account. Check your internet connection. Your changes are kept on this device.',
     account: 'Account',
-    signInButton: 'Teacher sign in',
+    signInButton: 'Sign in',
     signOut: 'Sign out',
     errors: {
         'invalid-email': 'That email address doesn\'t look right.',

@@ -7,7 +7,7 @@ import { roomPath, attachPresence, leaveRoom, isOnline, joinRoom } from '../../p
 import { audio } from '../../platform/audio/audio';
 import { useTheme } from '../../context/ThemeContext';
 import { Playfield } from './playfield';
-import { Screen, Avatar, MuteButton, roundHint } from './playerUi';
+import { Screen, Avatar, MuteButton, roundHint, useTimeWarning } from './playerUi';
 import ShowerPlay from './ShowerPlay';
 import { useT } from '../../context/LanguageContext';
 import Slots from '../../i18n/Slots';
@@ -40,6 +40,7 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
     const canvasRef = useRef(null);
     const fieldRef = useRef(null);
     const roundRef = useRef({ key: null, submitted: false, begun: false, offset: 0, leadTimer: 0, startTimer: 0 });
+    const streakRef = useRef(0);
     const [progress, setProgress] = useState(null); // { found, total }
     const [phaseNote, setPhaseNote] = useState(null); // 'done' | 'timeout' | 'lost'
     const [countdown, setCountdown] = useState(null);
@@ -167,7 +168,7 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
         return () => clearTimeout(r.leadTimer);
     }, [lead?.pid, lead?.t, roundKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Round resolved by the host
+    // Round resolved by the host — track streaks for exciting SFX
     const last = match.last;
     const lastKey = last ? `${match.id}:${last.round}` : null;
     useEffect(() => {
@@ -175,9 +176,17 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
         const field = fieldRef.current;
         if (field?.active) field.stopRound('reveal');
         if (!sound) return;
-        if (last.outcome === me || last.outcome === 'tie') audio.sfx('roundWin');
-        else if (last.outcome === 'both-miss') audio.sfx('bothMiss');
-        else audio.sfx('roundLose');
+        const won = last.outcome === me || last.outcome === 'tie';
+        if (won) {
+            streakRef.current++;
+            if (streakRef.current >= 3) audio.sfx('streak');
+            else audio.sfx('roundWin');
+        } else {
+            if (streakRef.current >= 3) audio.sfx('streakBreak');
+            else if (last.outcome === 'both-miss') audio.sfx('bothMiss');
+            else audio.sfx('roundLose');
+            streakRef.current = 0;
+        }
     }, [match.status, lastKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Duel over
@@ -189,10 +198,16 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
         else if (match.outcome?.winner) audio.sfx('matchLose');
     }, [match.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Intro whoosh
+    // Intro: whoosh + fanfare for every new duel
     useEffect(() => {
-        if (match.status === 'intro' && sound) audio.sfx('whoosh');
+        if (match.status === 'intro' && sound) {
+            audio.sfx('whoosh');
+            audio.sfx('gameStart');
+        }
     }, [match.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const roundEndAt = match.roundStartAt ? match.roundStartAt + (Number(settings.roundTime) || 15) * 1000 : 0;
+    useTimeWarning(sound && match.status === 'round' && !!match.q && !phaseNote, roundEndAt, () => rt.now());
 
     const myScore = match.scores?.[me] ?? 0;
     const rivalScore = match.scores?.[rivalId] ?? 0;
@@ -359,11 +374,11 @@ const PlayerScreen = ({ code, playerId, onExit }) => {
         return attachPresence(rt, roomPath(code, 'players', playerId));
     }, [rt, code, playerId]);
 
-    // Background music (the teacher can switch it off for student devices)
+    // Background music — player-specific tracks are more exciting than the host's calm versions
     const inRound = playing && (showerMode
         ? shower?.status === 'round' || shower?.status === 'result'
         : me?.status === 'matched' && !!match?.id);
-    const track = settings.studentMusic === false || !meta || ended ? null : inRound ? 'battle' : 'lobby';
+    const track = settings.studentMusic === false || !meta || ended ? null : inRound ? 'playerBattle' : 'playerLobby';
     useEffect(() => {
         if (track) audio.playMusic(track);
         else audio.stopMusic();

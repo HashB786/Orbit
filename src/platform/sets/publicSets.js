@@ -23,7 +23,17 @@ export const getOwnerId = async () => {
 
 const codedError = (code) => Object.assign(new Error(code), { code });
 
-const fromDoc = (docId, data) => normalizeSet({ ...data, id: `p_${docId}`, remoteId: docId, visibility: 'public' });
+const fromDoc = (docId, data) => normalizeSet({ ...data, id: `p_${docId}`, remoteId: docId, visibility: 'public' }, { featured: !!data.featured });
+
+// The library entry no longer exists (e.g. an admin removed it)
+const isGone = async (remoteId) => {
+    try {
+        const { db, doc, getDoc } = await getFirestoreApi();
+        return !(await getDoc(doc(db, COLLECTION, remoteId))).exists();
+    } catch {
+        return false;
+    }
+};
 
 const readMock = () => {
     try {
@@ -42,6 +52,7 @@ const toPayload = (set, ownerId) => {
         title: set.title,
         description: set.description || '',
         subject: set.subject || '',
+        grade: set.grade || '',
         author: set.author || 'Anonymous',
         ownerId,
         questions,
@@ -131,7 +142,12 @@ export const publishSet = async (set) => {
     const { db, collection, doc, addDoc, updateDoc, serverTimestamp } = await getFirestoreApi();
     let remoteId = set.remoteId;
     if (remoteId) {
-        await updateDoc(doc(db, COLLECTION, remoteId), { ...payload, updatedAt: serverTimestamp() });
+        try {
+            await updateDoc(doc(db, COLLECTION, remoteId), { ...payload, updatedAt: serverTimestamp() });
+        } catch (err) {
+            if (await isGone(remoteId)) throw codedError('removed');
+            throw err;
+        }
     } else {
         const ref = await addDoc(collection(db, COLLECTION), { ...payload, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), plays: 0 });
         remoteId = ref.id;
@@ -146,7 +162,12 @@ export const unpublishSet = async (remoteId) => {
         writeMock(readMock().filter(d => d.id !== remoteId));
     } else {
         const { db, doc, deleteDoc } = await getFirestoreApi();
-        await deleteDoc(doc(db, COLLECTION, remoteId));
+        try {
+            await deleteDoc(doc(db, COLLECTION, remoteId));
+        } catch (err) {
+            // Already removed: the rules deny deleting a missing doc, but there's nothing left to do
+            if (!(await isGone(remoteId))) throw err;
+        }
     }
     state.sets = state.sets.filter(s => s.remoteId !== remoteId);
     emit();

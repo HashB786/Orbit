@@ -44,8 +44,8 @@ const SetView = () => {
     const featured = FEATURED_IDS.has(set.id);
 
     const copyAndEdit = () => {
-        // Copies are saved to a teacher account; send everyone else to sign in first
-        if (!auth.isTeacher) {
+        // Copies are saved to an account (no email verification needed); send everyone else to sign in first
+        if (!auth.isCreator) {
             navigate(`/signin?next=${encodeURIComponent(`/set/${setId}`)}`);
             return;
         }
@@ -94,7 +94,7 @@ const SetView = () => {
                 <div className="min-w-0">
                     <h1 className="orbit-title text-2xl md:text-4xl break-words pb-0.5">{set.title}</h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                        {featured && <span className="inline-flex items-center gap-1 text-amber-600 font-semibold"><Sparkles size={14} /> {t('sets.featured')}</span>}
+                        {(featured || set.featured) && <span className="inline-flex items-center gap-1 text-amber-600 font-semibold"><Sparkles size={14} /> {t('sets.featured')}</span>}
                         {isMine && (set.visibility === 'public'
                             ? <span className="inline-flex items-center gap-1 text-sky-600 font-semibold"><Globe size={14} /> {t('sets.public')}</span>
                             : <span className="inline-flex items-center gap-1"><Lock size={13} /> {t('sets.private')}</span>)}

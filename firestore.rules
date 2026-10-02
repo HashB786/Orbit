@@ -1,7 +1,8 @@
 rules_version = '2';
 
 // Orbit Firestore rules.
-// - Teachers (Google or email accounts with a verified email) create, publish and host.
+// - Any signed-in account (Google or email) can create and manage sets.
+// - Hosting games (RTDB) still requires email_verified — see database.rules.json.
 // - Students and guests are anonymous: they may read public sets, never write.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -22,6 +23,11 @@ service cloud.firestore {
       return isAccount() && request.auth.token.get('email_verified', false) == true;
     }
 
+    // Verified, or anyone could register an unverified email/password account with this address
+    function isAdmin() {
+      return isTeacher() && request.auth.token.email == 'fynamichashbdev@gmail.com';
+    }
+
     function validSet(d) {
       return d.title is string && d.title.size() > 0 && d.title.size() <= 80
         && d.questions is list && d.questions.size() <= 300;
@@ -30,27 +36,41 @@ service cloud.firestore {
     // Public library (Discover)
     match /question_sets/{setId} {
       allow read: if true;
-      allow create: if isTeacher() && validSet(request.resource.data)
+      // Owners can't feature their own sets, start with fake plays, or pin them to the top of "Newest"
+      allow create: if isAccount() && validSet(request.resource.data)
         && request.resource.data.questions.size() > 0
-        && request.resource.data.ownerId == request.auth.uid;
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.get('featured', false) == false
+        && request.resource.data.get('plays', 0) == 0
+        && request.resource.data.createdAt == request.time;
       allow update: if signedIn() && (
-        (isTeacher() && resource.data.ownerId == request.auth.uid
-          && validSet(request.resource.data) && request.resource.data.ownerId == request.auth.uid)
+        isAdmin()
+        || (isAccount() && resource.data.ownerId == request.auth.uid
+          && validSet(request.resource.data) && request.resource.data.ownerId == request.auth.uid
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['featured', 'plays', 'createdAt']))
         // Anyone hosting a set may count one play
         || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['plays'])
             && request.resource.data.plays == resource.data.plays + 1)
       );
-      allow delete: if isAccount() && resource.data.ownerId == request.auth.uid;
+      allow delete: if isAdmin() || (isAccount() && resource.data.ownerId == request.auth.uid);
     }
 
-    // Teacher profile (name, email, accepted terms) and private sets
+    // Admin can read all user profiles
     match /users/{uid} {
-      allow read, write: if isAccount() && request.auth.uid == uid;
+      allow read: if (isAccount() && request.auth.uid == uid) || isAdmin();
+      allow write: if isAccount() && request.auth.uid == uid;
 
       match /sets/{setId} {
-        allow read, delete: if isAccount() && request.auth.uid == uid;
-        allow create, update: if isTeacher() && request.auth.uid == uid && validSet(request.resource.data);
+        allow read: if (isAccount() && request.auth.uid == uid) || isAdmin();
+        allow delete: if isAccount() && request.auth.uid == uid;
+        allow create, update: if isAccount() && request.auth.uid == uid && validSet(request.resource.data);
       }
+    }
+
+    // Admin site config (featured sets, announcements)
+    match /admin/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }

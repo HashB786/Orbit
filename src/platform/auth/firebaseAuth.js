@@ -13,7 +13,8 @@ const toUser = (u) => {
         photoURL: u.photoURL || '',
         emailVerified: !!u.emailVerified,
         isAnonymous: !!u.isAnonymous,
-        provider: u.isAnonymous ? 'anonymous' : google ? 'google' : 'password'
+        provider: u.isAnonymous ? 'anonymous' : google ? 'google' : 'password',
+        providers: u.providerData.map(p => p.providerId)
     };
 };
 
@@ -118,6 +119,17 @@ export const createFirebaseAuth = async () => {
         },
 
         resetPassword: (email) => mod.sendPasswordResetEmail(auth, email),
+
+        // Link email+password to an existing Google-only account as a backup sign-in method
+        async linkPassword(password) {
+            const user = auth.currentUser;
+            if (!user || !user.email) throw error('auth/no-current-user');
+            const credential = mod.EmailAuthProvider.credential(user.email, password);
+            await mod.linkWithCredential(user, credential);
+            await user.getIdToken(true);
+            emit();
+            return toUser(auth.currentUser);
+        },
 
         async updateName(name) {
             if (!auth.currentUser) return;

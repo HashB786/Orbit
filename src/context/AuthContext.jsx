@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { TERMS_VERSION, authMode, getAuthService, hasAccountHint, setAccountHint } from '../platform/auth';
+import { CHANGELOG_VERSION } from '../config/site';
 import { setSetsOwner, onSyncError } from '../platform/sets/store';
 import { useLanguage } from './LanguageContext';
 import { toast } from '../components/ui/toast';
@@ -54,13 +55,9 @@ export const AuthProvider = ({ children }) => {
             profile = cached || {};
         }
         setState(prev => (prev.user?.uid === user.uid ? { ...prev, profile } : prev));
-        // Sets sync only for verified teachers (the database rules require it too)
-        if (user.emailVerified) {
-            const moved = await setSetsOwner(user.uid);
-            if (moved > 0) toast(t('auth.movedSets', { count: moved }));
-        } else {
-            await setSetsOwner(null);
-        }
+        // Sets sync for any signed-in account (Firestore rules require email token only, not verified)
+        const moved = await setSetsOwner(user.uid);
+        if (moved > 0) toast(t('auth.movedSets', { count: moved }));
     }, [t]);
 
     // Loads the account service once; safe to call from anywhere
@@ -103,7 +100,7 @@ export const AuthProvider = ({ children }) => {
         // Terms are accepted on the sign-up form, so they're saved with the new account
         signUp: (email, password, name) => run(async (s) => {
             const user = await s.signUp(email, password, name);
-            const profile = { name, email: user.email, termsVersion: TERMS_VERSION, termsAcceptedAt: Date.now(), createdAt: Date.now() };
+            const profile = { name, email: user.email, termsVersion: TERMS_VERSION, termsAcceptedAt: Date.now(), createdAt: Date.now(), seenChangelog: CHANGELOG_VERSION };
             await s.saveProfile(user.uid, profile).catch(() => {});
             cacheProfile(user.uid, profile);
             setState(prev => (prev.user?.uid === user.uid ? { ...prev, profile } : prev));
@@ -119,16 +116,36 @@ export const AuthProvider = ({ children }) => {
             s.simulateVerify?.();
         }),
         resetPassword: (email) => run(s => s.resetPassword(email)),
+        linkPassword: (password) => run(s => s.linkPassword(password)),
+        skipPasswordSetup: () => run(async (s) => {
+            const user = s.current();
+            if (!user) return;
+            const profile = { ...(state.profile || {}), skipPasswordSetup: true };
+            setState(prev => ({ ...prev, profile }));
+            cacheProfile(user.uid, profile);
+            await s.saveProfile(user.uid, { skipPasswordSetup: true }).catch(() => {});
+        }),
+        markChangelogSeen: () => run(async (s) => {
+            const user = s.current();
+            if (!user) return;
+            const profile = { ...(state.profile || {}), seenChangelog: CHANGELOG_VERSION };
+            setState(prev => ({ ...prev, profile }));
+            cacheProfile(user.uid, profile);
+            await s.saveProfile(user.uid, { seenChangelog: CHANGELOG_VERSION }).catch(() => {});
+        }),
         acceptTerms: (name) => run(async (s) => {
             const user = s.current();
             if (!user) return;
+            const isNew = !state.profile?.createdAt;
             const profile = {
                 ...(state.profile || {}),
                 name: name || state.profile?.name || user.name || '',
                 email: user.email,
                 termsVersion: TERMS_VERSION,
                 termsAcceptedAt: Date.now(),
-                createdAt: state.profile?.createdAt || Date.now()
+                createdAt: state.profile?.createdAt || Date.now(),
+                // Brand-new accounts don't need a "what's new" for features that are all new to them
+                ...(isNew ? { seenChangelog: CHANGELOG_VERSION } : {})
             };
             await s.saveProfile(user.uid, profile);
             cacheProfile(user.uid, profile);
@@ -166,6 +183,15 @@ export const AuthProvider = ({ children }) => {
     const user = state.user;
     const verified = !!user?.emailVerified;
     const termsOk = state.profile?.termsVersion === TERMS_VERSION;
+    // Any signed-in user with accepted terms can create sets (no email verification needed)
+    const isCreator = !!user && termsOk;
+    // Hosting games also requires email verification
+    const isTeacher = !!user && verified && termsOk;
+    // Google-only accounts that haven't set a backup password and haven't skipped the prompt
+    const needsPassword = !!user && user.provider === 'google'
+        && !(user.providers || []).includes('password')
+        && !state.profile?.skipPasswordSetup
+        && termsOk;
 
     const value = useMemo(() => ({
         ...actions,
@@ -173,11 +199,14 @@ export const AuthProvider = ({ children }) => {
         status: state.status,
         user,
         profile: state.profile,
-        // A teacher who may create and host: signed in, email verified, terms accepted
-        isTeacher: !!user && verified && termsOk,
-        needs: !user ? 'signin' : !verified ? 'verify' : state.profile === null ? 'loading' : !termsOk ? 'terms' : null,
+        isCreator,
+        isTeacher,
+        // needs for creating sets: no email verification required
+        needsForCreate: !user ? 'signin' : state.profile === null ? 'loading' : !termsOk ? 'terms' : needsPassword ? 'setPassword' : null,
+        // needs for hosting: email verification required
+        needs: !user ? 'signin' : !verified ? 'verify' : state.profile === null ? 'loading' : !termsOk ? 'terms' : needsPassword ? 'setPassword' : null,
         displayName: state.profile?.name || user?.name || ''
-    }), [actions, state.status, state.profile, user, verified, termsOk]);
+    }), [actions, state.status, state.profile, user, verified, termsOk, isCreator, isTeacher, needsPassword]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

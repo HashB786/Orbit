@@ -4,6 +4,7 @@ import { Globe, Lock, Play, Sparkles } from 'lucide-react';
 import { TypeBadge, cardClass, cx } from '../ui';
 import { TYPE_IDS } from '../../platform/questions/types';
 import { useT } from '../../context/LanguageContext';
+import { gradeName } from '../../platform/sets/search';
 
 const SUBJECT_EMOJI = {
     Math: '➗', Science: '🔬', Geography: '🌍', History: '🏛️', English: '📖', Languages: '🗣️',
@@ -40,6 +41,7 @@ const SetCard = ({ set, to, onClick, badge, actions, selected = false }) => {
                     <span className="block text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
                         {t('common.questions', { count: set.questions.length })}
                         {set.subject ? ` · ${subjectName(t, set.subject)}` : ''}
+                        {set.grade ? ` · ${gradeName(t, set.grade)}` : ''}
                         {set.author ? ` · ${set.author}` : ''}
                         {set.plays > 0 ? ` · ${t('common.plays', { count: set.plays })}` : ''}
                     </span>

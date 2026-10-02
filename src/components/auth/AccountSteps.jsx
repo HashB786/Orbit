@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { MailCheck, RefreshCw, LogOut, Info, Wand2 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { MailCheck, RefreshCw, LogOut, Info, Wand2, KeyRound, Sparkles, ChevronRight, X } from 'lucide-react';
 import { IconOrb, btn, inputClass, cx } from '../ui';
 import { toast } from '../ui/toast';
 import { useAuth } from '../../context/AuthContext';
 import { useT } from '../../context/LanguageContext';
 import { authErrorKey } from '../../platform/auth';
+import { CHANGELOG, CHANGELOG_VERSION } from '../../config/site';
 import Rich from '../../i18n/Rich';
-import { ConsentChecks, ErrorNote } from './AuthPanel';
+import { ConsentChecks, ErrorNote, PasswordInput } from './AuthPanel';
 
 const COOLDOWN = 60;
 
@@ -151,5 +153,99 @@ export const AcceptTerms = () => {
                 <button type="button" onClick={() => auth.signOut()} className={cx(btn.ghost, 'w-full')}>{t('auth.verify.other')}</button>
             </div>
         </form>
+    );
+};
+
+// Optional backup-password setup for Google-only accounts
+export const SetPassword = () => {
+    const t = useT();
+    const auth = useAuth();
+    const [password, setPassword] = useState('');
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState('');
+
+    const submit = async (e) => {
+        e.preventDefault();
+        if (password.length < 8) return setError(t('auth.validation.password'));
+        setBusy(true);
+        setError('');
+        try {
+            await auth.linkPassword(password);
+            toast(t('auth.setPassword.saved'));
+        } catch (err) {
+            setError(t(authErrorKey(err)));
+            setBusy(false);
+        }
+    };
+
+    const skip = async () => {
+        await auth.skipPasswordSetup();
+    };
+
+    return (
+        <form onSubmit={submit} className="orbit-card w-full max-w-md p-6 sm:p-8" noValidate>
+            <div className="text-center">
+                <div className="flex justify-center"><IconOrb icon={KeyRound} tone="violet" size={64} /></div>
+                <h1 className="font-display text-2xl font-bold mt-4 text-gray-900 dark:text-white">{t('auth.setPassword.title')}</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5">{t('auth.setPassword.text')}</p>
+                <p className="text-xs text-gray-400 mt-1">{auth.user?.email}</p>
+            </div>
+            <div className="mt-6 space-y-4">
+                <div>
+                    <label htmlFor="set-pw" className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1.5">{t('auth.passwordNew')}</label>
+                    <PasswordInput id="set-pw" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" />
+                    <p className="text-xs text-gray-400 mt-1">{t('auth.passwordHint')}</p>
+                </div>
+                {error && <ErrorNote>{error}</ErrorNote>}
+                <button type="submit" disabled={busy || password.length < 8} className={cx(btn.primary, 'w-full py-3')}>
+                    <KeyRound size={17} /> {t('auth.setPassword.submit')}
+                </button>
+                <button type="button" onClick={skip} className={cx(btn.ghost, 'w-full')}>{t('auth.setPassword.skip')}</button>
+            </div>
+        </form>
+    );
+};
+
+// Full-screen game pages: never cover them with a popup
+const GAME_ROUTES = /^\/(room|board|play|practice|join)(\/|$)/;
+
+// "What's New" modal shown once per CHANGELOG_VERSION to signed-in users
+export const WhatsNew = () => {
+    const t = useT();
+    const auth = useAuth();
+    const { pathname } = useLocation();
+
+    // Only after sign-up steps (terms, backup password) are done
+    const open = !!auth.user && auth.needsForCreate === null
+        && auth.profile?.seenChangelog !== CHANGELOG_VERSION
+        && !GAME_ROUTES.test(pathname);
+
+    const dismiss = () => {
+        auth.markChangelogSeen().catch(() => {});
+    };
+
+    if (!open) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={dismiss}>
+            <div className="orbit-card w-full max-w-sm p-6 relative" onClick={e => e.stopPropagation()}>
+                <button onClick={dismiss} className={cx(btn.icon, 'absolute top-3 right-3')} aria-label={t('common.close')}><X size={18} /></button>
+                <div className="flex items-center gap-3 mb-4">
+                    <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-400 to-violet-600 flex items-center justify-center text-white shrink-0">
+                        <Sparkles size={20} />
+                    </span>
+                    <h2 className="font-display text-xl font-bold text-gray-900 dark:text-white">{t('whatsNew.title')}</h2>
+                </div>
+                <ul className="space-y-2.5">
+                    {CHANGELOG.map(key => (
+                        <li key={key} className="flex items-start gap-2.5 text-sm text-gray-700 dark:text-gray-300">
+                            <ChevronRight size={16} className="text-primary-500 shrink-0 mt-0.5" />
+                            <span>{t(key)}</span>
+                        </li>
+                    ))}
+                </ul>
+                <button onClick={dismiss} className={cx(btn.primary, 'w-full mt-5')}>{t('whatsNew.ok')}</button>
+            </div>
+        </div>
     );
 };

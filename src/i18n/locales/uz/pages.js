@@ -66,6 +66,7 @@ export const discover = {
     filters: 'Filtrlar',
     subject: 'Fan',
     hasType: 'Savol turi',
+    grade: 'Sinf darajasi',
     any: 'Istalgan',
     featured: 'Orbit tanlovi',
     community: 'Hamjamiyat toʻplamlari',
@@ -142,6 +143,7 @@ export const editor = {
     optional: '(ixtiyoriy)',
     descriptionPlaceholder: 'Bu toʻplam nima haqida?',
     choose: 'Tanlang…',
+    grade: 'Sinf darajasi',
     unsaved: 'Saqlanmagan',
     publicInDiscover: 'Kashf etish boʻlimida ommaviy',
     import: 'Import',
@@ -331,6 +333,23 @@ export const account = {
     deletePassword: 'Tasdiqlash uchun parolingizni kiriting',
     deleteConfirm: 'Butunlay oʻchirish',
     deleted: 'Akkauntingiz oʻchirildi.'
+};
+
+export const grades = {
+    'Grade 1': '1-sinf', 'Grade 2': '2-sinf', 'Grade 3': '3-sinf', 'Grade 4': '4-sinf',
+    'Grade 5': '5-sinf', 'Grade 6': '6-sinf', 'Grade 7': '7-sinf', 'Grade 8': '8-sinf',
+    'Grade 9': '9-sinf', 'Grade 10': '10-sinf', 'Grade 11': '11-sinf', 'Grade 12': '12-sinf',
+    University: 'Oliy taʼlim', Teachers: 'Oʻqituvchilar'
+};
+
+export const whatsNew = {
+    title: 'Orbitdagi yangiliklar',
+    ok: 'Tushunarli',
+    sets_for_all: 'Endi har kim savollar toʻplamini yaratishi va ulashishi mumkin — nafaqat oʻqituvchilar.',
+    grades: 'Toʻplamlarga sinf darajasi belgilash imkoniyati qoʻshildi (1–12-sinf, Oliy taʼlim, Oʻqituvchilar).',
+    backup_password: 'Google akkaunti egalari endi zaxira email+parol qoʻshishi mumkin.',
+    i18n: 'Interfeys to\'liq tarjima qilindi: ingliz, oʻzbek va rus tillarida.',
+    terms_accept: 'Foydalanish shartlari endi ro\'yxatdan o\'tishda bir marta, shartlar o\'zgarganda yana ko\'rsatiladi.'
 };
 
 export const settings = {

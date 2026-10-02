@@ -66,6 +66,7 @@ export const discover = {
     filters: 'Filters',
     subject: 'Subject',
     hasType: 'Has question type',
+    grade: 'Grade level',
     any: 'Any',
     featured: 'Featured by Orbit',
     community: 'Community sets',
@@ -142,6 +143,7 @@ export const editor = {
     optional: '(optional)',
     descriptionPlaceholder: 'What is this set about?',
     choose: 'Choose…',
+    grade: 'Grade level',
     unsaved: 'Unsaved',
     publicInDiscover: 'Public in Discover',
     import: 'Import',
@@ -325,12 +327,12 @@ export const notFound = {
 export const account = {
     nickname: 'Your nickname',
     nicknameText: 'Filled in for you when you join a game on this device.',
-    teacherTitle: 'Teacher account',
+    teacherTitle: 'Account',
     teacherText: 'Sign in to create question sets and host games. Your sets are saved to your account and follow you to any device.',
     provider: { google: 'Google account', password: 'Email and password' },
     verified: 'Verified',
     notVerified: 'Not verified',
-    finishVerify: 'Verify your email to start creating and hosting.',
+    finishVerify: 'Verify your email to host live games.',
     finishTerms: 'Accept the Terms of Use to start creating and hosting.',
     name: 'Your name',
     nameText: 'Shown to students when you host, and as the author of sets you publish.',
@@ -347,6 +349,23 @@ export const account = {
     deletePassword: 'Enter your password to confirm',
     deleteConfirm: 'Delete forever',
     deleted: 'Your account has been deleted.'
+};
+
+export const grades = {
+    'Grade 1': 'Grade 1', 'Grade 2': 'Grade 2', 'Grade 3': 'Grade 3', 'Grade 4': 'Grade 4',
+    'Grade 5': 'Grade 5', 'Grade 6': 'Grade 6', 'Grade 7': 'Grade 7', 'Grade 8': 'Grade 8',
+    'Grade 9': 'Grade 9', 'Grade 10': 'Grade 10', 'Grade 11': 'Grade 11', 'Grade 12': 'Grade 12',
+    University: 'University', Teachers: 'Teachers'
+};
+
+export const whatsNew = {
+    title: "What's new in Orbit",
+    ok: 'Got it',
+    sets_for_all: 'Anyone can now create and share question sets — not just teachers.',
+    grades: 'Sets can now have a grade level (Grade 1–12, University, Teachers) for easier discovery.',
+    backup_password: 'Google accounts can now add a backup email+password for extra security.',
+    i18n: 'Full interface translation in English, Uzbek and Russian.',
+    terms_accept: 'Terms of Use now appear once at sign-up, and again if they change.'
 };
 
 export const settings = {

@@ -35,7 +35,8 @@ const toUser = (account) => account && {
     photoURL: '',
     emailVerified: !!account.verified,
     isAnonymous: false,
-    provider: account.provider
+    provider: account.provider,
+    providers: account.providers || [account.provider === 'google' ? 'google.com' : 'password']
 };
 
 export const createLocalAuth = () => {
@@ -102,7 +103,8 @@ export const createLocalAuth = () => {
 
         async signIn(email, password) {
             const account = accounts()[String(email).trim().toLowerCase()];
-            if (!account || account.provider !== 'password' || account.pass !== await hash(password)) throw error('auth/invalid-credential');
+            const hasPassword = account && (account.provider === 'password' || account.providers?.includes('password'));
+            if (!hasPassword || account.pass !== await hash(password)) throw error('auth/invalid-credential');
             return startSession(account);
         },
 
@@ -117,6 +119,15 @@ export const createLocalAuth = () => {
         },
 
         async refresh() {
+            emit();
+            return toUser(currentAccount());
+        },
+
+        async linkPassword(password) {
+            const account = currentAccount();
+            if (!account) throw error('auth/no-current-user');
+            const providers = account.providers || [account.provider === 'google' ? 'google.com' : 'password'];
+            saveAccount({ ...account, pass: await hash(password), providers: [...new Set([...providers, 'password'])] });
             emit();
             return toUser(currentAccount());
         },

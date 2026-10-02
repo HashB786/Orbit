@@ -9,7 +9,7 @@ import { TYPE_IDS, createQuestion, convertQuestion, isValidQuestion, uid } from 
 import { demoQuestion } from '../platform/questions/demos';
 import { saveSet, findLocalSet } from '../platform/sets/store';
 import { publishSet, unpublishSet } from '../platform/sets/publicSets';
-import { SUBJECTS } from '../platform/sets/search';
+import { SUBJECTS, GRADES, gradeName } from '../platform/sets/search';
 import { useUser } from '../context/UserContext';
 import { useT } from '../context/LanguageContext';
 import { subjectName } from '../components/sets/SetCard';
@@ -159,7 +159,8 @@ const SetEditor = () => {
             if (saved.visibility === 'public' && saved.remoteId) {
                 try {
                     await publishSet(saved);
-                } catch {
+                } catch (err) {
+                    if (err.code === 'removed') saved = saveSet({ ...saved, remoteId: null, visibility: 'private' });
                     toast(t('editor.publicCopyFailed'), 'error');
                 }
             }
@@ -237,6 +238,10 @@ const SetEditor = () => {
                 const match = SUBJECTS.find(sub => sub.toLowerCase() === meta.subject.toLowerCase());
                 if (match) next.subject = match;
             }
+            if (meta.grade && !d.grade) {
+                const gMatch = GRADES.find(g => g.toLowerCase() === meta.grade.toLowerCase());
+                if (gMatch) next.grade = gMatch;
+            }
             return next;
         });
         setImportOpen(false);
@@ -291,6 +296,15 @@ const SetEditor = () => {
                         <select id="set-subject" value={draft.subject} onChange={e => update(d => ({ ...d, subject: e.target.value }))} className={inputClass}>
                             <option value="">{t('editor.choose')}</option>
                             {SUBJECTS.map(s => <option key={s} value={s}>{subjectName(t, s)}</option>)}
+                        </select>
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label htmlFor="set-grade" className="block text-sm font-semibold mb-1.5">{t('editor.grade')} <span className="text-gray-400 font-normal">{t('editor.optional')}</span></label>
+                        <select id="set-grade" value={draft.grade || ''} onChange={e => update(d => ({ ...d, grade: e.target.value }))} className={inputClass}>
+                            <option value="">{t('editor.choose')}</option>
+                            {GRADES.map(g => <option key={g} value={g}>{gradeName(t, g)}</option>)}
                         </select>
                     </div>
                 </div>

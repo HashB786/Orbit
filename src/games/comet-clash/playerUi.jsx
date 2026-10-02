@@ -1,4 +1,4 @@
-import React, { useSyncExternalStore } from 'react';
+import React, { useEffect, useSyncExternalStore } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
 import { SPACE_BG } from '../../components/SpaceScreen';
 import { audio } from '../../platform/audio/audio';
@@ -12,6 +12,19 @@ export const ordinal = (n, t = translateNow) => (n >= 1 && n <= 6 ? t(`cc.ordina
 export const roundHint = (t, kind, progress) => {
     if (kind === 'multi') return progress ? t('cc.hint.multiProgress', { found: progress.found, total: progress.total }) : t('cc.hint.multi');
     return t('cc.hint.orderNext', { ord: ordinal((progress?.found || 0) + 1, t) });
+};
+
+// Urgent beeps in the last 5 seconds of a round. `endAt` and `now()` are server time.
+export const useTimeWarning = (active, endAt, now) => {
+    useEffect(() => {
+        if (!active || !endAt) return undefined;
+        const remaining = endAt - now();
+        const timers = [5, 4, 3, 2, 1]
+            .map(s => remaining - s * 1000)
+            .filter(delay => delay > 0)
+            .map(delay => setTimeout(() => audio.sfx('timeWarning'), delay));
+        return () => timers.forEach(clearTimeout);
+    }, [active, endAt]); // eslint-disable-line react-hooks/exhaustive-deps
 };
 
 export const Screen = ({ children }) => (

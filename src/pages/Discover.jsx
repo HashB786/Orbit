@@ -4,7 +4,7 @@ import SetCard, { HostButton, subjectName } from '../components/sets/SetCard';
 import { EmptyState, Spinner, TypeBadge, PageHeader, btn, inputClass, cx } from '../components/ui';
 import { FEATURED_SETS } from '../platform/sets/featured';
 import { usePublicSets, refreshPublicSets } from '../platform/sets/publicSets';
-import { matchesSearch, SUBJECTS } from '../platform/sets/search';
+import { matchesSearch, SUBJECTS, GRADES, gradeName } from '../platform/sets/search';
 import { TYPE_IDS } from '../platform/questions/types';
 import { useT } from '../context/LanguageContext';
 
@@ -13,6 +13,7 @@ const Discover = () => {
     const pub = usePublicSets();
     const [query, setQuery] = useState('');
     const [subject, setSubject] = useState('');
+    const [grade, setGrade] = useState('');
     const [type, setType] = useState('');
     const [sort, setSort] = useState('new');
     const [showFilters, setShowFilters] = useState(false);
@@ -26,18 +27,20 @@ const Discover = () => {
         s.questions.length > 0 &&
         matchesSearch(s, query) &&
         (!subject || s.subject === subject) &&
+        (!grade || s.grade === grade) &&
         (!type || s.questions.some(q => q.type === type))
     );
 
-    const featured = useMemo(() => filter(FEATURED_SETS), [query, subject, type]); // eslint-disable-line react-hooks/exhaustive-deps
+    // Built-in picks plus community sets the admin featured
+    const featured = useMemo(() => filter([...FEATURED_SETS, ...pub.sets.filter(s => s.featured)]), [pub.sets, query, subject, grade, type]); // eslint-disable-line react-hooks/exhaustive-deps
     const community = useMemo(() => {
-        const list = filter(pub.sets);
+        const list = filter(pub.sets.filter(s => !s.featured));
         return sort === 'popular'
             ? [...list].sort((a, b) => (b.plays || 0) - (a.plays || 0))
             : [...list].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-    }, [pub.sets, query, subject, type, sort]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [pub.sets, query, subject, grade, type, sort]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const activeFilters = (subject ? 1 : 0) + (type ? 1 : 0);
+    const activeFilters = (subject ? 1 : 0) + (grade ? 1 : 0) + (type ? 1 : 0);
 
     return (
         <div className="space-y-6 md:pb-16">
@@ -77,6 +80,19 @@ const Discover = () => {
                                         ? 'bg-primary-600 border-primary-600 text-white'
                                         : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-primary-400')}>
                                     {s ? subjectName(t, s) : t('common.all')}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">{t('discover.grade')}</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {['', ...GRADES].map(g => (
+                                <button key={g || 'all'} onClick={() => setGrade(g)}
+                                    className={cx('px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors', grade === g
+                                        ? 'bg-primary-600 border-primary-600 text-white'
+                                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-primary-400')}>
+                                    {g ? gradeName(t, g) : t('common.all')}
                                 </button>
                             ))}
                         </div>

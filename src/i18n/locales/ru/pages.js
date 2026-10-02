@@ -66,6 +66,7 @@ export const discover = {
     filters: 'Фильтры',
     subject: 'Предмет',
     hasType: 'Тип вопросов',
+    grade: 'Уровень класса',
     any: 'Любой',
     featured: 'Выбор Orbit',
     community: 'Наборы сообщества',
@@ -147,6 +148,7 @@ export const editor = {
     optional: '(необязательно)',
     descriptionPlaceholder: 'О чём этот набор?',
     choose: 'Выберите…',
+    grade: 'Уровень класса',
     unsaved: 'Не сохранено',
     publicInDiscover: 'Опубликован в «Обзоре»',
     import: 'Импорт',
@@ -386,6 +388,23 @@ export const account = {
     deletePassword: 'Введите пароль для подтверждения',
     deleteConfirm: 'Удалить навсегда',
     deleted: 'Ваш аккаунт удалён.'
+};
+
+export const grades = {
+    'Grade 1': '1 класс', 'Grade 2': '2 класс', 'Grade 3': '3 класс', 'Grade 4': '4 класс',
+    'Grade 5': '5 класс', 'Grade 6': '6 класс', 'Grade 7': '7 класс', 'Grade 8': '8 класс',
+    'Grade 9': '9 класс', 'Grade 10': '10 класс', 'Grade 11': '11 класс', 'Grade 12': '12 класс',
+    University: 'Университет', Teachers: 'Учителя'
+};
+
+export const whatsNew = {
+    title: 'Что нового в Orbit',
+    ok: 'Понятно',
+    sets_for_all: 'Теперь любой может создавать и публиковать наборы вопросов — не только учителя.',
+    grades: 'У наборов теперь можно указать уровень класса (1–12, университет, учителя).',
+    backup_password: 'Аккаунты Google теперь могут добавить резервный вход через email и пароль.',
+    i18n: 'Полный перевод интерфейса на английский, узбекский и русский.',
+    terms_accept: 'Условия использования показываются один раз при регистрации и при каждом обновлении.'
 };
 
 export const settings = {

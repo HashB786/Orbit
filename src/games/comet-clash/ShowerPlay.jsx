@@ -4,7 +4,7 @@ import { roomPath } from '../../platform/rooms/rooms';
 import { audio } from '../../platform/audio/audio';
 import { useTheme } from '../../context/ThemeContext';
 import { Playfield } from './playfield';
-import { Avatar, MuteButton, roundHint } from './playerUi';
+import { Avatar, MuteButton, roundHint, useTimeWarning } from './playerUi';
 import { useT } from '../../context/LanguageContext';
 import Slots from '../../i18n/Slots';
 
@@ -15,6 +15,7 @@ const ShowerPlay = ({ rt, code, shower, me, meId, myRank, total, settings }) => 
     const canvasRef = useRef(null);
     const fieldRef = useRef(null);
     const roundRef = useRef({ key: null, field: null, submitted: false, begun: false, offset: 0 });
+    const streakRef = useRef(0);
     const [progress, setProgress] = useState(null);
     const [note, setNote] = useState(null); // 'done' | 'timeout'
     const [countdown, setCountdown] = useState(null);
@@ -111,19 +112,35 @@ const ShowerPlay = ({ rt, code, shower, me, meId, myRank, total, settings }) => 
         };
     }, [status, roundKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Question resolved: show the answer on the field, play my result sound
+    // Question resolved: show the answer, play result SFX with streak tracking
     const myDelta = shower.last?.round === round ? shower.last?.deltas?.[meId] : undefined;
+    const isFastest = shower.last?.round === round && shower.last?.fastest?.pid === meId;
     useEffect(() => {
         if (status !== 'result') return;
         const field = fieldRef.current;
         if (field?.active) field.stopRound('reveal');
         if (!sound || myDelta === undefined) return;
-        audio.sfx(myDelta > 0 ? 'roundWin' : 'bothMiss');
+        if (myDelta > 0) {
+            streakRef.current++;
+            if (isFastest) audio.sfx('fastest');
+            else if (streakRef.current >= 3) audio.sfx('streak');
+            else audio.sfx('roundWin');
+        } else {
+            if (streakRef.current >= 3) audio.sfx('streakBreak');
+            else audio.sfx('bothMiss');
+            streakRef.current = 0;
+        }
     }, [status, round]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
-        if (status === 'intro' && sound) audio.sfx('whoosh');
+        if (status === 'intro' && sound) {
+            audio.sfx('whoosh');
+            if (round <= 1) audio.sfx('gameStart');
+        }
     }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const roundEndAt = shower.roundStartAt ? shower.roundStartAt + (Number(settings.roundTime) || 15) * 1000 : 0;
+    useTimeWarning(sound && status === 'round' && !!q && !note, roundEndAt, () => rt.now());
 
     return (
         <div className="app-height w-full flex flex-col bg-[#040714] text-white select-none overflow-hidden">

@@ -90,6 +90,75 @@ const TRACKS = {
             if (idx !== null) a.tone({ midi: bar.chord[idx] + 12, type: 'sine', start: t, dur: stepDur * 0.5, gain: 0.05, attack: 0.002, release: 0.18, bus: a.musicBus });
         }
     },
+    // Player battle: high-energy, punchy synth in E minor (Em - C - D - B) — phone adrenaline rush
+    playerBattle: {
+        tempo: 140,
+        bars: [
+            { bass: 40, chord: [64, 67, 71] },
+            { bass: 36, chord: [60, 64, 67] },
+            { bass: 38, chord: [62, 66, 69] },
+            { bass: 35, chord: [59, 62, 66] },
+            { bass: 40, chord: [64, 67, 71] },
+            { bass: 36, chord: [60, 64, 67] },
+            { bass: 38, chord: [62, 66, 69] },
+            { bass: 35, chord: [59, 62, 66] }
+        ],
+        play(a, step, bar, t, stepDur, barIndex) {
+            const s = step % 16;
+            // Pumping sidechain-style bass
+            if (s % 2 === 0) {
+                a.tone({ midi: bar.bass + (s % 4 === 2 ? 12 : 0), type: 'sawtooth', start: t, dur: stepDur * 1.2, gain: 0.06, attack: 0.003, release: 0.06, bus: a.musicBus, filter: 600 });
+            }
+            // Four-on-the-floor kick with offbeat hat
+            if (s % 4 === 0) a.kick(t, 0.22);
+            if (s === 4 || s === 12) a.snare(t, 0.08);
+            if (s % 2 === 1) a.hat(t, 0.015, 0.025);
+            if (s % 4 === 2) a.hat(t, 0.025, 0.06);
+            // Stabby chord on downbeat
+            if (s === 0) {
+                bar.chord.forEach(n => a.tone({ midi: n, type: 'square', start: t, dur: stepDur * 2, gain: 0.016, attack: 0.005, release: 0.08, bus: a.musicBus, filter: 1800 }));
+            }
+            // Fast arpeggio lead on second half
+            if (barIndex >= 4) {
+                const seq = [0, 2, 1, 2, 0, 1, 2, 0, 1, 0, 2, 1, 0, 2, 1, 2];
+                const note = bar.chord[seq[s]] + 12;
+                a.tone({ midi: note, type: 'sawtooth', start: t, dur: stepDur * 0.5, gain: 0.022, attack: 0.002, release: 0.04, bus: a.musicBus, filter: 3200 });
+            }
+        }
+    },
+    // Player lobby: groovy anticipation builder in G minor (Gm - Eb - F - D) — upbeat waiting music
+    playerLobby: {
+        tempo: 100,
+        bars: [
+            { bass: 43, chord: [58, 62, 67] },
+            { bass: 39, chord: [55, 58, 63] },
+            { bass: 41, chord: [57, 60, 65] },
+            { bass: 38, chord: [54, 57, 62] }
+        ],
+        play(a, step, bar, t, stepDur) {
+            const s = step % 16;
+            // Bouncy bass with slides
+            if (s === 0 || s === 6 || s === 10) {
+                a.tone({ midi: bar.bass, type: 'triangle', start: t, dur: stepDur * 2, gain: 0.07, attack: 0.004, release: 0.1, bus: a.musicBus, filter: 600 });
+            }
+            if (s === 4 || s === 12) {
+                a.tone({ midi: bar.bass + 12, type: 'triangle', start: t, dur: stepDur * 1.2, gain: 0.04, attack: 0.004, release: 0.06, bus: a.musicBus, filter: 800 });
+            }
+            // Shuffle kick/hat groove
+            if (s % 4 === 0) a.kick(t, 0.14);
+            if (s === 4 || s === 12) a.noise({ start: t, dur: 0.07, gain: 0.03, type: 'highpass', freq: 3000, bus: a.musicBus });
+            if (s % 2 === 0) a.hat(t, 0.01, 0.035);
+            // Funky chord stabs
+            if (s === 0 || s === 7 || s === 10) {
+                bar.chord.forEach(n => a.tone({ midi: n, type: 'triangle', start: t, dur: stepDur * 1.5, gain: 0.03, attack: 0.005, release: 0.2, bus: a.musicBus, filter: 1600 }));
+            }
+            // Melody plucks
+            const melody = [2, null, 1, null, 0, null, 2, 1, null, 0, null, 2, 1, null, 0, null];
+            if (melody[s] !== null) {
+                a.tone({ midi: bar.chord[melody[s]] + 12, type: 'sine', start: t, dur: stepDur * 0.6, gain: 0.045, attack: 0.003, release: 0.15, bus: a.musicBus });
+            }
+        }
+    },
     // Millionaire: slow, suspenseful pulse in C minor with a heartbeat bass and shimmering pad
     tension: {
         tempo: 76,
@@ -401,6 +470,27 @@ const SFX = {
         arp(a, t, [67, 72, 76, 79, 84], { type: 'square', gap: 0.11, dur: 0.1, gain: 0.05 });
         [60, 64, 67, 72, 76].forEach(m => a.tone({ midi: m, type: 'triangle', start: t + 0.6, dur: 1.1, gain: 0.06, attack: 0.02, release: 0.8 }));
         a.noise({ start: t + 0.6, dur: 0.8, gain: 0.05, type: 'highpass', freq: 5000 });
+    },
+    // ---- Player excitement ----
+    streak: (a, t) => {
+        arp(a, t, [76, 79, 84, 88, 91], { type: 'triangle', gap: 0.04, dur: 0.06, gain: 0.1, release: 0.08 });
+        a.noise({ start: t + 0.15, dur: 0.3, gain: 0.04, type: 'highpass', freq: 8000 });
+    },
+    timeWarning: (a, t) => {
+        a.tone({ freq: 880, type: 'square', start: t, dur: 0.06, gain: 0.06, release: 0.03, filter: 2000 });
+        a.tone({ freq: 880, type: 'square', start: t + 0.1, dur: 0.06, gain: 0.06, release: 0.03, filter: 2000 });
+    },
+    fastest: (a, t) => {
+        arp(a, t, [84, 88, 91, 96], { type: 'square', gap: 0.05, dur: 0.06, gain: 0.06 });
+        a.tone({ midi: 96, type: 'triangle', start: t + 0.22, dur: 0.4, gain: 0.09, release: 0.3 });
+        a.noise({ start: t + 0.22, dur: 0.35, gain: 0.04, type: 'highpass', freq: 6000 });
+    },
+    streakBreak: (a, t) => {
+        a.tone({ freq: 440, slideTo: 220, type: 'sawtooth', start: t, dur: 0.2, gain: 0.05, release: 0.1, filter: 800 });
+    },
+    gameStart: (a, t) => {
+        arp(a, t, [60, 64, 67, 72, 76, 79, 84], { type: 'triangle', gap: 0.06, dur: 0.08, gain: 0.08, release: 0.12 });
+        a.noise({ start: t + 0.35, dur: 0.5, gain: 0.06, type: 'highpass', freq: 5000 });
     }
 };
 
