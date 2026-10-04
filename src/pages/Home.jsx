@@ -95,7 +95,7 @@ const Home = () => {
             {/* Games */}
             <section>
                 <SectionTitle title={t('nav.games')} to="/games" linkLabel={t('home.seeAll')} />
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
                     {GAMES.map(g => (
                         <Link key={g.id} to={`/games?host=${g.id}`} className="group orbit-card orbit-card-hover overflow-hidden flex flex-col min-w-0">
                             <div className="relative aspect-[16/8] overflow-hidden">

@@ -6,16 +6,16 @@
 // Students who are offline for the whole question (and send nothing) are skipped, not penalized.
 //
 // rooms/{code}/shower = { status: 'intro'|'round'|'result', round, total, q, introUntil,
-//                         roundStartAt, deadlineAt, resultUntil, asked, last }
+//                         readAt, roundStartAt, roundMs, deadlineAt, resultUntil, asked, last }
 // rooms/{code}/shower/results/{round}/{playerId} = { ok, t, wrong }   (written by each player)
 
 import { toChoiceRound, shuffle } from '../../platform/questions/rounds';
 import { isOnline, collapsePatch, completeResults } from '../../platform/rooms/shared';
 import { CometClashHost, roundAnswer } from './hostLogic';
+import { readingMs } from './timing';
 
 export const SHOWER_TIMINGS = {
     intro: 4000, // "Get ready" before the first question
-    countdown: 1600, // 3-2-1 before each question
     grace: 2500, // extra time for slow networks after the question clock ends
     result: 6000 // answer + leaderboard between questions
 };
@@ -135,12 +135,14 @@ export class MeteorShowerHost extends CometClashHost {
             this.endGame(set, now);
             return;
         }
-        const roundTime = (Number(this.settings.roundTime) || 15) * 1000;
-        const startAt = now + this.st.countdown;
+        const roundTime = this.roundMsFor(picked.index);
+        const startAt = now + readingMs(picked.round.prompt, this.t);
         set('shower/status', 'round');
         set('shower/round', round);
         set('shower/q', { index: picked.index, ...picked.round, seed: Math.floor(this.random() * 2 ** 31) });
+        set('shower/readAt', now);
         set('shower/roundStartAt', startAt);
+        set('shower/roundMs', roundTime);
         set('shower/deadlineAt', startAt + roundTime + this.st.grace);
         set(`shower/asked/${picked.index}`, true);
     }

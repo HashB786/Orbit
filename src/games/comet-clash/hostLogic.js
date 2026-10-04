@@ -9,13 +9,15 @@
 
 import { toChoiceRound, decoyPool, shuffle } from '../../platform/questions/rounds';
 import { normalizeQuestion } from '../../platform/questions/normalize';
+import { secondsFor } from '../../platform/questions/types';
 import { roomPath, isOnline, assignPath, collapsePatch, completeResults } from '../../platform/rooms/shared';
+import { READ_TIMES, readingMs } from './timing';
 
 export const BOT_NAMES = ['Nova-7', 'Byte', 'Quasar', 'Pixel', 'Zed-9', 'Orbitron', 'Comet-X', 'Astra', 'Vortex', 'Lumen'];
 
 export const DEFAULT_TIMINGS = {
     intro: 3500, // VS screen
-    countdown: 1600, // "3-2-1" before each round
+    ...READ_TIMES, // the question on its own before each round (see timing.js)
     grace: 2500, // extra time for slow networks after the round clock ends
     leadGrace: 3000, // after someone answers, how long to wait for the rival's report
     result: 2400, // round result on screen
@@ -62,6 +64,16 @@ export class CometClashHost {
 
     get settings() {
         return this.state.meta?.settings || {};
+    }
+
+    defaultRoundMs() {
+        return (Number(this.settings.roundTime) || 15) * 1000;
+    }
+
+    // The question's own time limit when the teacher allows it, otherwise the game's
+    roundMsFor(index) {
+        const s = this.settings;
+        return secondsFor(this.questions[index], Number(s.roundTime) || 15, s.useQuestionTime !== false) * 1000;
     }
 
     now() {
@@ -356,14 +368,16 @@ export class CometClashHost {
             this.finishMatch(set, m, now, 'time');
             return;
         }
-        const roundTime = (Number(this.settings.roundTime) || 15) * 1000;
-        const startAt = now + this.t.countdown;
+        const roundTime = this.roundMsFor(picked.index);
+        const startAt = now + readingMs(picked.round.prompt, this.t);
         const base = `matches/${m.id}`;
         set(`${base}/status`, 'round');
         set(`${base}/round`, round);
         set(`${base}/sudden`, round > m.rounds);
         set(`${base}/q`, { index: picked.index, ...picked.round, seed: Math.floor(this.random() * 2 ** 31) });
+        set(`${base}/readAt`, now);
         set(`${base}/roundStartAt`, startAt);
+        set(`${base}/roundMs`, roundTime);
         set(`${base}/deadlineAt`, startAt + roundTime + this.t.grace);
         set(`${base}/lead`, null);
         set(`${base}/asked/${picked.index}`, true);
@@ -388,15 +402,16 @@ export class CometClashHost {
 
         if (m.b === 'bot') {
             const key = `${m.id}:${round}`;
+            const roundMs = m.roundMs || this.defaultRoundMs();
             if (!this.botPlans.has(key)) {
-                this.botPlans.set(key, this.makeBotPlan(m, m.q || { kind: 'single' }, (Number(this.settings.roundTime) || 15) * 1000));
+                this.botPlans.set(key, this.makeBotPlan(m, m.q || { kind: 'single' }, roundMs));
             }
             const plan = this.botPlans.get(key);
             const human = results[m.a];
             if (plan.ok && elapsed >= plan.t) results.bot = { ok: true, t: plan.t };
             // Once the human has finished, the bot's (secret) result is final
             if (human) results.bot = { ok: plan.ok, t: plan.ok ? plan.t : null };
-            if (!plan.ok && elapsed >= (Number(this.settings.roundTime) || 15) * 1000) results.bot = { ok: false, t: null };
+            if (!plan.ok && elapsed >= roundMs) results.bot = { ok: false, t: null };
         }
 
         // Tell the slower player someone already found it (their device decides if they can still win)

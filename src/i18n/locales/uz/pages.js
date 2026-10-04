@@ -144,6 +144,9 @@ export const editor = {
     descriptionPlaceholder: 'Bu toʻplam nima haqida?',
     choose: 'Tanlang…',
     grade: 'Sinf darajasi',
+    timeLimit: 'Vaqt chegarasi',
+    timeDefault: 'Oʻyin boʻyicha',
+    timeHelp: 'Comet Clash oʻyinida, taymer yoqilganda esa Grid Battle va Millionaire oʻyinlarida ishlatiladi.',
     unsaved: 'Saqlanmagan',
     publicInDiscover: 'Kashf etish boʻlimida ommaviy',
     import: 'Import',
@@ -251,7 +254,7 @@ export const importer = {
 export const gamesPage = {
     subtitle: 'Har bir oʻyin istalgan savollar toʻplami bilan ishlaydi. Oʻyinni tanlang, soʻng toʻplamni.',
     live: 'Jonli oʻyinlar',
-    liveText: 'Oʻquvchilar oʻz telefonlari yoki noutbuklaridan kod orqali qoʻshiladi. Akkaunt kerak emas.',
+    liveText: 'Oʻquvchilar oʻz telefoni, plansheti yoki noutbukidan kod orqali qoʻshiladi. Akkaunt kerak emas.',
     board: 'Aqlli doska oʻyinlari',
     boardText: 'Bitta katta ekranda birgalikda oʻynaladi. Qoʻshilish shart emas.',
     illustration: '{name} rasmi',
@@ -278,11 +281,13 @@ export const host = {
     tooFew: { other: '{name} uchun kamida {count} ta yaroqli savol kerak ({selected} ta tanlangan).' },
     willUse: { other: '{count} ta savol ishlatiladi.' },
     defaults: 'Standart',
+    advanced: 'Qoʻshimcha sozlamalar',
+    advancedChanged: { other: '{count} ta oʻzgargan' },
     starting: 'Boshlanmoqda…',
     createRoom: 'Oʻyin xonasini yaratish',
     startHere: 'Shu ekranda boshlash',
     storageFull: 'Boshlab boʻlmadi: brauzer xotirasi toʻla.',
-    roomFailed: 'Oʻyin xonasini yaratib boʻlmadi. Internetni va emailingiz tasdiqlanganini tekshiring.',
+    roomFailed: 'Oʻyin xonasini yaratib boʻlmadi. Internetni tekshirib, qaytadan urinib koʻring.',
     tooManySpecials: '{cells} ta katakli taxta uchun maxsus kataklar juda koʻp ({specials} ta). Ularning bir qismini kamaytiring.'
 };
 
@@ -295,7 +300,8 @@ export const hostRoom = {
 export const board = {
     notSetUp: 'Bu doska oʻyini hali sozlanmagan.',
     choose: 'Oʻyin tanlash',
-    exit: 'Oʻyindan chiqish'
+    exit: 'Oʻyindan chiqish',
+    secondsLeft: { other: '{count} soniya qoldi' }
 };
 
 export const practice = {

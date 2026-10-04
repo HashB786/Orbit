@@ -10,6 +10,7 @@ export const cc = {
         orderNext: 'Blast them in order · next: {ord}'
     },
     notYet: 'Not yet!',
+    readQuestion: 'Read the question',
     stunned: 'Stunned {s}s',
     bot: 'Bot',
     rival: 'Rival',
@@ -141,7 +142,9 @@ export const solo = {
     correctOf: { one: '{correct} correct out of {count} round', other: '{correct} correct out of {count} rounds' },
     backToSet: 'Back to the set',
     review: 'Questions to review',
-    perfect: 'Perfect run! Nothing to review.'
+    perfect: 'Perfect run! Nothing to review.',
+    tapToStart: 'Ready? Tap here to start',
+    clickToStart: 'Ready? Click here or press Space'
 };
 
 export const mil = {
@@ -197,4 +200,46 @@ export const grid = {
     reviewBoard: 'Review board',
     newBoard: 'New board',
     noGraph: 'Not enough turns for a graph yet.'
+};
+
+export const siege = {
+    yourTeam: 'You\'re on team {team}',
+    joiningTeam: 'Joining a team…',
+    pickAll: 'Pick every correct answer, then check',
+    tapOrder: 'Tap the answers in the right order',
+    reset: 'Undo',
+    check: 'Check',
+    earned: 'Correct! Comet ready',
+    wrongAnswer: 'Not quite',
+    aimTouch: 'Drag to aim, let go to launch',
+    aimMouse: 'Aim with the mouse, click to launch',
+    aimKeys: 'Keys: ← → aim · ↑ ↓ power · Space launch',
+    power: 'Power',
+    turnLeft: 'Turn aim left',
+    turnRight: 'Turn aim right',
+    lessPower: 'Less power',
+    morePower: 'More power',
+    launch: 'Launch',
+    hit: 'Hit {team}!',
+    slingshot: 'Slingshot! Double points',
+    sun: 'Burned up in the sun',
+    lost: 'Lost in space',
+    teamRank: 'Team {team} finished #{rank}',
+    hits: { one: '{count} hit', other: '{count} hits' },
+    teamsCount: { one: '{count} team', other: '{count} teams' },
+    shuffle: 'Shuffle teams',
+    empty: 'No one yet',
+    autoTeams: 'Students are put into teams as they join.',
+    teams: 'Teams',
+    feed: 'Mission log',
+    feedEmpty: 'Waiting for the first comet…',
+    feedHit: '{name} hit {team} +{n}',
+    feedSling: '{name} slingshot into {team} +{n}',
+    feedSun: '{name}\'s comet burned up in the sun',
+    feedLost: '{name}\'s comet got lost in space',
+    shieldDown: '{team}\'s shield is down!',
+    topPilots: 'Top pilots',
+    winner: '{team} wins!',
+    tie: 'It\'s a tie!',
+    endText: 'Comets still in the air land, then the results are shown.'
 };

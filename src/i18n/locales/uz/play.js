@@ -8,6 +8,7 @@ export const cc = {
         orderNext: 'Tartib bilan uring · navbatdagi: {ord}'
     },
     notYet: 'Hali emas!',
+    readQuestion: 'Savolni oʻqing',
     stunned: 'Gangib qoldi {s}s',
     bot: 'Bot',
     rival: 'Raqib',
@@ -136,7 +137,9 @@ export const solo = {
     correctOf: { other: '{count} raunddan {correct} tasi toʻgʻri' },
     backToSet: 'Toʻplamga qaytish',
     review: 'Takrorlash uchun savollar',
-    perfect: 'Mukammal oʻyin! Takrorlashga hech narsa yoʻq.'
+    perfect: 'Mukammal oʻyin! Takrorlashga hech narsa yoʻq.',
+    tapToStart: 'Tayyormisiz? Boshlash uchun shu yerga bosing',
+    clickToStart: 'Tayyormisiz? Shu yerga bosing yoki Space tugmasini bosing'
 };
 
 export const mil = {
@@ -192,4 +195,46 @@ export const grid = {
     reviewBoard: 'Taxtani koʻrish',
     newBoard: 'Yangi taxta',
     noGraph: 'Grafik uchun hali yurishlar yetarli emas.'
+};
+
+export const siege = {
+    yourTeam: 'Siz {team} jamoasidasiz',
+    joiningTeam: 'Jamoaga qoʻshilmoqda…',
+    pickAll: 'Barcha toʻgʻri javoblarni tanlang, soʻng tekshiring',
+    tapOrder: 'Javoblarni toʻgʻri tartibda bosing',
+    reset: 'Bekor qilish',
+    check: 'Tekshirish',
+    earned: 'Toʻgʻri! Kometa tayyor',
+    wrongAnswer: 'Unchalik emas',
+    aimTouch: 'Moʻljal olish uchun suring, uchirish uchun qoʻyib yuboring',
+    aimMouse: 'Sichqoncha bilan moʻljal oling, uchirish uchun bosing',
+    aimKeys: 'Tugmalar: ← → moʻljal · ↑ ↓ kuch · Space uchirish',
+    power: 'Kuch',
+    turnLeft: 'Moʻljalni chapga burish',
+    turnRight: 'Moʻljalni oʻngga burish',
+    lessPower: 'Kuchni kamaytirish',
+    morePower: 'Kuchni oshirish',
+    launch: 'Uchirish',
+    hit: '{team} sayyorasiga tegdi!',
+    slingshot: 'Quyosh manevri! Ikki baravar ball',
+    sun: 'Quyoshda yonib ketdi',
+    lost: 'Koinotda adashib qoldi',
+    teamRank: '{team} jamoasi {rank}-oʻrinni egalladi',
+    hits: { other: '{count} ta zarba' },
+    teamsCount: { other: '{count} ta jamoa' },
+    shuffle: 'Jamoalarni aralashtirish',
+    empty: 'Hali hech kim yoʻq',
+    autoTeams: 'Oʻquvchilar qoʻshilishi bilan jamoalarga avtomatik boʻlinadi.',
+    teams: 'Jamoalar',
+    feed: 'Missiya jurnali',
+    feedEmpty: 'Birinchi kometa kutilmoqda…',
+    feedHit: '{name} {team} sayyorasiga tegdi +{n}',
+    feedSling: '{name}: quyosh manevri bilan {team} sayyorasiga +{n}',
+    feedSun: '{name} kometasi quyoshda yonib ketdi',
+    feedLost: '{name} kometasi koinotda adashib qoldi',
+    shieldDown: '{team} qalqoni oʻchdi!',
+    topPilots: 'Eng zoʻr uchuvchilar',
+    winner: '{team} gʻalaba qozondi!',
+    tie: 'Durang!',
+    endText: 'Havodagi kometalar qoʻnadi, soʻng natijalar koʻrsatiladi.'
 };

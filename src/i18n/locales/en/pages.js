@@ -144,6 +144,9 @@ export const editor = {
     descriptionPlaceholder: 'What is this set about?',
     choose: 'Choose…',
     grade: 'Grade level',
+    timeLimit: 'Time limit',
+    timeDefault: 'Game default',
+    timeHelp: 'Used by Comet Clash, and by Grid Battle and Millionaire when their timer is on.',
     unsaved: 'Unsaved',
     publicInDiscover: 'Public in Discover',
     import: 'Import',
@@ -261,7 +264,7 @@ export const importer = {
 export const gamesPage = {
     subtitle: 'Every game works with any question set. Pick one, then choose your set.',
     live: 'Live games',
-    liveText: 'Students join on their own phones or laptops with a code. No accounts.',
+    liveText: 'Students join on their own phones, tablets or laptops with a code. No accounts.',
     board: 'Smart board games',
     boardText: 'Played together on one big screen. Nothing to join.',
     illustration: '{name} illustration',
@@ -294,11 +297,13 @@ export const host = {
     },
     willUse: { one: '{count} question will be used.', other: '{count} questions will be used.' },
     defaults: 'Defaults',
+    advanced: 'Advanced options',
+    advancedChanged: { one: '{count} changed', other: '{count} changed' },
     starting: 'Starting…',
     createRoom: 'Create game room',
     startHere: 'Start on this screen',
     storageFull: 'Could not start: browser storage is full.',
-    roomFailed: 'Could not create the game room. Check your connection and that your email is verified.',
+    roomFailed: 'Could not create the game room. Check your connection and try again.',
     tooManySpecials: 'Too many special tiles ({specials}) for a board of {cells} tiles. Lower some of them.'
 };
 
@@ -311,7 +316,8 @@ export const hostRoom = {
 export const board = {
     notSetUp: 'This board game isn\'t set up yet.',
     choose: 'Choose a game',
-    exit: 'Exit game'
+    exit: 'Exit game',
+    secondsLeft: { one: '{count} second left', other: '{count} seconds left' }
 };
 
 export const practice = {

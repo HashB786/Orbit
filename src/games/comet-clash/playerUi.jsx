@@ -27,6 +27,36 @@ export const useTimeWarning = (active, endAt, now) => {
     }, [active, endAt]); // eslint-disable-line react-hooks/exhaustive-deps
 };
 
+// The question on its own before the asteroids appear. `total`/`elapsed` (ms) drive the bar,
+// `countdown` shows the final 3-2-1, `onReady` (solo practice) lets the player start early.
+export const ReadingCard = ({ prompt, kind, total, elapsed = 0, countdown, onReady }) => {
+    const t = useT();
+    // Students play on phones, tablets and laptops: name the gesture their device actually has
+    const touch = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches;
+    return (
+        <div className="absolute inset-0 z-[5] flex items-center justify-center p-3 sm:p-6 bg-[#040714]/75" onPointerDown={onReady}>
+            <div className="w-full max-w-2xl max-h-full overflow-y-auto rounded-3xl bg-[#0b1128]/95 border border-emerald-400/20 px-5 py-6 sm:px-10 sm:py-9 text-center shadow-[0_0_60px_-20px_rgba(52,211,153,0.5)]">
+                <p className="text-[11px] sm:text-xs font-black uppercase tracking-[0.3em] text-emerald-300">{t('cc.readQuestion')}</p>
+                <p className="mt-3 text-xl sm:text-3xl md:text-4xl font-black leading-snug break-words">{prompt}</p>
+                {kind && kind !== 'single' && (
+                    <p className="mt-3 text-sm sm:text-base font-bold text-emerald-300">{kind === 'multi' ? t('cc.hint.multi') : t('cc.hint.order')}</p>
+                )}
+                <div className="mt-6 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                    {/* Keyed so a new start point (e.g. after a pause) restarts the animation */}
+                    {total > 0 && <div key={`${total}:${elapsed}`} className="h-full bg-emerald-400 animate-fill" style={{ animationDuration: `${total}ms`, animationDelay: `-${Math.max(0, elapsed)}ms` }} />}
+                </div>
+                <div className="h-14 sm:h-16 mt-3 flex items-center justify-center">
+                    {countdown ? (
+                        <span key={countdown} className="text-5xl sm:text-6xl font-black tabular-nums animate-ping-once">{countdown}</span>
+                    ) : onReady ? (
+                        <span className="text-sm font-bold text-gray-400">{touch ? t('solo.tapToStart') : t('solo.clickToStart')}</span>
+                    ) : null}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export const Screen = ({ children }) => (
     <div className="app-height w-full overflow-y-auto overflow-x-hidden text-white" style={SPACE_BG}>
         <div className="min-h-full flex flex-col items-center justify-center px-5 py-10 text-center">{children}</div>

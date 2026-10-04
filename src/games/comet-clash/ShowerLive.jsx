@@ -39,18 +39,22 @@ const ShowerLive = ({ meta, players, shower, now, onEnd, onLock, soundToggle }) 
     const total = shower?.total || meta.settings?.showerQuestions || 0;
     const results = shower?.results?.[round] || {};
     const submitted = Object.keys(results).length;
-    const roundTime = (Number(meta.settings?.roundTime) || 15) * 1000;
+    const roundTime = shower?.roundMs || (Number(meta.settings?.roundTime) || 15) * 1000;
     const lastTick = useRef(0);
 
-    // Countdown beeps before each question and ticks in the last 5 seconds
+    // A chime when a question appears, 3-2-1 beeps before it starts and ticks in the last 5 seconds
     const beforeStart = status === 'round' ? shower.roundStartAt - now : 0;
     const left = status === 'round' ? shower.roundStartAt + roundTime - now : 0;
     const secondMark = status === 'round' ? Math.ceil((beforeStart > 0 ? beforeStart : left) / 1000) : 0;
     useEffect(() => {
+        if (status === 'round') audio.sfx('question');
+    }, [status, round]);
+    useEffect(() => {
         if (status !== 'round' || secondMark === lastTick.current) return;
         lastTick.current = secondMark;
-        if (beforeStart > 0) audio.sfx('countdown');
-        else if (secondMark > 0 && secondMark <= 5) audio.sfx('tick');
+        if (beforeStart > 0) {
+            if (secondMark <= 3) audio.sfx('countdown');
+        } else if (secondMark > 0 && secondMark <= 5) audio.sfx('tick');
     }, [secondMark, status, beforeStart]);
 
     const started = status === 'round' && beforeStart <= 0;
@@ -92,7 +96,14 @@ const ShowerLive = ({ meta, players, shower, now, onEnd, onLock, soundToggle }) 
             {status === 'round' && shower.q && (
                 <div className="rounded-3xl bg-white/5 border border-white/10 p-6 sm:p-10 text-center">
                     {beforeStart > 0 ? (
-                        <p className="text-8xl font-black tabular-nums py-10">{Math.ceil(beforeStart / 1000)}</p>
+                        <>
+                            <p className="text-xs font-black uppercase tracking-[0.3em] text-emerald-300">{t('cc.readQuestion')}</p>
+                            <p className="mt-3 text-3xl sm:text-5xl font-black leading-snug break-words">{shower.q.prompt}</p>
+                            {shower.q.kind !== 'single' && (
+                                <p className="mt-3 text-emerald-300 font-bold">{shower.q.kind === 'multi' ? t('cc.hint.multi') : t('cc.hint.order')}</p>
+                            )}
+                            <p key={secondMark} className="mt-8 text-7xl font-black tabular-nums animate-ping-once">{secondMark}</p>
+                        </>
                     ) : (
                         <>
                             <p className="text-2xl sm:text-4xl font-black leading-snug break-words">{shower.q.prompt}</p>

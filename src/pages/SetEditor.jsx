@@ -119,7 +119,7 @@ const SetEditor = () => {
     const onRemove = useCallback((id) => update(d => ({ ...d, questions: d.questions.filter(q => q.id !== id) })), [update]);
 
     // The blank starter question is replaced instead of left behind as an empty card
-    const isUntouched = (q) => !q.prompt.trim() && !isValidQuestion(q)
+    const isUntouched = (q) => !q.prompt.trim() && !isValidQuestion(q) && !q.time
         && !(q.options || []).some(o => o.text.trim()) && !(q.accepted || []).some(a => a.trim()) && !(q.items || []).some(i => i.trim());
     const append = (d, added) => ({
         ...d,

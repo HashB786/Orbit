@@ -159,6 +159,42 @@ const TRACKS = {
             }
         }
     },
+    // Slingshot Siege: war drums under a heroic D minor march (Dm - Bb - F - C), melody in the second half
+    siege: {
+        tempo: 116,
+        bars: [
+            { bass: 38, chord: [62, 65, 69] },
+            { bass: 46, chord: [58, 62, 65] },
+            { bass: 41, chord: [60, 65, 69] },
+            { bass: 48, chord: [60, 64, 67] },
+            { bass: 38, chord: [62, 65, 69] },
+            { bass: 46, chord: [58, 62, 65] },
+            { bass: 41, chord: [60, 65, 69] },
+            { bass: 45, chord: [57, 61, 64] }
+        ],
+        play(a, step, bar, t, stepDur, barIndex) {
+            const s = step % 16;
+            // Deep toms: BOOM . . boom . . . . BOOM . . boom
+            if (s === 0 || s === 3 || s === 8 || s === 11) {
+                a.tone({ freq: s % 8 === 0 ? 92 : 118, slideTo: 44, type: 'sine', start: t, dur: 0.17, gain: s % 8 === 0 ? 0.22 : 0.13, attack: 0.002, release: 0.08, bus: a.musicBus });
+            }
+            if (s === 4 || s === 12) a.snare(t, 0.065);
+            if (s % 2 === 0) a.hat(t, s % 4 === 2 ? 0.016 : 0.008, 0.03);
+            // Driving bass in eighths
+            if (s % 2 === 0) {
+                a.tone({ midi: bar.bass + (s === 6 || s === 14 ? 7 : 0), type: 'sawtooth', start: t, dur: stepDur * 1.4, gain: 0.05, attack: 0.004, release: 0.06, bus: a.musicBus, filter: 480 });
+            }
+            // Brassy stab on each downbeat
+            if (s === 0) {
+                bar.chord.forEach(n => a.tone({ midi: n, type: 'sawtooth', start: t, dur: stepDur * 3, gain: 0.02, attack: 0.03, release: 0.3, bus: a.musicBus, filter: 1400 }));
+            }
+            if (barIndex >= 4) {
+                const melody = [0, null, 2, null, 1, null, 2, 1, 0, null, 1, null, 2, null, null, null];
+                const idx = melody[s];
+                if (idx !== null) a.tone({ midi: bar.chord[idx] + 12, type: 'triangle', start: t, dur: stepDur * 1.6, gain: 0.04, attack: 0.01, release: 0.15, bus: a.musicBus });
+            }
+        }
+    },
     // Millionaire: slow, suspenseful pulse in C minor with a heartbeat bass and shimmering pad
     tension: {
         tempo: 76,
@@ -475,6 +511,34 @@ const SFX = {
     streak: (a, t) => {
         arp(a, t, [76, 79, 84, 88, 91], { type: 'triangle', gap: 0.04, dur: 0.06, gain: 0.1, release: 0.08 });
         a.noise({ start: t + 0.15, dur: 0.3, gain: 0.04, type: 'highpass', freq: 8000 });
+    },
+    // ---- Slingshot Siege ----
+    launch: (a, t) => {
+        a.noise({ start: t, dur: 0.35, gain: 0.1, type: 'bandpass', freq: 600, freqEnd: 2600, q: 1.2 });
+        a.tone({ freq: 260, slideTo: 820, type: 'triangle', start: t, dur: 0.22, gain: 0.07, release: 0.06 });
+    },
+    impact: (a, t) => {
+        a.noise({ start: t, dur: 0.5, gain: 0.26, type: 'lowpass', freq: 1600, freqEnd: 90 });
+        a.tone({ freq: 140, slideTo: 38, type: 'sine', start: t, dur: 0.35, gain: 0.2, release: 0.12 });
+    },
+    burn: (a, t) => {
+        a.noise({ start: t, dur: 0.6, gain: 0.08, type: 'highpass', freq: 2500, freqEnd: 6000 });
+        a.tone({ freq: 90, slideTo: 60, type: 'sawtooth', start: t, dur: 0.4, gain: 0.04, release: 0.15, filter: 400 });
+    },
+    fizzle: (a, t) => a.tone({ freq: 520, slideTo: 180, type: 'sine', start: t, dur: 0.35, gain: 0.06, release: 0.12 }),
+    slingshot: (a, t) => {
+        arp(a, t, [72, 79, 84, 88, 91, 96], { type: 'triangle', gap: 0.045, dur: 0.07, gain: 0.09, release: 0.12 });
+        a.noise({ start: t + 0.1, dur: 0.5, gain: 0.05, type: 'highpass', freq: 7000 });
+    },
+    shieldDown: (a, t) => {
+        a.tone({ freq: 880, slideTo: 220, type: 'square', start: t, dur: 0.3, gain: 0.05, release: 0.08, filter: 2200 });
+        a.tone({ freq: 660, type: 'square', start: t + 0.34, dur: 0.12, gain: 0.05, release: 0.05, filter: 2000 });
+        a.tone({ freq: 440, type: 'square', start: t + 0.5, dur: 0.18, gain: 0.05, release: 0.08, filter: 1800 });
+    },
+    timeUp: (a, t) => {
+        a.tone({ freq: 330, type: 'square', start: t, dur: 0.16, gain: 0.07, release: 0.05, filter: 1400 });
+        a.tone({ freq: 247, type: 'square', start: t + 0.2, dur: 0.45, gain: 0.08, release: 0.15, filter: 1200 });
+        a.noise({ start: t + 0.2, dur: 0.35, gain: 0.04, type: 'lowpass', freq: 900 });
     },
     timeWarning: (a, t) => {
         a.tone({ freq: 880, type: 'square', start: t, dur: 0.06, gain: 0.06, release: 0.03, filter: 2000 });

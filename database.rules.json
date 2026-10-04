@@ -60,6 +60,15 @@
               }
             }
           }
+        },
+
+        "inbox": {
+          "$playerId": {
+            "$key": {
+              ".write": "auth != null && $playerId.beginsWith(auth.uid + '_') && !data.exists() && newData.exists() && !root.child('rooms').child($code).child('players').child($playerId).child('kicked').exists()",
+              ".validate": "newData.child('k').val() === 'a' || newData.child('k').val() === 's'"
+            }
+          }
         }
       }
     }

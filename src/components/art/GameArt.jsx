@@ -219,8 +219,71 @@ const MillionaireArt = ({ id }) => (
     </>
 );
 
+// Team planets around a sun; a comet swings past the sun (slingshot) into the pink planet
+const ArtPlanet = ({ x, y, r, color, shield }) => (
+    <g>
+        {shield !== undefined && (
+            <circle cx={x} cy={y} r={r + 5} fill="none" stroke={color} strokeOpacity="0.85" strokeWidth="2.2" strokeLinecap="round"
+                strokeDasharray={`${(2 * Math.PI * (r + 5) * shield).toFixed(1)} 999`} transform={`rotate(-90 ${x} ${y})`} />
+        )}
+        <circle cx={x} cy={y} r={r} fill={color} />
+        <circle cx={x - r * 0.35} cy={y - r * 0.35} r={r * 0.45} fill="#ffffff" opacity="0.25" />
+        <circle cx={x} cy={y} r={r} fill="none" stroke="#020617" strokeOpacity="0.35" strokeWidth="3" />
+    </g>
+);
+
+const SlingshotSiegeArt = ({ id }) => (
+    <>
+        <defs>
+            <linearGradient id={`${id}-bg`} x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#2a1240" />
+                <stop offset="1" stopColor="#060818" />
+            </linearGradient>
+            <radialGradient id={`${id}-glow`} cx="0.5" cy="0.5" r="0.5">
+                <stop offset="0" stopColor="#fb923c" stopOpacity="0.6" />
+                <stop offset="1" stopColor="#fb923c" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id={`${id}-sun`} cx="0.4" cy="0.38" r="0.65">
+                <stop offset="0" stopColor="#fffbeb" />
+                <stop offset="0.35" stopColor="#fde047" />
+                <stop offset="0.8" stopColor="#f97316" />
+                <stop offset="1" stopColor="#ea580c" />
+            </radialGradient>
+            <linearGradient id={`${id}-trail`} x1="0" y1="1" x2="1" y2="0">
+                <stop offset="0" stopColor="#34d399" stopOpacity="0" />
+                <stop offset="0.6" stopColor="#34d399" stopOpacity="0.8" />
+                <stop offset="1" stopColor="#d1fae5" />
+            </linearGradient>
+        </defs>
+        <rect width={W} height={H} fill={`url(#${id}-bg)`} />
+        <Stars seed={33} count={55} width={W} height={H} />
+
+        {/* Gravity rings and the golden slingshot zone */}
+        <circle cx="160" cy="92" r="78" fill="none" stroke="#a5b4fc" strokeOpacity="0.12" />
+        <circle cx="160" cy="92" r="44" fill="none" stroke="#fbbf24" strokeOpacity="0.45" strokeDasharray="3 5" />
+        <circle cx="160" cy="92" r="60" fill={`url(#${id}-glow)`} />
+        <circle cx="160" cy="92" r="24" fill={`url(#${id}-sun)`} />
+
+        <ArtPlanet x={58} y={42} r={13} color="#fbbf24" shield={0.7} />
+        <ArtPlanet x={50} y={136} r={15} color="#34d399" shield={1} />
+        <ArtPlanet x={276} y={142} r={14} color="#60a5fa" shield={0.45} />
+        <ArtPlanet x={268} y={50} r={16} color="#f472b6" />
+
+        {/* The comet whips around the sun and strikes */}
+        <path d="M66,128 C 118,150 196,132 194,94 C 192,64 222,52 250,52" fill="none" stroke={`url(#${id}-trail)`} strokeWidth="3.5" strokeLinecap="round" />
+        <circle cx="250" cy="52" r="5" fill="#ffffff" />
+        <circle cx="250" cy="52" r="10" fill="#34d399" opacity="0.35" />
+        {[[-14, -12], [12, -16], [18, 6], [-6, 18], [8, 20], [-18, 4]].map(([dx, dy], i) => (
+            <rect key={i} x={262 + dx} y={52 + dy} width="3.2" height="3.2" fill={i % 2 ? '#f9a8d4' : '#ffffff'} opacity={0.95 - i * 0.1} />
+        ))}
+        <Sparkle x={284} y={26} size={6} color="#fde68a" />
+        <text x="232" y="22" textAnchor="middle" fontFamily="Inter, sans-serif" fontWeight="900" fontSize="13" fill="#fde047">+50</text>
+    </>
+);
+
 const SCENES = {
     'comet-clash': CometClashArt,
+    'slingshot-siege': SlingshotSiegeArt,
     'grid-battle': GridBattleArt,
     millionaire: MillionaireArt
 };

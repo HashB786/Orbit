@@ -2,16 +2,17 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pause, Play, Heart, Flame, RotateCcw, LogOut, BookOpen, Check, X, Trophy } from 'lucide-react';
 import { SPACE_BG } from '../../components/SpaceScreen';
 import { toChoiceRound, decoyPool, shuffle } from '../../platform/questions/rounds';
-import { answerLabel } from '../../platform/questions/types';
+import { answerLabel, secondsFor } from '../../platform/questions/types';
 import { audio } from '../../platform/audio/audio';
 import { useTheme } from '../../context/ThemeContext';
 import { Playfield } from './playfield';
-import { roundHint } from './playerUi';
+import { ReadingCard, roundHint } from './playerUi';
+import { readingMs } from './timing';
 import { useLanguage } from '../../context/LanguageContext';
 import { localeOf } from '../../i18n';
 
 const LIVES = 3;
-const ROUND_MS = 15000;
+const ROUND_SECONDS = 15;
 
 const readBest = (key) => {
     try {
@@ -31,6 +32,7 @@ const Practice = ({ set, questions, onExit }) => {
     const game = useRef(null);
     const [hud, setHud] = useState({ score: 0, lives: LIVES, streak: 0, correct: 0, rounds: 0 });
     const [round, setRound] = useState(null);
+    const [reading, setReading] = useState(null); // { total, elapsed } while the question is shown on its own
     const [progress, setProgress] = useState(null);
     const [phase, setPhase] = useState('play'); // play | paused | over
     const [runId, setRunId] = useState(0);
@@ -61,15 +63,21 @@ const Practice = ({ set, questions, onExit }) => {
             hud: { score: 0, lives: LIVES, streak: 0, correct: 0, rounds: 0 },
             missed: new Map(),
             timer: 0,
+            pending: false, // the question is being read; asteroids not out yet
+            readTimer: 0,
+            readLeft: 0,
+            readStart: 0,
             over: false
         };
         setHud(game.current.hud);
         setReview([]);
+        setReading(null);
         setPhase('play');
         nextRound(400);
 
         return () => {
             clearTimeout(game.current?.timer);
+            clearTimeout(game.current?.readTimer);
             observer.disconnect();
             field.destroy();
             fieldRef.current = null;
@@ -101,18 +109,49 @@ const Practice = ({ set, questions, onExit }) => {
             }
             if (!built) return;
             g.lastIndex = built.index;
-            g.current = { ...built, missed: false };
+            g.current = { ...built, missed: false, ms: secondsFor(questions[built.index], ROUND_SECONDS) * 1000 };
             setRound(built);
             setProgress(null);
-            fieldRef.current?.startRound({
-                kind: built.kind,
-                options: built.options,
-                seed: Math.floor(Math.random() * 2 ** 31),
-                timeLimitMs: ROUND_MS,
-                penalty: { stun: 0, timeCost: 2 }
-            });
+            // Read the question first; the asteroids come when the time is up (or on a tap)
+            const total = readingMs(built.prompt);
+            g.pending = true;
+            g.readLeft = total;
+            g.readStart = Date.now();
+            setReading({ total, elapsed: 0 });
+            audio.sfx('question');
+            g.readTimer = setTimeout(beginRound, total);
         }, delay);
     };
+
+    const beginRound = () => {
+        const g = game.current;
+        if (!g || g.over || !g.pending) return;
+        clearTimeout(g.readTimer);
+        g.pending = false;
+        setReading(null);
+        audio.sfx('go');
+        fieldRef.current?.startRound({
+            kind: g.current.kind,
+            options: g.current.options,
+            seed: Math.floor(Math.random() * 2 ** 31),
+            timeLimitMs: g.current.ms,
+            penalty: { stun: 0, timeCost: 2 }
+        });
+    };
+
+    // Pausing while the question is being read freezes the reading time too
+    useEffect(() => {
+        const g = game.current;
+        if (!g?.pending) return;
+        if (phase === 'paused') {
+            clearTimeout(g.readTimer);
+            g.readLeft = Math.max(0, g.readLeft - (Date.now() - g.readStart));
+        } else if (phase === 'play') {
+            g.readStart = Date.now();
+            g.readTimer = setTimeout(beginRound, g.readLeft);
+            setReading(r => (r ? { total: r.total, elapsed: r.total - g.readLeft } : r));
+        }
+    }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const noteMiss = (picked) => {
         const g = game.current;
@@ -159,7 +198,7 @@ const Practice = ({ set, questions, onExit }) => {
         }
         if (e.type === 'complete') {
             const streak = g.hud.streak + 1;
-            const gained = Math.round((100 + Math.max(0, ROUND_MS - e.t) / 100) * multiplier(g.hud.streak));
+            const gained = Math.round((100 + Math.max(0, (g.current?.ms || ROUND_SECONDS * 1000) - e.t) / 100) * multiplier(g.hud.streak));
             let lives = g.hud.lives;
             if (streak % 5 === 0 && lives < 5) lives++;
             update({ score: g.hud.score + gained, streak, correct: g.hud.correct + 1, rounds: g.hud.rounds + 1, lives });
@@ -190,6 +229,7 @@ const Practice = ({ set, questions, onExit }) => {
     useEffect(() => {
         const onKey = (e) => {
             if (e.code === 'Escape' || e.code === 'KeyP') togglePause();
+            else if ((e.code === 'Space' || e.code === 'Enter') && phase === 'play' && game.current?.pending) beginRound();
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
@@ -217,7 +257,7 @@ const Practice = ({ set, questions, onExit }) => {
                     </div>
                 </div>
                 <div className="px-3 sm:px-6 pb-3 text-center min-h-[2.75rem]">
-                    {round && (
+                    {round && !reading && (
                         <>
                             <p className="max-w-3xl mx-auto text-base sm:text-xl md:text-2xl font-bold leading-snug line-clamp-3 break-words">{round.prompt}</p>
                             {round.kind !== 'single' && (
@@ -232,6 +272,10 @@ const Practice = ({ set, questions, onExit }) => {
 
             <div className="relative flex-1 min-h-0">
                 <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block touch-none cursor-crosshair" />
+
+                {round && reading && phase !== 'over' && (
+                    <ReadingCard prompt={round.prompt} kind={round.kind} total={reading.total} elapsed={reading.elapsed} onReady={beginRound} />
+                )}
 
                 {phase === 'paused' && (
                     <div className="absolute inset-0 z-10 bg-[#040714]/85 flex items-center justify-center p-4">

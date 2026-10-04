@@ -227,6 +227,19 @@
         100% { transform: scale(1); opacity: 1; }
     }
 
+    /* A bar that fills once; duration (and a negative delay to start part-way) are set inline */
+    .animate-fill {
+        transform-origin: left center;
+        animation-name: orbit-fill;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+    }
+
+    @keyframes orbit-fill {
+        from { transform: scaleX(0); }
+        to { transform: scaleX(1); }
+    }
+
     /* Hover-only controls must stay visible on touch screens */
     @media (hover: none) {
         .touch-visible {

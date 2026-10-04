@@ -1,6 +1,6 @@
 import React, { memo, useState } from 'react';
-import { ArrowUp, ArrowDown, Copy, Trash2, Plus, X, Check, AlertTriangle, ChevronDown } from 'lucide-react';
-import { TYPE_IDS, LIMITS, validateQuestion, uid } from '../../platform/questions/types';
+import { ArrowUp, ArrowDown, Copy, Trash2, Plus, X, Check, AlertTriangle, ChevronDown, Timer } from 'lucide-react';
+import { TYPE_IDS, LIMITS, QUESTION_TIMES, validateQuestion, uid, formatSeconds } from '../../platform/questions/types';
 import { TYPE_ICONS, cx, btn } from '../ui';
 import { useT } from '../../context/LanguageContext';
 import Rich from '../../i18n/Rich';
@@ -199,6 +199,36 @@ const OrderEditor = ({ q, onChange }) => {
     );
 };
 
+// Optional per-question time limit; games without a timer ignore it
+const TimePicker = ({ q, onChange }) => {
+    const t = useT();
+    const value = q.time || 0;
+    const choices = QUESTION_TIMES.includes(value) || !value ? QUESTION_TIMES : [...QUESTION_TIMES, value].sort((a, b) => a - b);
+    const set = (time) => {
+        const next = { ...q };
+        if (time) next.time = time;
+        else delete next.time;
+        onChange(next);
+    };
+    return (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400" title={t('editor.timeHelp')}>
+                <Timer size={14} className={value ? 'text-primary-500' : ''} />
+                <span>{t('editor.timeLimit')}</span>
+                <select
+                    value={value}
+                    onChange={e => set(Number(e.target.value))}
+                    className={cx('bg-gray-100 dark:bg-white/[0.06] rounded-lg px-2 py-1 font-semibold outline-none focus:ring-2 focus:ring-primary-500/30', value ? 'text-primary-600 dark:text-primary-300' : '')}
+                >
+                    <option value={0}>{t('editor.timeDefault')}</option>
+                    {choices.map(n => <option key={n} value={n}>{formatSeconds(t, n)}</option>)}
+                </select>
+            </label>
+            <span className="hidden sm:inline text-[11px] text-gray-400">{t('editor.timeHelp')}</span>
+        </div>
+    );
+};
+
 // One question in the editor. Memoized: typing in one card doesn't re-render the others.
 const QuestionCard = memo(({ q, index, total, showErrors, onChange, onType, onMove, onDuplicate, onRemove }) => {
     const t = useT();
@@ -240,6 +270,10 @@ const QuestionCard = memo(({ q, index, total, showErrors, onChange, onType, onMo
                     <AlertTriangle size={16} className="shrink-0 mt-0.5" /> {errors.map(code => t(`validation.${code}`)).join(' ')}
                 </p>
             )}
+
+            <div className="mt-4 pt-3 border-t border-gray-100 dark:border-white/[0.06]">
+                <TimePicker q={q} onChange={change} />
+            </div>
         </article>
     );
 });

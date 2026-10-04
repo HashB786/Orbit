@@ -7,7 +7,7 @@ import { roomPath, attachPresence, leaveRoom, isOnline, joinRoom } from '../../p
 import { audio } from '../../platform/audio/audio';
 import { useTheme } from '../../context/ThemeContext';
 import { Playfield } from './playfield';
-import { Screen, Avatar, MuteButton, roundHint, useTimeWarning } from './playerUi';
+import { Screen, Avatar, MuteButton, ReadingCard, roundHint, useTimeWarning } from './playerUi';
 import ShowerPlay from './ShowerPlay';
 import { useT } from '../../context/LanguageContext';
 import Slots from '../../i18n/Slots';
@@ -44,7 +44,9 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
     const [progress, setProgress] = useState(null); // { found, total }
     const [phaseNote, setPhaseNote] = useState(null); // 'done' | 'timeout' | 'lost'
     const [countdown, setCountdown] = useState(null);
+    const [reading, setReading] = useState(null); // { total, elapsed } while the question is shown on its own
     const sound = settings.studentSound !== false;
+    const roundMs = match.roundMs || (Number(settings.roundTime) || 15) * 1000;
 
     const rivalId = match.a === me ? match.b : match.a;
     const rival = rivalId === 'bot' ? { name: match.bot?.name || t('cc.bot'), color: '#94a3b8', bot: true } : players[rivalId] || { name: t('cc.rival') };
@@ -93,7 +95,7 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
         };
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // New round: countdown, then start at the shared start time
+    // New round: the question on its own, a 3-2-1, then the asteroids at the shared start time
     useEffect(() => {
         const field = fieldRef.current;
         if (!field || match.status !== 'round' || !match.q) return undefined;
@@ -107,11 +109,11 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
         setProgress(null);
         setPhaseNote(already ? (already.ok ? 'done' : 'timeout') : null);
         setCountdown(null);
+        setReading(null);
         field.clear();
         // Refreshed after answering: don't play the same round twice
         if (already) return undefined;
 
-        const roundTime = (Number(settings.roundTime) || 15) * 1000;
         const timers = [];
         const begin = () => {
             const current = roundRef.current;
@@ -120,20 +122,24 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
             const offset = Math.max(0, rt.now() - match.roundStartAt);
             current.offset = offset;
             setCountdown(null);
+            setReading(null);
             if (sound) audio.sfx('go');
             field.startRound({
                 kind: match.q.kind,
                 options: match.q.options,
                 seed: match.q.seed,
                 speed: settings.speed,
-                timeLimitMs: Math.max(2000, roundTime - offset),
+                timeLimitMs: Math.max(2000, roundMs - offset),
                 penalty: { stun: 1.5, timeCost: 0 }
             });
         };
         const delay = match.roundStartAt - rt.now();
         if (delay <= 0) begin();
         else {
-            // 3-2-1 beeps
+            const total = match.readAt ? Math.max(delay, match.roundStartAt - match.readAt) : delay;
+            setReading({ total, elapsed: total - delay });
+            if (sound) audio.sfx('question');
+            // 3-2-1 beeps at the end of the reading time
             [3, 2, 1].filter(n => delay - n * 450 > 0).forEach(n => timers.push(setTimeout(() => {
                 setCountdown(n);
                 if (sound) audio.sfx('countdown');
@@ -143,7 +149,11 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
         return () => {
             timers.forEach(clearTimeout);
             // Not started yet (e.g. React re-ran the effect): allow the next run to set it up again
-            if (!roundRef.current.begun && roundRef.current.key === roundKey) roundRef.current.key = null;
+            if (!roundRef.current.begun && roundRef.current.key === roundKey) {
+                roundRef.current.key = null;
+                setReading(null);
+                setCountdown(null);
+            }
         };
     }, [match.status, roundKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -206,7 +216,7 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
         }
     }, [match.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const roundEndAt = match.roundStartAt ? match.roundStartAt + (Number(settings.roundTime) || 15) * 1000 : 0;
+    const roundEndAt = match.roundStartAt ? match.roundStartAt + roundMs : 0;
     useTimeWarning(sound && match.status === 'round' && !!match.q && !phaseNote, roundEndAt, () => rt.now());
 
     const myScore = match.scores?.[me] ?? 0;
@@ -236,7 +246,7 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
                     </div>
                 </div>
                 <div className="px-3 sm:px-6 pb-3 text-center min-h-[2.75rem]">
-                    {match.status === 'round' && q && (
+                    {match.status === 'round' && q && !reading && (
                         <>
                             <p className="max-w-3xl mx-auto text-base sm:text-xl md:text-2xl font-bold leading-snug line-clamp-3 break-words">{q.prompt}</p>
                             {q.kind !== 'single' && !phaseNote && (
@@ -266,11 +276,9 @@ const Duel = ({ rt, code, match, me, players, settings }) => {
                     </div>
                 )}
 
-                {/* Round countdown */}
-                {match.status === 'round' && countdown && (
-                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                        <span key={countdown} className="text-8xl font-black text-white/90 drop-shadow-lg animate-ping-once">{countdown}</span>
-                    </div>
+                {/* The question on its own before the round, ending with 3-2-1 */}
+                {match.status === 'round' && q && reading && (
+                    <ReadingCard prompt={q.prompt} kind={q.kind} total={reading.total} elapsed={reading.elapsed} countdown={countdown} />
                 )}
 
                 {/* VS intro */}

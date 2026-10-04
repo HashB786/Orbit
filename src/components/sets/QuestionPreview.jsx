@@ -1,7 +1,7 @@
 import React from 'react';
-import { Check } from 'lucide-react';
+import { Check, Timer } from 'lucide-react';
 import { TypeBadge, cx } from '../ui';
-import { answerLabel, isValidQuestion } from '../../platform/questions/types';
+import { answerLabel, isValidQuestion, formatSeconds } from '../../platform/questions/types';
 import { useT } from '../../context/LanguageContext';
 
 // Read-only view of a question (set preview page)
@@ -15,6 +15,7 @@ const QuestionPreview = ({ q, index, showAnswers }) => {
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                         <TypeBadge type={q.type} />
+                        {q.time > 0 && <span className="inline-flex items-center gap-1 text-[11px] font-bold text-gray-500 dark:text-gray-400"><Timer size={12} /> {formatSeconds(t, q.time)}</span>}
                         {!valid && <span className="text-[11px] font-bold text-amber-600">{t('sets.incomplete')}</span>}
                     </div>
                     <p className="font-semibold text-gray-900 dark:text-white break-words">{q.prompt || <span className="text-gray-400 italic">{t('sets.noText')}</span>}</p>

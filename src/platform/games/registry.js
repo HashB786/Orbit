@@ -3,7 +3,8 @@
 // kind: 'live'  -> students join with a room code on their own devices (host screen + player screen)
 //       'board' -> played on one big screen / smart board, no join code
 // compat: per question type: 'native' | 'adapted' | 'unsupported'
-// settings: rendered automatically by the host setup screen (see components/host/SettingsForm)
+// settings: rendered automatically by the host setup screen (see components/host/SettingsForm).
+//           `advanced: true` settings stay hidden behind the "Advanced options" button.
 //
 // Texts are translated. `i18n` names the game's section:
 //   games.<i18n>.name / tagline / how[] / players / notes.<type>
@@ -14,6 +15,16 @@ import { lazy } from 'react';
 
 const minutes = (list) => list.map(m => ({ value: m * 60, label: ['units.minutes', { n: m }] }));
 const literal = (list) => list.map(([value, text]) => ({ value, text }));
+
+// Optional countdown per question (smart-board games and Slingshot Siege)
+const questionTimer = [
+    { key: 'timer', type: 'toggle', default: false, help: true },
+    {
+        key: 'timerSeconds', type: 'number', min: 5, max: 120, step: 5, default: 30, suffix: 'units.s',
+        showIf: s => s.timer, help: s => (s.useQuestionTime !== false ? 'helpOwn' : null)
+    },
+    { key: 'useQuestionTime', type: 'toggle', default: true, advanced: true, showIf: s => s.timer }
+];
 
 export const GAMES = [
     {
@@ -33,37 +44,67 @@ export const GAMES = [
             { key: 'duration', type: 'select', options: minutes([3, 5, 8, 10, 15, 20]), default: 480, showIf: s => s.mode !== 'shower' },
             { key: 'showerQuestions', type: 'number', min: 3, max: 40, default: 10, showIf: s => s.mode === 'shower' },
             { key: 'rounds', type: 'number', min: 3, max: 9, default: 5, showIf: s => s.mode !== 'shower' },
-            { key: 'roundTime', type: 'number', min: 8, max: 40, default: 15, suffix: 'units.s' },
-            { key: 'winBonus', type: 'number', min: 0, max: 10, default: 3, suffix: 'units.pts', showIf: s => s.mode !== 'shower' },
             {
-                key: 'missPenalty', type: 'segmented', default: -1, showIf: s => s.mode !== 'shower',
-                options: [{ value: 0 }, { value: -1 }, { value: -2 }]
+                key: 'roundTime', type: 'number', min: 8, max: 40, default: 15, suffix: 'units.s',
+                help: s => (s.useQuestionTime !== false ? 'helpOwn' : null)
             },
-            {
-                key: 'missPoints', type: 'segmented', default: -100, showIf: s => s.mode === 'shower',
-                options: literal([[0, '0'], [-50, '−50'], [-100, '−100']])
-            },
-            { key: 'negativeScores', type: 'toggle', default: true },
-            { key: 'suddenDeath', type: 'toggle', default: true, showIf: s => s.mode !== 'shower' },
-            { key: 'bots', type: 'toggle', default: true, showIf: s => s.mode !== 'shower', help: true },
-            { key: 'botWait', type: 'number', min: 3, max: 30, default: 8, suffix: 'units.s', showIf: s => s.mode !== 'shower' && s.bots },
             {
                 key: 'speed', type: 'segmented', default: 'normal',
                 options: [{ value: 'calm' }, { value: 'normal' }, { value: 'fast' }]
             },
+            { key: 'useQuestionTime', type: 'toggle', default: true, advanced: true },
+            { key: 'winBonus', type: 'number', min: 0, max: 10, default: 3, suffix: 'units.pts', advanced: true, showIf: s => s.mode !== 'shower' },
             {
-                key: 'hostTimeout', type: 'select', default: 180,
+                key: 'missPenalty', type: 'segmented', default: -1, advanced: true, showIf: s => s.mode !== 'shower',
+                options: [{ value: 0 }, { value: -1 }, { value: -2 }]
+            },
+            {
+                key: 'missPoints', type: 'segmented', default: -100, advanced: true, showIf: s => s.mode === 'shower',
+                options: literal([[0, '0'], [-50, '−50'], [-100, '−100']])
+            },
+            { key: 'negativeScores', type: 'toggle', default: true, advanced: true },
+            { key: 'suddenDeath', type: 'toggle', default: true, advanced: true, showIf: s => s.mode !== 'shower' },
+            { key: 'bots', type: 'toggle', default: true, advanced: true, showIf: s => s.mode !== 'shower', help: true },
+            { key: 'botWait', type: 'number', min: 3, max: 30, default: 8, suffix: 'units.s', advanced: true, showIf: s => s.mode !== 'shower' && s.bots },
+            {
+                key: 'hostTimeout', type: 'select', default: 180, advanced: true,
                 options: [{ value: 0 }, { value: 60 }, { value: 180 }, { value: 300 }],
                 help: true
             },
-            { key: 'lateJoin', type: 'toggle', default: true },
-            { key: 'randomNames', type: 'toggle', default: false, help: true },
-            { key: 'studentLeaderboard', type: 'toggle', default: true },
-            { key: 'studentMusic', type: 'toggle', default: true, help: true },
-            { key: 'studentSound', type: 'toggle', default: true }
+            { key: 'lateJoin', type: 'toggle', default: true, advanced: true },
+            { key: 'randomNames', type: 'toggle', default: false, advanced: true, help: true },
+            { key: 'studentLeaderboard', type: 'toggle', default: true, advanced: true },
+            { key: 'studentMusic', type: 'toggle', default: true, advanced: true, help: true },
+            { key: 'studentSound', type: 'toggle', default: true, advanced: true }
         ],
         Host: lazy(() => import('../../games/comet-clash/HostScreen')),
         Player: lazy(() => import('../../games/comet-clash/PlayerScreen'))
+    },
+    {
+        id: 'slingshot-siege',
+        i18n: 'siege',
+        kind: 'live',
+        accent: 'from-orange-400 to-rose-500',
+        compat: { mc: 'native', tf: 'native', multi: 'native', order: 'native', typed: 'adapted' },
+        notes: ['typed', 'multi', 'order'],
+        minQuestions: 3,
+        settings: [
+            { key: 'teams', type: 'number', min: 2, max: 6, default: 4, help: true },
+            { key: 'duration', type: 'select', options: minutes([3, 5, 8, 10, 15]), default: 300 },
+            ...questionTimer,
+            { key: 'slingshotBonus', type: 'toggle', default: true, advanced: true, help: true },
+            {
+                key: 'hostTimeout', type: 'select', default: 180, advanced: true,
+                options: [{ value: 0 }, { value: 60 }, { value: 180 }, { value: 300 }],
+                help: true
+            },
+            { key: 'lateJoin', type: 'toggle', default: true, advanced: true },
+            { key: 'randomNames', type: 'toggle', default: false, advanced: true, help: true },
+            { key: 'studentMusic', type: 'toggle', default: true, advanced: true, help: true },
+            { key: 'studentSound', type: 'toggle', default: true, advanced: true }
+        ],
+        Host: lazy(() => import('../../games/slingshot-siege/HostScreen')),
+        Player: lazy(() => import('../../games/slingshot-siege/PlayerScreen'))
     },
     {
         id: 'grid-battle',
@@ -77,11 +118,12 @@ export const GAMES = [
             { key: 'teams', type: 'number', min: 2, max: 6, default: 3 },
             { key: 'rows', type: 'number', min: 3, max: 8, default: 5 },
             { key: 'cols', type: 'number', min: 3, max: 8, default: 6 },
-            { key: 'bombs', type: 'number', min: 0, max: 10, default: 4 },
-            { key: 'winds', type: 'number', min: 0, max: 5, default: 2 },
-            { key: 'bonuses', type: 'number', min: 0, max: 10, default: 4 },
-            { key: 'grenades', type: 'number', min: 0, max: 5, default: 2 },
-            { key: 'skips', type: 'number', min: 0, max: 5, default: 2 }
+            ...questionTimer,
+            { key: 'bombs', type: 'number', min: 0, max: 10, default: 4, advanced: true },
+            { key: 'winds', type: 'number', min: 0, max: 5, default: 2, advanced: true },
+            { key: 'bonuses', type: 'number', min: 0, max: 10, default: 4, advanced: true },
+            { key: 'grenades', type: 'number', min: 0, max: 5, default: 2, advanced: true },
+            { key: 'skips', type: 'number', min: 0, max: 5, default: 2, advanced: true }
         ],
         // Returns a translation spec [key, vars] when the settings can't work
         validate: (s) => {
@@ -104,10 +146,11 @@ export const GAMES = [
                 key: 'questionCount', type: 'segmented', default: 15,
                 options: literal([[5, '5'], [10, '10'], [15, '15']])
             },
-            { key: 'fiftyFifty', type: 'toggle', default: true },
-            { key: 'askAudience', type: 'toggle', default: true },
+            ...questionTimer,
+            { key: 'fiftyFifty', type: 'toggle', default: true, advanced: true },
+            { key: 'askAudience', type: 'toggle', default: true, advanced: true },
             {
-                key: 'suspense', type: 'segmented', default: 'dramatic',
+                key: 'suspense', type: 'segmented', default: 'dramatic', advanced: true,
                 options: [{ value: 'quick' }, { value: 'dramatic' }]
             }
         ],
@@ -124,7 +167,7 @@ export const settingLabel = (t, game, setting) => t(`gs.${game.i18n}.${setting.k
 export const settingHelp = (t, game, setting, values) => {
     if (!setting.help) return null;
     const variant = typeof setting.help === 'function' ? setting.help(values) : 'help';
-    return t(`gs.${game.i18n}.${setting.key}.${variant}`);
+    return variant ? t(`gs.${game.i18n}.${setting.key}.${variant}`) : null;
 };
 export const optionLabel = (t, game, setting, option) => {
     if (option.text !== undefined) return option.text;

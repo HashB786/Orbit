@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Grid as GridIcon, Trophy, Disc, Wind, Star, Flame, HelpCircle, Check, X, CircleOff, Tornado, Crown, Rocket } from 'lucide-react';
-import { answerLabel } from '../../platform/questions/types';
+import { answerLabel, secondsFor } from '../../platform/questions/types';
 import { shuffle } from '../../platform/questions/rounds';
 import { SPACE_BG } from '../../components/SpaceScreen';
 import { audio } from '../../platform/audio/audio';
 import { useTheme } from '../../context/ThemeContext';
 import { useT } from '../../context/LanguageContext';
 import Slots from '../../i18n/Slots';
+import QuestionTimer from '../shared/QuestionTimer';
 
 // --- TEAMS & TILES ---
 
@@ -197,7 +198,13 @@ const GridBattle = ({ questions = [], settings = {} }) => {
     const [gameLog, setGameLog] = useState([]);
     const [scoreHistory, setScoreHistory] = useState(() => [new Array(config.teams).fill(0)]);
     const [flash, setFlash] = useState(null); // short banner, e.g. "Empty space"
+    const [timeUp, setTimeUp] = useState(false);
     const timers = useRef([]);
+
+    // Optional countdown per question (0 = no timer)
+    const secondsForQuestion = (q) => (settings.timer
+        ? secondsFor(q, Number(settings.timerSeconds) || 30, settings.useQuestionTime !== false)
+        : 0);
 
     const later = (fn, ms) => timers.current.push(setTimeout(fn, ms));
     useEffect(() => {
@@ -268,6 +275,7 @@ const GridBattle = ({ questions = [], settings = {} }) => {
         setGrid(newGrid);
         setActiveCard({ r, c, ...card, mode: 'play' });
         setShowAnswer(false);
+        setTimeUp(false);
     };
 
     const handleEventResolution = (result) => {
@@ -490,7 +498,19 @@ const GridBattle = ({ questions = [], settings = {} }) => {
                             )}
 
                             <div className="px-5 pb-6 sm:px-10 sm:pb-10 pt-2 flex flex-col items-center text-center gap-5">
-                                <TileBadge type={activeCard.type} size={activeCard.type === 'question' ? 84 : 120} />
+                                {activeCard.type === 'question' && activeCard.mode === 'play' && secondsForQuestion(activeCard.data) > 0 ? (
+                                    <QuestionTimer
+                                        key={activeCard.id}
+                                        seconds={secondsForQuestion(activeCard.data)}
+                                        running={!showAnswer && !activeCard.closeConfirm}
+                                        onExpire={() => { setTimeUp(true); setShowAnswer(true); }}
+                                    />
+                                ) : (
+                                    <TileBadge type={activeCard.type} size={activeCard.type === 'question' ? 84 : 120} />
+                                )}
+                                {timeUp && activeCard.mode === 'play' && (
+                                    <p className="-mt-2 text-2xl sm:text-3xl font-black text-rose-300">{t('cc.timeUp')}</p>
+                                )}
                                 <div className="w-full space-y-4">
                                     {activeCard.type === 'question' ? (
                                         <div className="space-y-6">

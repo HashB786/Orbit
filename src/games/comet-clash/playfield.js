@@ -195,8 +195,7 @@ export class Playfield {
                 shapeSeed: rand
             };
             this.layoutRock(rock);
-            rock.x = clamp(rock.x, rock.r, this.w - rock.r);
-            rock.y = clamp(rock.y, rock.r, this.h - rock.r);
+            this.bounce(rock);
             this.rocks.push(rock);
         });
 
@@ -392,7 +391,6 @@ export class Playfield {
             rock.x += rock.vx * dt;
             rock.y += rock.vy * dt;
             rock.rot += rock.spin * dt;
-            this.wrap(rock);
         }
 
         // Answer rocks bounce off each other so labels never overlap
@@ -425,6 +423,9 @@ export class Playfield {
             }
         }
 
+        // After the rock-to-rock pushes, so a push can never shove a rock off screen
+        for (const rock of rocks) if (!rock.dying) this.bounce(rock);
+
         for (let i = this.debris.length - 1; i >= 0; i--) {
             const d = this.debris[i];
             d.x += d.vx * dt;
@@ -436,15 +437,30 @@ export class Playfield {
                 removeAt(this.debris, i);
                 continue;
             }
-            this.wrap(d);
+            this.bounce(d);
         }
     }
 
-    wrap(o) {
-        if (o.x < -o.r) o.x = this.w + o.r;
-        else if (o.x > this.w + o.r) o.x = -o.r;
-        if (o.y < -o.r) o.y = this.h + o.r;
-        else if (o.y > this.h + o.r) o.y = -o.r;
+    // Answers stay fully on screen: they bounce off the edges instead of leaving and coming back
+    bounce(o) {
+        const minX = Math.min(o.r, this.w / 2);
+        const maxX = Math.max(this.w - o.r, this.w / 2);
+        const minY = Math.min(o.r, this.h / 2);
+        const maxY = Math.max(this.h - o.r, this.h / 2);
+        if (o.x < minX) {
+            o.x = minX;
+            o.vx = Math.abs(o.vx);
+        } else if (o.x > maxX) {
+            o.x = maxX;
+            o.vx = -Math.abs(o.vx);
+        }
+        if (o.y < minY) {
+            o.y = minY;
+            o.vy = Math.abs(o.vy);
+        } else if (o.y > maxY) {
+            o.y = maxY;
+            o.vy = -Math.abs(o.vy);
+        }
     }
 
     updateBullets(dt) {

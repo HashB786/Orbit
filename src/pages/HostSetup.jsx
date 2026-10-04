@@ -135,7 +135,7 @@ const HostSetup = () => {
             {/* 1. Game */}
             <section className="mb-6">
                 <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400 mb-2">1 · {t('host.game')}</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                     {GAMES.map(g => {
                         const a = analyzeSet(g, set.questions);
                         const usable = Object.values(a.byType).reduce((n, info) => n + (info.support !== 'unsupported' ? info.playable : 0), 0);
@@ -189,7 +189,7 @@ const HostSetup = () => {
                         </button>
                     </div>
                     <div className={cx(cardClass, 'p-4')}>
-                        <SettingsForm game={game} value={settings} onChange={updateSettings} />
+                        <SettingsForm key={game.id} game={game} value={settings} onChange={updateSettings} forceOpen={!!settingsError} />
                         {settingsError && <p className="mt-3 text-sm font-semibold text-red-500">{tl(settingsError, t)}</p>}
                     </div>
                 </section>

@@ -2,10 +2,12 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, RotateCcw, Crown, Orbit, Flag } from 'lucide-react';
 import { toChoiceRound, decoyPool, shuffle } from '../../platform/questions/rounds';
+import { secondsFor } from '../../platform/questions/types';
 import { SPACE_BG } from '../../components/SpaceScreen';
 import { audio } from '../../platform/audio/audio';
 import { useTheme } from '../../context/ThemeContext';
 import { useT } from '../../context/LanguageContext';
+import QuestionTimer from '../shared/QuestionTimer';
 
 // Prize ladders (index 0 = first question). Milestones are guaranteed once reached.
 const LADDERS = {
@@ -29,9 +31,10 @@ const buildRun = (questions, count) => {
     let bag = [];
     for (let attempts = 0; run.length < count && attempts < count * 4 + questions.length; attempts++) {
         if (!bag.length) bag = shuffle(questions);
-        const round = toChoiceRound(bag.pop(), pool, { maxOptions: 4 });
+        const q = bag.pop();
+        const round = toChoiceRound(q, pool, { maxOptions: 4 });
         if (round && round.kind === 'single') {
-            run.push({ text: round.prompt, options: round.options.map(o => ({ text: o.text, isCorrect: o.correct })) });
+            run.push({ text: round.prompt, options: round.options.map(o => ({ text: o.text, isCorrect: o.correct })), time: q.time });
         }
     }
     return run;
@@ -53,6 +56,7 @@ const Millionaire = ({ questions = [], settings = {} }) => {
     const [index, setIndex] = useState(0);
     const [selected, setSelected] = useState(null);
     const [answerState, setAnswerState] = useState('idle'); // idle | locked | correct | incorrect
+    const [timeUp, setTimeUp] = useState(false);
     const [lifelines, setLifelines] = useState({ fifty: { used: false, removed: [] }, audience: { used: false, votes: [] } });
     const timers = useRef([]);
 
@@ -68,6 +72,10 @@ const Millionaire = ({ questions = [], settings = {} }) => {
     const total = run.length;
     const currentQ = run[Math.min(index, Math.max(0, total - 1))];
     const isLocked = answerState !== 'idle';
+    // Optional countdown (0 = no timer)
+    const limit = settings.timer && currentQ
+        ? secondsFor(currentQ, Number(settings.timerSeconds) || 30, settings.useQuestionTime !== false)
+        : 0;
 
     // Last milestone reached before question `i`
     const safePrize = (i) => {
@@ -95,9 +103,23 @@ const Millionaire = ({ questions = [], settings = {} }) => {
         setIndex(0);
         setSelected(null);
         setAnswerState('idle');
+        setTimeUp(false);
         setLifelines({ fifty: { used: false, removed: [] }, audience: { used: false, votes: [] } });
         audio.playMusic('tension');
         audio.sfx('whoosh');
+    };
+
+    // Out of time counts as a wrong answer: the right one is shown, then the game ends
+    const handleTimeUp = () => {
+        if (gameState !== 'playing' || isLocked) return;
+        setTimeUp(true);
+        setSelected(null);
+        setAnswerState('incorrect');
+        later(() => {
+            setGameState('gameover');
+            audio.stopMusic();
+            audio.sfx('matchLose');
+        }, timing.wrong);
     };
 
     const handleAnswerClick = (i) => {
@@ -269,8 +291,19 @@ const Millionaire = ({ questions = [], settings = {} }) => {
 
                 {/* Question */}
                 <div className="flex-1 flex flex-col justify-end pb-2 sm:pb-6">
-                    <p className="text-center text-xs font-black uppercase tracking-[0.25em] text-sky-300 mb-3">
-                        {t('mil.questionFor', { n: index + 1, total, prize: ladder[index]?.[0] })}
+                    {limit > 0 && (
+                        <div className="flex justify-center mb-3">
+                            <QuestionTimer
+                                key={`${runId}:${index}`}
+                                seconds={limit}
+                                running={gameState === 'playing' && answerState === 'idle'}
+                                onExpire={handleTimeUp}
+                                size={72}
+                            />
+                        </div>
+                    )}
+                    <p className={`text-center font-black uppercase tracking-[0.25em] mb-3 ${timeUp ? 'text-base text-rose-300' : 'text-xs text-sky-300'}`}>
+                        {timeUp ? t('cc.timeUp') : t('mil.questionFor', { n: index + 1, total, prize: ladder[index]?.[0] })}
                     </p>
                     <motion.div
                         key={index}

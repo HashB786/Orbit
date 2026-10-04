@@ -164,6 +164,9 @@ const fromLoose = (item) => {
     }
 
     const q = { id: uid(), type, prompt };
+    // "time": 20, "timeLimit": "30s"... (tidyQuestion clamps it)
+    const time = parseInt(String(first(item, ['time', 'timeLimit', 'time_limit', 'seconds', 'timer', 'duration']) ?? ''), 10);
+    if (time > 0) q.time = time;
 
     if (type === 'mc' || type === 'multi') {
         const list = toList(rawOptions);

@@ -7,6 +7,7 @@
 //   answer?:   boolean                   // tf
 //   accepted?: string[]                  // typed (first one is the "main" answer)
 //   items?:    string[]                  // order (stored in the correct order)
+//   time?:     number                    // optional time limit in seconds (games decide whether to use it)
 // }
 
 import { t } from '../../i18n';
@@ -22,7 +23,22 @@ export const QUESTION_TYPES = {
     order: { id: 'order' }
 };
 
-export const LIMITS = { prompt: 280, option: 80, minOptions: 2, maxOptions: 6, minItems: 2, maxItems: 6, maxAccepted: 6 };
+export const LIMITS = { prompt: 280, option: 80, minOptions: 2, maxOptions: 6, minItems: 2, maxItems: 6, maxAccepted: 6, minTime: 5, maxTime: 300 };
+
+// Choices offered in the editor; imported sets may carry any whole number in range
+export const QUESTION_TIMES = [5, 10, 15, 20, 30, 45, 60, 90, 120];
+
+// A valid time limit in seconds, or 0 for "none"
+export const questionTime = (v) => {
+    const n = Math.round(Number(v));
+    return Number.isFinite(n) && n > 0 ? Math.min(LIMITS.maxTime, Math.max(LIMITS.minTime, n)) : 0;
+};
+
+// Seconds a game gives for `q`: its own time limit when the host allows it, otherwise the game's default
+export const secondsFor = (q, fallback, useOwn = true) => (useOwn && questionTime(q?.time)) || fallback;
+
+// "20 s", "1 min", "90 s"
+export const formatSeconds = (t, n) => (n >= 60 && n % 60 === 0 ? t('units.minutes', { n: n / 60 }) : `${n} ${t('units.s')}`);
 
 export const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
 
@@ -53,6 +69,7 @@ export const createQuestion = (type = 'mc') => {
 export const convertQuestion = (q, type) => {
     if (q.type === type) return q;
     const next = { ...createQuestion(type), id: q.id, prompt: q.prompt };
+    if (q.time) next.time = q.time;
     const correctTexts = answerTexts(q);
 
     if (type === 'mc' || type === 'multi') {
@@ -98,6 +115,8 @@ export const tidyQuestion = (q) => {
     } else if (q.type === 'order') {
         out.items = (q.items || []).map(a => clean(a).slice(0, LIMITS.option)).filter(Boolean).slice(0, LIMITS.maxItems);
     }
+    const time = questionTime(q.time);
+    if (time) out.time = time;
     return out;
 };
 

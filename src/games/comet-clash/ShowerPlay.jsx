@@ -4,7 +4,7 @@ import { roomPath } from '../../platform/rooms/rooms';
 import { audio } from '../../platform/audio/audio';
 import { useTheme } from '../../context/ThemeContext';
 import { Playfield } from './playfield';
-import { Avatar, MuteButton, roundHint, useTimeWarning } from './playerUi';
+import { Avatar, MuteButton, ReadingCard, roundHint, useTimeWarning } from './playerUi';
 import { useT } from '../../context/LanguageContext';
 import Slots from '../../i18n/Slots';
 
@@ -19,12 +19,14 @@ const ShowerPlay = ({ rt, code, shower, me, meId, myRank, total, settings }) => 
     const [progress, setProgress] = useState(null);
     const [note, setNote] = useState(null); // 'done' | 'timeout'
     const [countdown, setCountdown] = useState(null);
+    const [reading, setReading] = useState(null); // { total, elapsed } while the question is shown on its own
     const sound = settings.studentSound !== false;
 
     const status = shower.status;
     const round = shower.round || 0;
     const roundKey = `shower:${round}`;
     const q = shower.q;
+    const roundMs = shower.roundMs || (Number(settings.roundTime) || 15) * 1000;
 
     const submit = (result) => {
         const r = roundRef.current;
@@ -64,7 +66,7 @@ const ShowerPlay = ({ rt, code, shower, me, meId, myRank, total, settings }) => 
         };
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // New question: countdown, then start at the shared start time
+    // New question: shown on its own, a 3-2-1, then the asteroids at the shared start time
     useEffect(() => {
         const field = fieldRef.current;
         if (!field || status !== 'round' || !q) return undefined;
@@ -75,10 +77,10 @@ const ShowerPlay = ({ rt, code, shower, me, meId, myRank, total, settings }) => 
         setProgress(null);
         setNote(already ? (already.ok ? 'done' : 'timeout') : null);
         setCountdown(null);
+        setReading(null);
         field.clear();
         if (already) return undefined;
 
-        const roundTime = (Number(settings.roundTime) || 15) * 1000;
         const timers = [];
         const begin = () => {
             const current = roundRef.current;
@@ -87,19 +89,23 @@ const ShowerPlay = ({ rt, code, shower, me, meId, myRank, total, settings }) => 
             const offset = Math.max(0, rt.now() - shower.roundStartAt);
             current.offset = offset;
             setCountdown(null);
+            setReading(null);
             if (sound) audio.sfx('go');
             field.startRound({
                 kind: q.kind,
                 options: q.options,
                 seed: q.seed,
                 speed: settings.speed,
-                timeLimitMs: Math.max(2000, roundTime - offset),
+                timeLimitMs: Math.max(2000, roundMs - offset),
                 penalty: { stun: 1.5, timeCost: 0 }
             });
         };
         const delay = shower.roundStartAt - rt.now();
         if (delay <= 0) begin();
         else {
+            const total = shower.readAt ? Math.max(delay, shower.roundStartAt - shower.readAt) : delay;
+            setReading({ total, elapsed: total - delay });
+            if (sound) audio.sfx('question');
             [3, 2, 1].filter(n => delay - n * 450 > 0).forEach(n => timers.push(setTimeout(() => {
                 setCountdown(n);
                 if (sound) audio.sfx('countdown');
@@ -108,7 +114,11 @@ const ShowerPlay = ({ rt, code, shower, me, meId, myRank, total, settings }) => 
         }
         return () => {
             timers.forEach(clearTimeout);
-            if (!roundRef.current.begun && roundRef.current.key === roundKey) roundRef.current.key = null;
+            if (!roundRef.current.begun && roundRef.current.key === roundKey) {
+                roundRef.current.key = null;
+                setReading(null);
+                setCountdown(null);
+            }
         };
     }, [status, roundKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -139,7 +149,7 @@ const ShowerPlay = ({ rt, code, shower, me, meId, myRank, total, settings }) => 
         }
     }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const roundEndAt = shower.roundStartAt ? shower.roundStartAt + (Number(settings.roundTime) || 15) * 1000 : 0;
+    const roundEndAt = shower.roundStartAt ? shower.roundStartAt + roundMs : 0;
     useTimeWarning(sound && status === 'round' && !!q && !note, roundEndAt, () => rt.now());
 
     return (
@@ -157,7 +167,7 @@ const ShowerPlay = ({ rt, code, shower, me, meId, myRank, total, settings }) => 
                     </span>
                 </div>
                 <div className="px-3 sm:px-6 pb-3 text-center min-h-[2.75rem]">
-                    {status === 'round' && q && (
+                    {status === 'round' && q && !reading && (
                         <>
                             <p className="max-w-3xl mx-auto text-base sm:text-xl md:text-2xl font-bold leading-snug line-clamp-3 break-words">{q.prompt}</p>
                             {q.kind !== 'single' && !note && (
@@ -173,10 +183,8 @@ const ShowerPlay = ({ rt, code, shower, me, meId, myRank, total, settings }) => 
             <div className="relative flex-1 min-h-0">
                 <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block touch-none cursor-crosshair" />
 
-                {status === 'round' && countdown && (
-                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                        <span key={countdown} className="text-8xl font-black text-white/90 drop-shadow-lg animate-ping-once">{countdown}</span>
-                    </div>
+                {status === 'round' && q && reading && (
+                    <ReadingCard prompt={q.prompt} kind={q.kind} total={reading.total} elapsed={reading.elapsed} countdown={countdown} />
                 )}
 
                 {status === 'round' && note && (

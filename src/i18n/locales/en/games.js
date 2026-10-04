@@ -8,7 +8,7 @@ export const games = {
         name: 'Comet Clash',
         tagline: 'Blast the asteroid with the right answer: 1v1 Duels, or everyone at once in a Meteor Shower.',
         how: [
-            'Students join with the code on their own phones or laptops.',
+            'Students join with the code on their own phones, tablets or laptops.',
             'Duels: two students race on the same question. First to blast the answer +1, both miss −1, and the duel winner gets a bonus.',
             'Meteor Shower: everyone answers every question. Up to 100 points for speed, −100 for not finding it.',
             'Missed questions come back later, and you get a class report at the end.'
@@ -17,6 +17,21 @@ export const games = {
             typed: 'Shown as asteroids: the answer plus decoys from the rest of the set.',
             multi: 'Blast every correct asteroid.',
             order: 'Blast the asteroids in the right order.'
+        }
+    },
+    siege: {
+        name: 'Slingshot Siege',
+        tagline: 'Space teams defend their planets around a sun. Every right answer earns a comet, and gravity bends every shot.',
+        how: [
+            'Students join with the code on their phones, tablets or laptops and are split into space teams.',
+            'Every correct answer earns a comet, gives the team +5 and recharges its shield.',
+            'Aim by dragging with a finger or the mouse, or with the arrow keys. The sun\'s gravity bends the comet.',
+            'A hit is worth +10, or +25 once the planet\'s shield is down. Skim past the sun first for a slingshot: double points.'
+        ],
+        notes: {
+            typed: 'Shown as options: the answer plus decoys from the rest of the set.',
+            multi: 'Students pick every correct answer, then check.',
+            order: 'Students tap the answers in the right order.'
         }
     },
     grid: {
@@ -58,7 +73,8 @@ export const gs = {
         duration: { label: 'Game length' },
         showerQuestions: { label: 'Questions' },
         rounds: { label: 'Rounds per duel' },
-        roundTime: { label: 'Seconds per question' },
+        roundTime: { label: 'Seconds per question', helpOwn: 'Questions with their own time limit use it instead.' },
+        useQuestionTime: { label: 'Use each question\'s own time limit' },
         winBonus: { label: 'Duel win bonus' },
         missPenalty: { label: 'When both miss', options: { 0: 'No penalty', '-1': '−1 each', '-2': '−2 each' } },
         missPoints: { label: 'Didn\'t find the answer' },
@@ -75,7 +91,24 @@ export const gs = {
         lateJoin: { label: 'Allow joining after the start' },
         randomNames: { label: 'Fun random nicknames', help: 'Students get a generated name like "Cosmic Otter" instead of typing one.' },
         studentLeaderboard: { label: 'Show rank on student screens' },
-        studentMusic: { label: 'Music on student devices', help: 'Soft background music on phones. Each student can mute it.' },
+        studentMusic: { label: 'Music on student devices', help: 'Soft background music on every student\'s device. Each student can mute it.' },
+        studentSound: { label: 'Sound effects on student devices' }
+    },
+    siege: {
+        teams: { label: 'Teams', help: 'Students are split evenly as they join. You can shuffle the teams in the lobby.' },
+        duration: { label: 'Game length' },
+        timer: { label: 'Question timer', help: 'A countdown for every question. Running out of time counts as a wrong answer.' },
+        timerSeconds: { label: 'Seconds per question', helpOwn: 'Questions with their own time limit use it instead.' },
+        useQuestionTime: { label: 'Use each question\'s own time limit' },
+        slingshotBonus: { label: 'Slingshot bonus', help: 'Comets that skim past the sun (inside the golden ring) before a hit score double.' },
+        hostTimeout: {
+            label: 'If your screen goes offline',
+            options: { 0: 'Wait for me (never end)', 60: 'End the game after 1 min', 180: 'End the game after 3 min', 300: 'End the game after 5 min' },
+            help: 'While your screen is offline the game pauses. Come back in time and it continues where it stopped.'
+        },
+        lateJoin: { label: 'Allow joining after the start' },
+        randomNames: { label: 'Fun random nicknames', help: 'Students get a generated name like "Cosmic Otter" instead of typing one.' },
+        studentMusic: { label: 'Music on student devices', help: 'Soft background music on every student\'s device. Each student can mute it.' },
         studentSound: { label: 'Sound effects on student devices' }
     },
     grid: {
@@ -86,12 +119,18 @@ export const gs = {
         winds: { label: 'Solar winds (score reset)' },
         bonuses: { label: 'Shooting stars (+1 point)' },
         grenades: { label: 'Meteor strikes (hit a team)' },
-        skips: { label: 'Wormholes (lose a turn)' }
+        skips: { label: 'Wormholes (lose a turn)' },
+        timer: { label: 'Question timer', help: 'A countdown for every question. When it runs out, the answer is shown.' },
+        timerSeconds: { label: 'Seconds per question', helpOwn: 'Questions with their own time limit use it instead.' },
+        useQuestionTime: { label: 'Use each question\'s own time limit' }
     },
     millionaire: {
         questionCount: { label: 'Questions to the top' },
         fiftyFifty: { label: '50:50 lifeline' },
         askAudience: { label: 'Ask the Audience lifeline' },
-        suspense: { label: 'Answer reveal', options: { quick: 'Quick', dramatic: 'Dramatic' } }
+        suspense: { label: 'Answer reveal', options: { quick: 'Quick', dramatic: 'Dramatic' } },
+        timer: { label: 'Question timer', help: 'A countdown for every question. Running out of time counts as a wrong answer.' },
+        timerSeconds: { label: 'Seconds per question', helpOwn: 'Questions with their own time limit use it instead.' },
+        useQuestionTime: { label: 'Use each question\'s own time limit' }
     }
 };
