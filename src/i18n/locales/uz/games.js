@@ -25,7 +25,8 @@ export const games = {
             'Oʻquvchilar telefoni, plansheti yoki noutbukidan kod orqali qoʻshiladi va kosmik jamoalarga boʻlinadi.',
             'Har bir toʻgʻri javob kometa beradi, jamoaga +5 ball qoʻshadi va uning qalqonini quvvatlaydi.',
             'Barmoq yoki sichqoncha bilan surib yoki strelka tugmalari bilan moʻljal oling. Quyosh gravitatsiyasi kometani egadi.',
-            'Zarba +10 ball, sayyora qalqoni oʻchgan boʻlsa +25. Avval quyosh yonidan oʻtsangiz, quyosh manevri ikki baravar ball beradi.'
+            'Zarba +10 ball, sayyora qalqoni oʻchgan boʻlsa +25. Avval quyosh yonidan oʻtsangiz, quyosh manevri ikki baravar ball beradi.',
+            'Sayyoralar aylanadi, Oy esa yoʻlni toʻsadi. Kuch yulduzlaridan oʻtib uchlik kometa, mega kometa va qalqon oling; ketma-ket 3 ta toʻgʻri javob olovli kometa beradi.'
         ],
         notes: {
             typed: 'Variantlar sifatida koʻrsatiladi: javob va toʻplamdagi boshqa javoblardan chalgʻituvchilar.',
@@ -99,6 +100,14 @@ export const gs = {
         timer: { label: 'Savol taymeri', help: 'Har bir savol uchun teskari sanoq. Vaqt tugasa, notoʻgʻri javob hisoblanadi.' },
         timerSeconds: { label: 'Har bir savolga soniya', helpOwn: 'Oʻz vaqt chegarasi bor savollarda oʻsha vaqt ishlatiladi.' },
         useQuestionTime: { label: 'Har bir savolning oʻz vaqt chegarasidan foydalanish' },
+        orbit: {
+            label: 'Sayyoralar aylanishi',
+            options: { still: 'Toʻxtagan', slow: 'Sekin', fast: 'Tez' },
+            help: 'Barcha sayyoralar quyosh atrofida birga aylanadi, shuning uchun oʻquvchilar oldinroqqa moʻljal oladi. Har bir jamoa uchun adolatli.'
+        },
+        moon: { label: 'Oy', help: 'Oy quyoshga yaqinroqda teskari tomonga aylanadi. U kometalarni toʻsadi va biroz tortadi, shuning uchun vaqtni tanlash muhim.' },
+        powerUps: { label: 'Kuch yulduzlari', help: 'Vaqti-vaqti bilan yulduzlar paydo boʻladi. Kometani ulardan oʻtkazing: uchlik kometa, mega kometa yoki +30 qalqon.' },
+        bounty: { label: 'Yetakchi uchun mukofot', help: 'Birinchi oʻrindagi jamoaga zarba +5 beradi, bu oʻyinni teng tutadi.' },
         slingshotBonus: { label: 'Quyosh manevri bonusi', help: 'Zarbadan oldin quyosh yonidan (oltin halqa ichida) oʻtgan kometalar ikki baravar ball oladi.' },
         hostTimeout: {
             label: 'Ekraningiz oflayn boʻlib qolsa',

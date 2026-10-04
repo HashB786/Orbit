@@ -26,7 +26,8 @@ export const games = {
             'Students join with the code on their phones, tablets or laptops and are split into space teams.',
             'Every correct answer earns a comet, gives the team +5 and recharges its shield.',
             'Aim by dragging with a finger or the mouse, or with the arrow keys. The sun\'s gravity bends the comet.',
-            'A hit is worth +10, or +25 once the planet\'s shield is down. Skim past the sun first for a slingshot: double points.'
+            'A hit is worth +10, or +25 once the planet\'s shield is down. Skim past the sun first for a slingshot: double points.',
+            'Planets orbit and the moon gets in the way. Fly through power stars for Triple comets, Mega comets and shields; 3 right answers in a row make a fire comet.'
         ],
         notes: {
             typed: 'Shown as options: the answer plus decoys from the rest of the set.',
@@ -100,6 +101,14 @@ export const gs = {
         timer: { label: 'Question timer', help: 'A countdown for every question. Running out of time counts as a wrong answer.' },
         timerSeconds: { label: 'Seconds per question', helpOwn: 'Questions with their own time limit use it instead.' },
         useQuestionTime: { label: 'Use each question\'s own time limit' },
+        orbit: {
+            label: 'Planets orbit',
+            options: { still: 'Still', slow: 'Slow', fast: 'Fast' },
+            help: 'All planets circle the sun together, so students have to lead their shots. Fair for every team.'
+        },
+        moon: { label: 'The Moon', help: 'A moon circles closer to the sun the other way. It blocks comets and pulls them a little, so timing matters.' },
+        powerUps: { label: 'Power stars', help: 'Stars appear now and then. Fly a comet through one for a Triple comet, a Mega comet or +30 shield.' },
+        bounty: { label: 'Bounty on the leader', help: 'Hitting the team in first place gives +5, which keeps the game close.' },
         slingshotBonus: { label: 'Slingshot bonus', help: 'Comets that skim past the sun (inside the golden ring) before a hit score double.' },
         hostTimeout: {
             label: 'If your screen goes offline',

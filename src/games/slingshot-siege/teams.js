@@ -2,6 +2,37 @@ import { isOnline } from '../../platform/rooms/shared';
 
 export const MAX_SHIELD = 100;
 
+// Scoring, shared by the host (which applies it) and the screens (which explain it)
+export const RULES = {
+    answerPoints: 5,
+    answerShield: 4,
+    hitShielded: 10,
+    hitOpen: 25,
+    shieldDamage: 20,
+    maxShield: MAX_SHIELD,
+    fireBonus: 5,
+    bounty: 5,
+    starShield: 30,
+    streak: 3
+};
+
+// The team strictly ahead of everyone (and above zero) carries the bounty
+export const leaderOf = (siege) => {
+    const count = siege?.count || 0;
+    let best = null;
+    let top = 0;
+    let tie = false;
+    for (let i = 0; i < count; i++) {
+        const s = siege.teams?.[i]?.score || 0;
+        if (s > top) {
+            top = s;
+            best = i;
+            tie = false;
+        } else if (s === top && s > 0) tie = true;
+    }
+    return tie ? null : best;
+};
+
 // The same space teams as Grid Battle, so classes recognise them across games
 export const TEAMS = [
     { name: 'Nova', color: '#34d399' },

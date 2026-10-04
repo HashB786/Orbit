@@ -91,7 +91,14 @@ export const GAMES = [
         settings: [
             { key: 'teams', type: 'number', min: 2, max: 6, default: 4, help: true },
             { key: 'duration', type: 'select', options: minutes([3, 5, 8, 10, 15]), default: 300 },
+            {
+                key: 'orbit', type: 'segmented', default: 'slow', help: true,
+                options: [{ value: 'still' }, { value: 'slow' }, { value: 'fast' }]
+            },
             ...questionTimer,
+            { key: 'moon', type: 'toggle', default: true, advanced: true, help: true },
+            { key: 'powerUps', type: 'toggle', default: true, advanced: true, help: true },
+            { key: 'bounty', type: 'toggle', default: true, advanced: true, help: true },
             { key: 'slingshotBonus', type: 'toggle', default: true, advanced: true, help: true },
             {
                 key: 'hostTimeout', type: 'select', default: 180, advanced: true,

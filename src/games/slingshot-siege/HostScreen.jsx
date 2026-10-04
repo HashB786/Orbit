@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     Users, Lock, Unlock, Play, Timer, Plus, Square, Trophy, Crown, BookOpen, RotateCcw, Home,
-    AlertTriangle, Monitor, Hourglass, Shuffle, Shield, Rocket, Sun, Orbit as OrbitIcon
+    AlertTriangle, Monitor, Hourglass, Shuffle, Shield, Rocket, Sun, Moon, Star, Flame, Orbit as OrbitIcon
 } from 'lucide-react';
 import QRCode from '../../components/ui/QRCode';
 import { ConfirmDialog, Spinner } from '../../components/ui';
@@ -19,9 +19,9 @@ import Slots from '../../i18n/Slots';
 import { gameName, getGame } from '../../platform/games/registry';
 import { Pill, HostButton, SoundToggle, useHostClaim } from '../shared/liveUi';
 import { SiegeHost } from './hostLogic';
-import { ArenaView } from './arena';
-import { planetPos } from './physics';
-import { teamOf, clampTeams, rankTeams, teamMembers, MAX_SHIELD } from './teams';
+import { ArenaView, STAR_STYLE } from './arena';
+import { planetPos, worldOf } from './physics';
+import { teamOf, clampTeams, rankTeams, teamMembers, leaderOf, MAX_SHIELD } from './teams';
 
 const MEDALS = ['#fbbf24', '#cbd5e1', '#f59e0b'];
 
@@ -52,6 +52,7 @@ const Lobby = ({ code, meta, players, now, onStart, onKick, onLock, onShuffle })
                 <div className="mt-5 flex flex-wrap justify-center gap-2">
                     <Pill><Users size={14} /> {t('siege.teamsCount', { count })}</Pill>
                     <Pill><Timer size={14} /> {t('units.minutes', { n: Math.round((s.duration || 0) / 60) })}</Pill>
+                    <Pill><OrbitIcon size={14} /> {t(`gs.siege.orbit.options.${s.orbit || 'slow'}`)}</Pill>
                 </div>
             </section>
 
@@ -110,7 +111,7 @@ const Lobby = ({ code, meta, players, now, onStart, onKick, onLock, onShuffle })
 
 // ---------- LIVE ----------
 
-const Live = ({ code, meta, players, siege, now, subscribe, onEnd, onAddTime, onLock }) => {
+const Live = ({ rt, code, meta, players, siege, now, subscribe, onEnd, onAddTime, onLock }) => {
     const t = useT();
     const { performance } = useTheme();
     const canvasRef = useRef(null);
@@ -118,13 +119,17 @@ const Live = ({ code, meta, players, siege, now, subscribe, onEnd, onAddTime, on
     const lastSound = useRef({});
     const [feed, setFeed] = useState([]);
     const count = siege?.count || 2;
+    const settings = meta.settings || {};
+    const world = useMemo(() => worldOf(count, settings), [count, settings.orbit, settings.moon]); // eslint-disable-line react-hooks/exhaustive-deps
+    const gameTime = useRef(() => (rt.now() - meta.startedAt) / 1000).current;
+    const leader = settings.bounty === false ? null : leaderOf(siege);
     const ranking = rankTeams(siege);
     const pilots = rankPlayers(players).slice(0, 5);
     const members = teamMembers(players, count, now);
     const remaining = meta.endsAt - now;
 
     useEffect(() => {
-        const view = new ArenaView(canvasRef.current, { lowFx: !performance.particles || performance.reducedMotion });
+        const view = new ArenaView(canvasRef.current, { lowFx: !performance.particles || performance.reducedMotion, world, timeFn: gameTime });
         viewRef.current = view;
         view.mount();
         const observer = new ResizeObserver(() => view.resize());
@@ -137,8 +142,13 @@ const Live = ({ code, meta, players, siege, now, subscribe, onEnd, onAddTime, on
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
-        viewRef.current?.setState(count, siege?.teams);
-    }, [count, siege]);
+        const view = viewRef.current;
+        if (!view) return;
+        view.setWorld(world);
+        view.setTeams(siege?.teams);
+        view.setStars(siege?.stars);
+        view.setLeader(leader);
+    }, [world, siege, leader]);
 
     // Many students launch at once: keep each sound to a few per second
     const play = (name, gap = 200) => {
@@ -151,22 +161,30 @@ const Live = ({ code, meta, players, siege, now, subscribe, onEnd, onAddTime, on
     useEffect(() => subscribe((e) => {
         const view = viewRef.current;
         if (e.type === 'launch') {
-            view?.addComet({ team: e.team, flight: e.flight });
+            // A comet that took a moment to arrive starts part-way, in step with the planets
+            view?.addComet({ team: e.team, flight: e.flight, fire: e.fire, mega: e.mega, elapsed: rt.now() - e.launchedAt });
             play('launch', 250);
         } else if (e.type === 'land') {
             const { flight } = e;
             if (e.hit) {
-                const p = planetPos(flight.target, count);
-                view?.floater(p.x, p.y - 70, e.sling ? `★ +${e.pts}` : `+${e.pts}`, e.sling ? '#fde047' : teamOf(e.team).color, e.sling ? 1.3 : 1);
+                const p = planetPos(world, flight.target, gameTime());
+                const color = e.sling ? '#fde047' : e.fire ? '#fb923c' : teamOf(e.team).color;
+                view?.floater(p.x, p.y - 70, e.sling ? `★ +${e.pts}` : `+${e.pts}`, color, e.sling || e.bounty ? 1.3 : 1);
                 play(e.sling ? 'slingshot' : 'impact', e.sling ? 0 : 150);
                 if (e.opened) play('shieldDown', 0);
             } else if (flight.end === 'sun') {
                 play('burn', 300);
             }
-            const entry = { id: e.id, name: e.name, team: e.team, target: e.hit ? flight.target : null, end: flight.end, pts: e.pts, sling: e.sling, opened: e.opened };
+            const entry = { id: e.id, kind: 'land', name: e.name, team: e.team, target: e.hit ? flight.target : null, end: flight.end, pts: e.pts, sling: e.sling, opened: e.opened, bounty: e.bounty, fire: e.fire };
             setFeed(list => [entry, ...list].slice(0, 7));
+        } else if (e.type === 'star') {
+            view?.sparkle(e.x, e.y, STAR_STYLE[e.kind].color);
+            play('bonus', 0);
+            setFeed(list => [{ id: `star-${e.id}`, kind: 'star', name: e.name, team: e.team, power: e.kind }, ...list].slice(0, 7));
+        } else if (e.type === 'spawn') {
+            play('reveal', 0);
         }
-    }), [subscribe, count]); // eslint-disable-line react-hooks/exhaustive-deps
+    }), [subscribe, world]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <div className="max-w-[1600px] mx-auto px-3 sm:px-5 py-3 flex flex-col gap-3 lg:h-[calc(100dvh-3rem)]">
@@ -221,11 +239,18 @@ const Live = ({ code, meta, players, siege, now, subscribe, onEnd, onAddTime, on
                             <ul className="space-y-1.5 text-sm">
                                 {feed.map(f => (
                                     <motion.li key={f.id} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} className="flex items-start gap-2">
-                                        {f.target !== null ? <OrbitIcon size={14} className="mt-0.5 shrink-0" style={{ color: teamOf(f.team).color }} /> : <Sun size={14} className="mt-0.5 shrink-0 text-orange-300" />}
+                                        {f.kind === 'star' ? <Star size={14} className="mt-0.5 shrink-0" style={{ color: STAR_STYLE[f.power].color }} />
+                                            : f.target !== null ? <OrbitIcon size={14} className="mt-0.5 shrink-0" style={{ color: f.fire ? '#fb923c' : teamOf(f.team).color }} />
+                                                : f.end === 'moon' ? <Moon size={14} className="mt-0.5 shrink-0 text-slate-300" />
+                                                    : <Sun size={14} className="mt-0.5 shrink-0 text-orange-300" />}
                                         <span className="min-w-0 break-words">
-                                            {f.target !== null
-                                                ? t(f.sling ? 'siege.feedSling' : 'siege.feedHit', { name: f.name, team: teamOf(f.target).name, n: f.pts })
-                                                : f.end === 'sun' ? t('siege.feedSun', { name: f.name }) : t('siege.feedLost', { name: f.name })}
+                                            {f.kind === 'star'
+                                                ? t('siege.feedStar', { name: f.name, power: t(`siege.power_${f.power}`) })
+                                                : f.target !== null
+                                                    ? t(f.sling ? 'siege.feedSling' : 'siege.feedHit', { name: f.name, team: teamOf(f.target).name, n: f.pts })
+                                                    : f.end === 'sun' ? t('siege.feedSun', { name: f.name })
+                                                        : f.end === 'moon' ? t('siege.feedMoon', { name: f.name }) : t('siege.feedLost', { name: f.name })}
+                                            {f.bounty && <b className="block text-amber-300">{t('siege.bountyHit')}</b>}
                                             {f.opened && <b className="block text-rose-300">{t('siege.shieldDown', { team: teamOf(f.target).name })}</b>}
                                         </span>
                                     </motion.li>
@@ -247,6 +272,22 @@ const Live = ({ code, meta, players, siege, now, subscribe, onEnd, onAddTime, on
                                 </li>
                             ))}
                         </ol>
+                    </section>
+
+                    {/* What the stars and symbols mean, for the class watching the big screen */}
+                    <section className="rounded-3xl bg-white/5 border border-white/10 p-4">
+                        <h2 className="text-lg font-black flex items-center gap-2 mb-2"><Star size={18} className="text-yellow-300" /> {t('siege.legend')}</h2>
+                        <ul className="space-y-1.5 text-sm text-gray-300">
+                            {settings.powerUps !== false && ['triple', 'mega', 'shield'].map(kind => (
+                                <li key={kind} className="flex items-start gap-2">
+                                    <span className="w-12 shrink-0 text-center text-xs font-black rounded-md py-0.5" style={{ background: `${STAR_STYLE[kind].color}26`, color: STAR_STYLE[kind].color }}>{STAR_STYLE[kind].label}</span>
+                                    <span className="min-w-0">{t(`siege.legend_${kind}`)}</span>
+                                </li>
+                            ))}
+                            <li className="flex items-start gap-2"><span className="w-12 shrink-0 flex justify-center text-orange-300"><Flame size={16} /></span><span className="min-w-0">{t('siege.legend_fire')}</span></li>
+                            {settings.bounty !== false && <li className="flex items-start gap-2"><span className="w-12 shrink-0 flex justify-center text-amber-300"><Crown size={16} /></span><span className="min-w-0">{t('siege.legend_bounty')}</span></li>}
+                            {settings.moon !== false && <li className="flex items-start gap-2"><span className="w-12 shrink-0 flex justify-center text-slate-300"><Moon size={16} /></span><span className="min-w-0">{t('siege.legend_moon')}</span></li>}
+                        </ul>
                     </section>
                 </aside>
             </div>
@@ -487,6 +528,7 @@ const HostScreen = ({ code, onExit }) => {
             )}
             {meta.status === 'live' && (
                 <Live
+                    rt={rt}
                     code={code}
                     meta={meta}
                     players={players}

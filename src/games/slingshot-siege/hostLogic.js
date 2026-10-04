@@ -3,21 +3,27 @@
 // comet with the shared physics and writes the results.
 //
 // rooms/{code}/
-//   siege                          { count, teams: { [i]: { score, shield } } }                   (host)
-//   inbox/{playerId}/{key}         { k: 'a', q, ok } answer  |  { k: 's', dx, dy, p } launch   (player, write-once)
-//   players/{id}                   team, score, answered, correct, hits, slings, earned, spent, last (host)
-//   stats/{questionIndex}          { asked, correct }  for the class report                     (host)
+//   siege                  { count, teams: { [i]: { score, shield } }, stars: { [id]: { x, y, kind, at, until } } }  (host)
+//   inbox/{playerId}/{key} { k: 'a', q, ok } answer | { k: 's', dx, dy, p, t } launch                    (player, write-once)
+//   players/{id}           team, score, answered, correct, hits, slings, earned, spent, streak, power, last, gotStar (host)
+//   stats/{questionIndex}  { asked, correct }  for the class report                                       (host)
+// Times inside the game (t, at, until) are milliseconds since meta.startedAt.
 //
 // Scoring (RULES): a correct answer earns one comet, +5 for the team and +4 shield.
 // A hit scores +10 while the target's shield is up (and knocks 20 off it), +25 once it is down.
-// Skimming past the sun before the hit (a slingshot) doubles it.
+// Slingshot (skimming the sun) doubles it; a fire comet adds +5 and hits shields twice as hard;
+// hitting the leading team adds the +5 bounty.
+// Power stars: Triple comet (next launch splits in three), Mega comet (huge, double shield damage), Shield +30.
 
 import { normalizeQuestion } from '../../platform/questions/normalize';
 import { roomPath, assignPath, collapsePatch } from '../../platform/rooms/shared';
-import { simulate, isValidShot } from './physics';
-import { clampTeams, MAX_SHIELD } from './teams';
+import { simulate, isValidShot, worldOf, turnVector, firstStar, CENTER, TRIPLE_SPREAD } from './physics';
+import { clampTeams, leaderOf, RULES } from './teams';
 
-export const RULES = { answerPoints: 5, answerShield: 4, hitShielded: 10, hitOpen: 25, shieldDamage: 20, maxShield: MAX_SHIELD };
+export const STAR_KINDS = ['triple', 'mega', 'shield'];
+const STAR_LIFE = 18000; // ms a power star stays out
+const STAR_FIRST = 12000; // the first star appears this long after the start
+const MAX_STARS = 2;
 
 // Shorter host outages are ignored; past the teacher's limit the game ends (see checkGap)
 const GAP_THRESHOLD = 15000;
@@ -34,7 +40,7 @@ const shuffle = (list, rand) => {
 };
 
 export class SiegeHost {
-    // onEvent({ type: 'launch' | 'land', ... }) lets the big screen animate comets and show the log
+    // onEvent({ type: 'launch' | 'land' | 'star' | 'spawn', ... }) lets the big screen animate and log
     constructor(rt, code, { random = Math.random, tickMs = 250, onEvent = () => {}, onError = console.error } = {}) {
         this.rt = rt;
         this.code = code;
@@ -44,7 +50,10 @@ export class SiegeHost {
         this.onError = onError;
         this.state = { meta: null, players: {}, siege: null, inbox: {}, stats: {} };
         this.questions = [];
-        this.flying = new Map(); // `${playerId}/${key}` -> { pid, key, team, flight, landAt }
+        this.flying = new Map(); // comet id -> { pid, key, team, flight, landAt, fire, mega }
+        this.launched = new Map(); // `${pid}/${key}` -> comets still in the air for that launch
+        this.reserved = new Map(); // star id -> { pid, key, team, at } (host ms when the comet reaches it)
+        this.nextStarAt = 0;
         this.timers = new Set();
         this.unsubs = [];
         this.busy = false;
@@ -60,8 +69,17 @@ export class SiegeHost {
         return this.state.siege?.count || clampTeams(this.settings.teams);
     }
 
+    get world() {
+        return worldOf(this.teamCount, this.settings);
+    }
+
     now() {
         return this.rt.now();
+    }
+
+    // ms of game time
+    gameTime(now = this.now()) {
+        return now - (this.state.meta?.startedAt || now);
     }
 
     path(...rest) {
@@ -204,7 +222,8 @@ export class SiegeHost {
             [`players/${id}/hits`]: p.hits ?? 0,
             [`players/${id}/slings`]: p.slings ?? 0,
             [`players/${id}/earned`]: p.earned ?? 0,
-            [`players/${id}/spent`]: p.spent ?? 0
+            [`players/${id}/spent`]: p.spent ?? 0,
+            [`players/${id}/streak`]: p.streak ?? 0
         };
     }
 
@@ -232,7 +251,9 @@ export class SiegeHost {
             } else {
                 this.assignTeams(set);
                 this.readInbox(set, now);
+                this.collectStars(set, now);
                 this.landComets(set, now);
+                this.tendStars(set, now);
             }
         }
 
@@ -272,7 +293,7 @@ export class SiegeHost {
             }
             for (const k of keys) {
                 const e = entries[k];
-                if (e?.k === 's' && !this.flying.has(`${pid}/${k}`)) this.launch(set, pid, k, e, now);
+                if (e?.k === 's' && !this.launched.has(`${pid}/${k}`)) this.launch(set, pid, k, e, now);
             }
         }
     }
@@ -282,6 +303,7 @@ export class SiegeHost {
         const p = this.state.players[pid];
         const ok = entry.ok === true;
         set(`players/${pid}/answered`, (p.answered || 0) + 1);
+        set(`players/${pid}/streak`, ok ? (p.streak || 0) + 1 : 0);
         if (ok) {
             const team = this.state.siege.teams?.[p.team] || { score: 0, shield: RULES.maxShield };
             set(`players/${pid}/correct`, (p.correct || 0) + 1);
@@ -304,20 +326,104 @@ export class SiegeHost {
             set(`inbox/${pid}/${key}`, null);
             return;
         }
-        // `acc` marks a comet already paid for (the host screen reloaded while it was flying)
-        if (entry.acc !== true) {
+        // `fx` marks a comet already paid for (the host screen reloaded while it was flying):
+        // replay it exactly, without charging the comet or the power-up again
+        let fx = entry.fx;
+        if (!fx) {
             if ((p.earned || 0) - (p.spent || 0) <= 0) {
                 set(`inbox/${pid}/${key}`, null);
                 return;
             }
+            fx = {
+                triple: p.power === 'triple',
+                mega: p.power === 'mega',
+                fire: (p.streak || 0) >= RULES.streak
+            };
             set(`players/${pid}/spent`, (p.spent || 0) + 1);
-            set(`inbox/${pid}/${key}/acc`, true);
+            if (p.power) set(`players/${pid}/power`, null);
+            if (fx.fire) set(`players/${pid}/streak`, 0);
+            set(`inbox/${pid}/${key}/fx`, fx);
         }
-        const flight = simulate(p.team, this.teamCount, entry.dx, entry.dy, entry.p);
-        const comet = { id: `${pid}/${key}`, pid, key, team: p.team, flight, landAt: now + flight.ms };
-        this.flying.set(comet.id, comet);
-        this.later(() => this.poke(), flight.ms + 10);
-        this.onEvent({ type: 'launch', ...comet, name: p.name });
+        // A launch time outside a fair window (wrong clock, replay) is moved to now
+        const gameNow = this.gameTime(now);
+        const t = entry.t >= gameNow - 8000 && entry.t <= gameNow + 1500 ? Math.round(entry.t) : gameNow;
+        const startedAt = this.state.meta.startedAt;
+        const world = this.world;
+        const spreads = fx.triple ? [-TRIPLE_SPREAD, 0, TRIPLE_SPREAD] : [0];
+        const comets = spreads.map((deg, n) => {
+            const v = deg ? turnVector(entry.dx, entry.dy, deg) : { dx: entry.dx, dy: entry.dy };
+            const shot = { team: p.team, dx: v.dx, dy: v.dy, p: entry.p, t, mega: !!fx.mega };
+            const flight = simulate(world, shot);
+            const comet = { id: `${pid}/${key}/${n}`, pid, key, team: p.team, flight, landAt: startedAt + t + flight.ms, fire: !!fx.fire, mega: !!fx.mega };
+            this.reserveStar(comet, shot, startedAt);
+            return comet;
+        });
+        this.launched.set(`${pid}/${key}`, comets.length);
+        for (const comet of comets) {
+            this.flying.set(comet.id, comet);
+            this.later(() => this.poke(), comet.landAt - now + 10);
+            this.onEvent({ type: 'launch', ...comet, name: p.name, launchedAt: startedAt + t });
+        }
+    }
+
+    // The first comet to reach a power star gets it (the star stays out until then)
+    reserveStar(comet, shot, startedAt) {
+        const stars = Object.entries(this.state.siege.stars || {})
+            .filter(([id]) => !this.reserved.has(id))
+            .map(([id, s]) => ({ id, ...s }));
+        const got = firstStar(comet.flight, shot, stars);
+        if (!got) return;
+        const at = startedAt + shot.t + got.ms;
+        this.reserved.set(got.id, { pid: comet.pid, key: comet.key, team: comet.team, at });
+        this.later(() => this.poke(), at - this.now() + 10);
+    }
+
+    collectStars(set, now) {
+        for (const [id, r] of [...this.reserved.entries()]) {
+            if (now < r.at) continue;
+            this.reserved.delete(id);
+            const star = this.state.siege.stars?.[id];
+            if (!star) continue;
+            set(`siege/stars/${id}`, null);
+            const p = this.state.players[r.pid];
+            if (!p || p.kicked) continue;
+            if (star.kind === 'shield') {
+                const team = this.state.siege.teams?.[p.team] || { shield: 0 };
+                set(`siege/teams/${p.team}/shield`, Math.min(RULES.maxShield, (team.shield || 0) + RULES.starShield));
+            } else {
+                set(`players/${r.pid}/power`, star.kind);
+            }
+            set(`players/${r.pid}/gotStar`, { k: r.key, kind: star.kind });
+            this.onEvent({ type: 'star', id, kind: star.kind, x: star.x, y: star.y, pid: r.pid, name: p.name, team: p.team });
+        }
+    }
+
+    // Power stars come and go in the space between the sun and the planets
+    tendStars(set, now) {
+        const stars = this.state.siege.stars || {};
+        const gameNow = this.gameTime(now);
+        for (const [id, s] of Object.entries(stars)) {
+            if (gameNow > s.until && !this.reserved.has(id)) set(`siege/stars/${id}`, null);
+        }
+        if (this.settings.powerUps === false) return;
+        if (!this.nextStarAt) this.nextStarAt = this.state.meta.startedAt + STAR_FIRST;
+        if (now < this.nextStarAt) return;
+        this.nextStarAt = now + 15000 + this.random() * 10000;
+        if (Object.keys(this.state.siege.stars || {}).length >= MAX_STARS) return;
+        // Inside the moon's orbit, or between it and the planets
+        const inner = this.random() < 0.5;
+        const r = inner ? 100 + this.random() * 60 : 245 + this.random() * 22;
+        const a = this.random() * Math.PI * 2;
+        const id = this.rt.newKey();
+        const star = {
+            x: Math.round(CENTER + Math.cos(a) * r),
+            y: Math.round(CENTER + Math.sin(a) * r),
+            kind: STAR_KINDS[Math.floor(this.random() * STAR_KINDS.length)],
+            at: gameNow,
+            until: gameNow + STAR_LIFE
+        };
+        set(`siege/stars/${id}`, star);
+        this.onEvent({ type: 'spawn', id, ...star });
     }
 
     landComets(set, now) {
@@ -328,19 +434,32 @@ export class SiegeHost {
 
     land(set, comet) {
         this.flying.delete(comet.id);
-        set(`inbox/${comet.pid}/${comet.key}`, null);
+        const launchId = `${comet.pid}/${comet.key}`;
+        const left = (this.launched.get(launchId) || 1) - 1;
+        if (left <= 0) {
+            this.launched.delete(launchId);
+            set(`inbox/${comet.pid}/${comet.key}`, null);
+        } else {
+            this.launched.set(launchId, left);
+        }
+
         const p = this.state.players[comet.pid];
         const { end, target, sling } = comet.flight;
+        const hit = end === 'hit' && Number.isInteger(target) && !!this.state.siege.teams?.[target];
         let pts = 0;
         let opened = false;
-        const hit = end === 'hit' && Number.isInteger(target) && !!this.state.siege.teams?.[target];
+        let bounty = false;
+        const slingshot = hit && sling && this.settings.slingshotBonus !== false;
         if (hit && p && !p.kicked) {
             const tgt = this.state.siege.teams[target];
             const open = (tgt.shield || 0) <= 0;
+            bounty = this.settings.bounty !== false && leaderOf(this.state.siege) === target && target !== p.team;
             pts = open ? RULES.hitOpen : RULES.hitShielded;
-            const slingshot = sling && this.settings.slingshotBonus !== false;
             if (slingshot) pts *= 2;
-            const shield = Math.max(0, (tgt.shield || 0) - RULES.shieldDamage);
+            if (comet.fire) pts += RULES.fireBonus;
+            if (bounty) pts += RULES.bounty;
+            const damage = RULES.shieldDamage * (comet.fire || comet.mega ? 2 : 1);
+            const shield = Math.max(0, (tgt.shield || 0) - damage);
             opened = !open && shield === 0;
             const own = this.state.siege.teams[p.team] || { score: 0 };
             set(`siege/teams/${target}/shield`, shield);
@@ -349,11 +468,18 @@ export class SiegeHost {
             set(`players/${comet.pid}/hits`, (p.hits || 0) + 1);
             if (slingshot) set(`players/${comet.pid}/slings`, (p.slings || 0) + 1);
         }
-        const slingshot = hit && sling && this.settings.slingshotBonus !== false;
         if (p && !p.kicked) {
-            set(`players/${comet.pid}/last`, { k: comet.key, end, target: hit ? target : null, pts, sling: slingshot });
+            // One result per launch, added up over a Triple comet's three flights
+            const prev = p.last?.k === comet.key ? p.last : null;
+            set(`players/${comet.pid}/last`, {
+                k: comet.key,
+                pts: (prev?.pts || 0) + pts,
+                hits: (prev?.hits || 0) + (hit ? 1 : 0),
+                sling: !!(prev?.sling || slingshot),
+                bounty: !!(prev?.bounty || bounty)
+            });
         }
-        this.onEvent({ type: 'land', ...comet, name: p?.name || '', pts, sling: slingshot, hit, opened });
+        this.onEvent({ type: 'land', ...comet, name: p?.name || '', pts, sling: slingshot, hit, opened, bounty });
     }
 
     // The host screen was offline (tab closed, laptop asleep, network lost). Past the teacher's limit the
