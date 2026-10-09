@@ -61,7 +61,7 @@ const Climb = ({ rt, code, playerId, me, players, settings, questions, seed, sta
     const deck = useRef({ order: [], retry: [], served: 0, last: -1 });
     const timers = useRef([]);
     const [, bump] = useReducer(x => x + 1, 0);
-    const [hud, setHud] = useState({ alt: 0, best: 0, fuel: 0, ground: true, storm: -5, zone: 0 });
+    const [hud, setHud] = useState({ alt: 0, best: 0, fuel: 0, range: 0, ground: true, storm: -5, zone: 0 });
     const [card, setCard] = useState(null);
     const [phase, setPhase] = useState('climb'); // climb | question | feedback
     const [feedback, setFeedback] = useState(null);
@@ -121,7 +121,15 @@ const Climb = ({ rt, code, playerId, me, players, settings, questions, seed, sta
         const hudTimer = setInterval(() => {
             const c = climberRef.current;
             if (!c) return;
-            setHud({ alt: c.alt(), best: c.best, fuel: c.fuel, ground: c.p.ground, storm: stormAt(c.world, c.tau()) - c.carried, zone: zoneAt(c.alt()) });
+            setHud({
+                alt: c.alt(),
+                best: c.best,
+                fuel: c.fuel,
+                range: c.range(),
+                ground: c.p.ground,
+                storm: stormAt(c.world, c.tau()) - c.carried,
+                zone: zoneAt(c.alt())
+            });
         }, 120);
         return () => {
             clearInterval(hudTimer);
@@ -237,6 +245,8 @@ const Climb = ({ rt, code, playerId, me, players, settings, questions, seed, sta
     });
 
     const fuelPct = Math.round((hud.fuel / BOOST.tank) * 100);
+    // Out of fuel means no more climbing, so the button asks for attention
+    const dry = hud.range < 1.2;
     const toneClass = { good: 'bg-emerald-500 text-gray-950', bad: 'bg-rose-500 text-white', info: 'bg-white/90 text-gray-950' };
 
     return (
@@ -257,9 +267,10 @@ const Climb = ({ rt, code, playerId, me, players, settings, questions, seed, sta
                 <div className="flex items-center gap-3 px-3 sm:px-5 pb-2">
                     <span className="flex items-center gap-1.5 flex-1 min-w-0" title={t('climb.fuel')}>
                         <Zap size={15} className="text-yellow-300 fill-current shrink-0" />
-                        <span className="flex-1 h-2.5 rounded-full bg-white/10 overflow-hidden max-w-[16rem]">
-                            <span className="block h-full rounded-full bg-yellow-300 transition-[width] duration-150" style={{ width: `${fuelPct}%` }} />
+                        <span className="flex-1 h-2.5 rounded-full bg-white/10 overflow-hidden max-w-[13rem]">
+                            <span className={`block h-full rounded-full transition-[width] duration-150 ${dry ? 'bg-rose-400' : 'bg-yellow-300'}`} style={{ width: `${fuelPct}%` }} />
                         </span>
+                        <span className={`text-xs font-black tabular-nums shrink-0 ${dry ? 'text-rose-300' : 'text-yellow-200'}`}>{t('climb.fuelRange', { n: Math.floor(hud.range) })}</span>
                     </span>
                     <span className="text-xs font-black uppercase tracking-wider" style={{ color: ZONES[hud.zone]?.tint }}>{zoneName}</span>
                 </div>
@@ -281,7 +292,7 @@ const Climb = ({ rt, code, playerId, me, players, settings, questions, seed, sta
                             type="button"
                             onClick={openQuestion}
                             disabled={!hud.ground}
-                            className={`absolute left-1/2 -translate-x-1/2 top-3 z-10 h-11 px-4 rounded-2xl font-black text-sm flex items-center gap-1.5 shadow-xl transition-colors ${hud.ground ? 'bg-emerald-500 hover:bg-emerald-400 text-gray-950' : 'bg-white/10 text-gray-400'} ${hud.fuel < BOOST.cost && hud.ground ? 'animate-pulse' : ''}`}
+                            className={`absolute left-1/2 -translate-x-1/2 top-3 z-10 h-11 px-4 rounded-2xl font-black text-sm flex items-center gap-1.5 shadow-xl transition-colors ${hud.ground ? 'bg-emerald-500 hover:bg-emerald-400 text-gray-950' : 'bg-white/10 text-gray-400'} ${dry && hud.ground ? 'animate-pulse' : ''}`}
                         >
                             <BookOpen size={17} /> {t('climb.refuel')}
                         </button>
@@ -513,6 +524,7 @@ const PlayerScreen = ({ code, playerId, onExit }) => {
                 <p className="font-black text-white flex items-center gap-2"><Rocket size={16} className="text-cyan-300" /> {t('climb.readyTitle')}</p>
                 <p className="flex items-start gap-2"><ChevronUp size={15} className="mt-0.5 shrink-0 text-sky-300" />{t('climb.readyJump')}</p>
                 <p className="flex items-start gap-2"><Zap size={15} className="mt-0.5 shrink-0 text-yellow-300" />{t('climb.readyFuel')}</p>
+                <p className="flex items-start gap-2"><Rocket size={15} className="mt-0.5 shrink-0 text-cyan-300" />{t('climb.readyNoFuel')}</p>
                 <p className="flex items-start gap-2"><Flame size={15} className="mt-0.5 shrink-0 text-fuchsia-300" />{t('climb.readyStorm')}</p>
             </div>
             <p className="mt-6 text-gray-300 max-w-xs">{t('cc.watch')}</p>

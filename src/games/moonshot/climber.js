@@ -3,7 +3,7 @@
 // the teacher's screen only receives how high the climber got, and keeps the score.
 
 import {
-    WIDTH, BAND, CATCH_BELOW, PLAYER, PHYS, BOOST, SPRING, SHIELD_MS, ROCK, CAUGHT_FUEL, FLAG,
+    WIDTH, BAND, CATCH_BELOW, PLAYER, PHYS, BOOST, FUEL_PER_M, SPRING, SHIELD_MS, ROCK, CAUGHT_FUEL, FLAG,
     rowAt, pieceX, stormAt, zoneAt, refugeRow, stationSpot, encodeClimber, decodeClimber
 } from './world';
 
@@ -75,6 +75,9 @@ export class Climber {
 
     // The altitude that counts towards the score
     alt() { return this.p.y - this.carried; }
+
+    // How far the fuel in the tank can still carry this climber
+    range() { return this.fuel / FUEL_PER_M; }
 
     // ---------- the world around the climber ----------
 
@@ -382,7 +385,7 @@ export class Climber {
             pieces,
             ghosts,
             me: {
-                x: p.x, y: p.y, vy: p.vy, face: p.face, ground: p.ground,
+                x: p.x, y: p.y, vx: p.vx, vy: p.vy, face: p.face, ground: p.ground,
                 boost: this.held.jump && !p.ground && this.fuel > 0,
                 answering: this.answering,
                 caught: now < this.caughtUntil,

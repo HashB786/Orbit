@@ -13,7 +13,7 @@ export const PLAYER = { w: 0.72, h: 1.1 };
 
 export const PHYS = {
     gravity: 30,
-    jump: 12.4, // straight up: 2.56 m high
+    jump: 8.9, // straight up: 1.32 m, which is less than the 2.35 m between rows
     speed: 6.2,
     accel: 60,
     airAccel: 34,
@@ -23,9 +23,11 @@ export const PHYS = {
     coyote: 0.1, // you can still jump this long after walking off an edge
     buffer: 0.14 // a jump pressed this long before landing still counts
 };
-// The jetpack: questions fill the tank, holding jump in the air burns it
-export const BOOST = { accel: 56, maxUp: 5.4, cost: 62, tank: 300, answer: 95, cell: 70 };
-export const SPRING = { jump: 17.6, boots: 14.8, bootsMs: 20000 }; // bouncy platforms and spring boots
+// The jetpack: the only real way up. Questions fill the tank, holding jump in the air burns it.
+// At 62 fuel a second and 5.4 m a second, a metre of climbing costs about 11.5 fuel.
+export const BOOST = { accel: 56, maxUp: 5.4, cost: 62, tank: 360, answer: 120, cell: 80 };
+export const FUEL_PER_M = 62 / 5.4; // what a metre of flying costs, for the fuel gauge
+export const SPRING = { jump: 14.6, boots: 12.2, bootsMs: 20000 }; // bouncy platforms (3.6 m) and spring boots (2.5 m)
 export const SHIELD_MS = 12000;
 export const ROCK = { r: 0.62, knock: 7.5, stun: 0.45 };
 export const CAUGHT_FUEL = 70; // fuel lost when the storm catches you
@@ -33,9 +35,9 @@ export const CAUGHT_FUEL = 70; // fuel lost when the storm catches you
 // The storm rises from the bottom and slowly speeds up
 export const STORMS = {
     off: null,
-    slow: { rate: 0.26, accel: 0.0004 },
-    normal: { rate: 0.42, accel: 0.0008 },
-    fast: { rate: 0.6, accel: 0.0016 }
+    slow: { rate: 0.18, accel: 0.0003 },
+    normal: { rate: 0.3, accel: 0.0005 },
+    fast: { rate: 0.45, accel: 0.0009 }
 };
 export const STORM_GRACE = 25; // seconds before it starts
 
@@ -159,8 +161,8 @@ export const rowAt = (world, row) => {
     const host = out[Math.floor(extra() * out.length)];
     if (row > 0 && host) {
         const r = extra();
-        if (r < 0.34) out.push({ row, i: out.length, pickup: 'fuel', x: host.x + host.w / 2, y: y + 1.15 });
-        else if (world.powerUps && r < 0.4) out.push({ row, i: out.length, pickup: extra() < 0.5 ? 'boots' : 'shield', x: host.x + host.w / 2, y: y + 1.2 });
+        if (r < 0.46) out.push({ row, i: out.length, pickup: 'fuel', x: host.x + host.w / 2, y: y + 1.15 });
+        else if (world.powerUps && r < 0.54) out.push({ row, i: out.length, pickup: extra() < 0.5 ? 'boots' : 'shield', x: host.x + host.w / 2, y: y + 1.2 });
     }
     if (world.hazards && row > 6 && extra() < 0.17) {
         out.push({ row, i: out.length, rock: true, x: WIDTH / 2, y: y + 1.3, phase: extra() * Math.PI * 2, amp: WIDTH / 2 - 1.2, rate: 0.35 + extra() * 0.5 });
