@@ -147,6 +147,37 @@ export const GAMES = [
         Player: lazy(() => import('../../games/star-corsairs/PlayerScreen'))
     },
     {
+        id: 'moonshot',
+        i18n: 'climb',
+        kind: 'live',
+        accent: 'from-sky-400 to-fuchsia-600',
+        compat: { mc: 'native', tf: 'native', multi: 'native', order: 'native', typed: 'adapted' },
+        notes: ['typed', 'multi', 'order'],
+        minQuestions: 3,
+        settings: [
+            { key: 'duration', type: 'select', options: minutes([5, 8, 10, 15]), default: 480 },
+            {
+                key: 'storm', type: 'segmented', default: 'normal', help: true,
+                options: [{ value: 'off' }, { value: 'slow' }, { value: 'normal' }, { value: 'fast' }]
+            },
+            ...questionTimer,
+            { key: 'hazards', type: 'toggle', default: true, advanced: true, help: true },
+            { key: 'powerUps', type: 'toggle', default: true, advanced: true, help: true },
+            { key: 'ghosts', type: 'toggle', default: true, advanced: true, help: true },
+            {
+                key: 'hostTimeout', type: 'select', default: 180, advanced: true,
+                options: [{ value: 0 }, { value: 60 }, { value: 180 }, { value: 300 }],
+                help: true
+            },
+            { key: 'lateJoin', type: 'toggle', default: true, advanced: true },
+            { key: 'randomNames', type: 'toggle', default: false, advanced: true, help: true },
+            { key: 'studentMusic', type: 'toggle', default: true, advanced: true, help: true },
+            { key: 'studentSound', type: 'toggle', default: true, advanced: true }
+        ],
+        Host: lazy(() => import('../../games/moonshot/HostScreen')),
+        Player: lazy(() => import('../../games/moonshot/PlayerScreen'))
+    },
+    {
         id: 'grid-battle',
         i18n: 'grid',
         kind: 'board',

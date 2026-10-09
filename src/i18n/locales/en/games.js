@@ -51,6 +51,32 @@ export const games = {
             order: 'Students tap the answers in the right order.'
         }
     },
+    climb: {
+        name: 'Moonshot',
+        tagline: 'Climb from the launchpad to the Moon. Questions fill your jetpack, and a storm is rising below you.',
+        how: [
+            'Students join with the code on their phones, tablets or laptops.',
+            'Jump from platform to platform and climb as high as you can: your altitude is your score.',
+            'Standing still on a platform, answer a question to fill the jetpack. Hold jump in the air to fly on it.',
+            'Springs, moving and crumbling platforms, drifting rocks, fuel cells and boots make every route different.',
+            'A storm rises from below: if it catches you, you restart from the last station above it.'
+        ],
+        zones: {
+            pad: 'Launchpad',
+            clouds: 'Cloudline',
+            jet: 'Jet Stream',
+            edge: 'The Edge',
+            orbit: 'Low Orbit',
+            belt: 'Asteroid Belt',
+            deep: 'Deep Space',
+            moon: 'Moonlight'
+        },
+        notes: {
+            typed: 'Shown as options: the answer plus decoys from the rest of the set.',
+            multi: 'Students pick every correct answer, then check.',
+            order: 'Students tap the answers in the right order.'
+        }
+    },
     grid: {
         name: 'Grid Battle',
         tagline: 'Space teams explore a board of tiles: questions, black holes, shooting stars and meteor strikes.',
@@ -147,6 +173,29 @@ export const gs = {
         goldComets: { label: 'Golden comets', help: 'Now and then a golden comet races across. The ship that smashes it wins a jackpot.' },
         upgrades: { label: 'Upgrade bay', help: 'Students can spend crystals on a stronger laser, armor or a crystal magnet.' },
         bounty: { label: 'Bounty on the leader', help: 'Plundering the player in first place pays +25 crystals, which keeps the game close.' },
+        hostTimeout: {
+            label: 'If your screen goes offline',
+            options: { 0: 'Wait for me (never end)', 60: 'End the game after 1 min', 180: 'End the game after 3 min', 300: 'End the game after 5 min' },
+            help: 'While your screen is offline the game pauses. Come back in time and it continues where it stopped.'
+        },
+        lateJoin: { label: 'Allow joining after the start' },
+        randomNames: { label: 'Fun random nicknames', help: 'Students get a generated name like "Cosmic Otter" instead of typing one.' },
+        studentMusic: { label: 'Music on student devices', help: 'Soft background music on every student\'s device. Each student can mute it.' },
+        studentSound: { label: 'Sound effects on student devices' }
+    },
+    climb: {
+        duration: { label: 'Game length' },
+        storm: {
+            label: 'The rising storm',
+            options: { off: 'Off', slow: 'Gentle', normal: 'Normal', fast: 'Fierce' },
+            help: 'A storm climbs the tower behind the students. Caught climbers restart from the last station above it, so nobody is ever sent back to the bottom.'
+        },
+        timer: { label: 'Question timer', help: 'A countdown for every question. Running out of time counts as a wrong answer.' },
+        timerSeconds: { label: 'Seconds per question', helpOwn: 'Questions with their own time limit use it instead.' },
+        useQuestionTime: { label: 'Use each question\'s own time limit' },
+        hazards: { label: 'Hazards', help: 'Crumbling platforms and drifting rocks. Switch them off for an easier climb.' },
+        powerUps: { label: 'Fuel cells and power-ups', help: 'Spare fuel, spring boots and shields are scattered up the tower.' },
+        ghosts: { label: 'See classmates climbing', help: 'Students see the others near their own height, so a close race feels close.' },
         hostTimeout: {
             label: 'If your screen goes offline',
             options: { 0: 'Wait for me (never end)', 60: 'End the game after 1 min', 180: 'End the game after 3 min', 300: 'End the game after 5 min' },

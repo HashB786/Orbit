@@ -349,10 +349,62 @@ const StarCorsairsArt = ({ id }) => (
     </>
 );
 
+// A rocket climbing a tower of platforms, with the storm closing in below
+const MoonshotArt = ({ id }) => (
+    <>
+        <defs>
+            <linearGradient id={`${id}-bg`} x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0" stopColor="#3b1d6e" />
+                <stop offset="0.45" stopColor="#15205a" />
+                <stop offset="1" stopColor="#04050f" />
+            </linearGradient>
+            <linearGradient id={`${id}-storm`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#c084fc" stopOpacity="0.8" />
+                <stop offset="1" stopColor="#2e1065" />
+            </linearGradient>
+            <linearGradient id={`${id}-flame`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#fde047" />
+                <stop offset="1" stopColor="#f97316" stopOpacity="0" />
+            </linearGradient>
+        </defs>
+        <rect width={W} height={H} fill={`url(#${id}-bg)`} />
+        <Stars seed={91} count={55} width={W} height={H} />
+
+        {/* The moon, waiting at the top */}
+        <circle cx="268" cy="30" r="20" fill="#e2e8f0" />
+        <circle cx="262" cy="25" r="4" fill="#94a3b8" opacity="0.6" />
+        <circle cx="273" cy="36" r="3" fill="#94a3b8" opacity="0.5" />
+
+        {/* Platforms going up */}
+        {[[36, 150, 44], [104, 124, 34], [52, 98, 30], [128, 74, 38], [196, 104, 32], [214, 54, 40], [168, 150, 36], [250, 128, 30]].map(([x, y, w], i) => (
+            <g key={i}>
+                <rect x={x} y={y} width={w} height={7} rx="2" fill={i % 3 === 0 ? '#047857' : '#475569'} />
+                <rect x={x} y={y - 2} width={w} height="3" rx="1.5" fill={i % 3 === 0 ? '#6ee7b7' : '#94a3b8'} />
+            </g>
+        ))}
+
+        {/* The climber mid-jump, jetpack burning */}
+        <g transform="translate(150 96)">
+            <path d="M-6,4 L0,26 L6,4 Z" fill={`url(#${id}-flame)`} />
+            <path d="M0,-17 C7,-6 7,2 6,5 L-6,5 C-7,2 -7,-6 0,-17 Z" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1" />
+            <path d="M-6,-1 L-11,5 L-6,5 Z M6,-1 L11,5 L6,5 Z" fill="#e11d48" />
+            <circle cx="0" cy="-8" r="3.2" fill="#38bdf8" />
+        </g>
+        <path d="M150,124 C 138,112 140,104 150,96" fill="none" stroke="#67e8f9" strokeOpacity="0.5" strokeWidth="2" strokeDasharray="3 4" />
+
+        {/* Fuel cell and the rising storm */}
+        <rect x="88" y="108" width="7" height="12" rx="2" fill="#fde047" stroke="#ffffff" strokeWidth="1" />
+        <Sparkle x={92} y={101} size={5} color="#fef08a" />
+        <path d="M0,166 Q 40,158 80,166 T 160,166 T 240,166 T 320,166 L320,180 L0,180 Z" fill={`url(#${id}-storm)`} />
+        <text x="24" y="26" fontFamily="Inter, sans-serif" fontWeight="900" fontSize="15" fill="#67e8f9">842 m</text>
+    </>
+);
+
 const SCENES = {
     'comet-clash': CometClashArt,
     'slingshot-siege': SlingshotSiegeArt,
     'star-corsairs': StarCorsairsArt,
+    moonshot: MoonshotArt,
     'grid-battle': GridBattleArt,
     millionaire: MillionaireArt
 };

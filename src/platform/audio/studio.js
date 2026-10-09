@@ -471,11 +471,120 @@ const corsairBoss = {
     }
 };
 
-export const STUDIO_TRACKS = { corsairLobby, corsairs, corsairBoss };
+
+// Moonshot: an uplifting climb in A major (A - E - F#m - D). A rolling arpeggio carries it, the drums
+// and bass come in, and a soaring lead takes over for the last half: music for going higher.
+const CLIMB_BARS = [
+    { bass: 45, chord: [69, 73, 76] },
+    { bass: 40, chord: [71, 76, 80] },
+    { bass: 42, chord: [66, 69, 73] },
+    { bass: 38, chord: [62, 66, 69] }
+];
+const CLIMB_ARP = [0, 1, 2, 3, 2, 1, 0, 2, 1, 3, 2, 4, 3, 2, 1, 2];
+const CLIMB_LEAD = [
+    [0, 0, 81, 4], [0, 4, 83, 2], [0, 6, 85, 6], [0, 12, 83, 4],
+    [1, 0, 80, 4], [1, 4, 83, 2], [1, 6, 88, 8], [1, 14, 85, 2],
+    [2, 0, 83, 3], [2, 3, 85, 3], [2, 6, 88, 2], [2, 8, 90, 4], [2, 12, 88, 4],
+    [3, 0, 85, 6], [3, 6, 83, 2], [3, 8, 81, 8]
+];
+
+const moonshot = {
+    tempo: 142,
+    bars: Array.from({ length: 16 }, (_, i) => CLIMB_BARS[i % 4]),
+    play(a, step, bar, t, sd, barIndex) {
+        const s = step % 16;
+        const barDur = sd * 16;
+        const tones = [...bar.chord, bar.chord[0] + 12, bar.chord[1] + 12];
+        const full = barIndex >= 4;
+        const lead = barIndex >= 8;
+        const huge = barIndex >= 12;
+
+        // Drums come in after the intro
+        if (full) {
+            if (s % 4 === 0) kick(a, t, huge ? 0.55 : 0.46, { depth: huge ? 0.75 : 0.6 });
+            if (s === 4 || s === 12) clap(a, t, huge ? 0.19 : 0.14, 0.35);
+            if (s % 2 === 0) hat(a, t, s % 4 === 2 ? 0.042 : 0.016, huge && s === 14);
+            else if (huge) hat(a, t, 0.01);
+        } else if (s === 0 || s === 8) {
+            kick(a, t, 0.3, { depth: 0.45 });
+        }
+        if (s === 0 && (barIndex === 0 || barIndex === 8 || barIndex === 12)) crash(a, t, 0.055);
+        if (barIndex === 7 && s === 0) riser(a, t, barDur, 0.055);
+        if (barIndex === 11 && s === 12) snare(a, t, 0.1, 0.2);
+
+        // Plucky bass in eighths, with an octave lift before the bar turns over
+        if (s % 2 === 0) {
+            const up = s === 6 || s === 14;
+            synth(a, {
+                midi: bar.bass + (up ? 12 : 0), voices: 2, spread: 12, width: 0, t, dur: sd * 1.4,
+                release: 0.06, gain: full ? 0.07 : 0.05, cutoff: full ? 1200 : 700, q: 2, dest: a.pumpBus
+            });
+        }
+        if (s === 0) {
+            // Wide pad under everything
+            chord(a, bar.chord, {
+                t, dur: barDur * 0.95, attack: full ? 0.05 : 0.4, release: 0.4, gain: full ? 0.03 : 0.024,
+                voices: 4, spread: 16, cutoff: full ? 2600 : 1200, dest: a.pumpBus, rev: 0.3
+            });
+            if (huge) synth(a, { midi: bar.bass - 12, type: 'sine', t, dur: barDur * 0.95, attack: 0.01, release: 0.1, gain: 0.15, dest: a.pumpBus });
+        }
+
+        // The arpeggio: the sound of climbing
+        synth(a, {
+            midi: tones[CLIMB_ARP[s] % tones.length] + 12, t, dur: sd * 0.42, release: 0.1,
+            gain: full ? 0.034 : 0.026, cutoff: lead ? 3400 : 2000, cutoffTo: 600, sweep: 0.12, dly: 0.3
+        });
+
+        // The lead, soaring over the top
+        if (lead) {
+            const phrase = (barIndex - 8) % 4;
+            for (const [, , midi, len] of notesAt(CLIMB_LEAD, phrase, s)) {
+                synth(a, {
+                    midi: huge ? midi : midi - 12, type: 'triangle', voices: 2, spread: 9, width: 0.4, t,
+                    dur: sd * len * 0.9, attack: 0.012, release: 0.22, gain: 0.055, cutoff: 3600, vibrato: 12, dly: 0.25, rev: 0.3
+                });
+            }
+        }
+    }
+};
+
+export const STUDIO_TRACKS = { corsairLobby, corsairs, corsairBoss, moonshot };
 
 // ---------- stingers (sound effects, on the effects volume) ----------
 
 export const STUDIO_SFX = {
+    // ----- Moonshot -----
+    jump: (a, t) => synth(a, { freq: 340, slideTo: 760, type: 'triangle', t, dur: 0.1, release: 0.05, gain: 0.05, dest: a.sfxBus }),
+    spring: (a, t) => {
+        synth(a, { freq: 260, slideTo: 1250, type: 'square', t, dur: 0.17, release: 0.07, gain: 0.05, cutoff: 2600, dest: a.sfxBus });
+        synth(a, { freq: 1250, slideTo: 700, type: 'sine', t: t + 0.16, dur: 0.1, release: 0.08, gain: 0.03, dest: a.sfxBus });
+    },
+    checkpoint: (a, t) => {
+        synth(a, { freq: 520, slideTo: 880, type: 'sine', t, dur: 0.14, release: 0.12, gain: 0.05, dest: a.sfxBus });
+        synth(a, { midi: 76, type: 'triangle', t: t + 0.08, dur: 0.1, release: 0.2, gain: 0.04, dest: a.sfxBus, rev: 0.3 });
+    },
+    crack: (a, t) => noise(a, t, 0.05, 0.12, 'highpass', 4200, { dest: a.sfxBus }),
+    crumble: (a, t) => {
+        noise(a, t, 0.45, 0.16, 'lowpass', 2200, { freqEnd: 300, dest: a.sfxBus });
+        [0, 0.07, 0.15, 0.24].forEach(o => noise(a, t + o, 0.08, 0.07, 'bandpass', 900 + Math.random() * 700, { q: 1.4, dest: a.sfxBus }));
+    },
+    bump: (a, t) => {
+        synth(a, { freq: 190, slideTo: 70, type: 'sine', t, dur: 0.16, release: 0.08, gain: 0.14, dest: a.sfxBus });
+        noise(a, t, 0.12, 0.1, 'lowpass', 1400, { freqEnd: 300, dest: a.sfxBus });
+    },
+    caught: (a, t) => {
+        synth(a, { freq: 620, slideTo: 90, type: 'sawtooth', t, dur: 0.75, release: 0.2, gain: 0.07, cutoff: 2200, cutoffTo: 300, sweep: 0.7, voices: 3, spread: 22, dest: a.sfxBus, rev: 0.4 });
+        noise(a, t, 0.8, 0.13, 'bandpass', 2600, { freqEnd: 220, q: 1.2, dest: a.sfxBus, rev: 0.3 });
+    },
+    shieldBreak: (a, t) => {
+        [92, 87, 95, 84].forEach((m, i) => synth(a, { midi: m, type: 'triangle', t: t + i * 0.035, dur: 0.06, release: 0.18, gain: 0.04, dest: a.sfxBus, rev: 0.35 }));
+        noise(a, t, 0.3, 0.07, 'highpass', 5200, { dest: a.sfxBus });
+    },
+    zoneUp: (a, t) => {
+        [76, 81, 85, 88, 93].forEach((m, i) => synth(a, { midi: m, type: 'triangle', t: t + i * 0.055, dur: 0.1, release: 0.3, gain: 0.05, dest: a.sfxBus, dly: 0.3, rev: 0.35 }));
+        riser(a, t, 0.5, 0.025, a.sfxBus);
+    }
+,
     // The mothership arrives: a cinematic BRAAAM and a siren sweep
     bossIntro: (a, t) => {
         impact(a, t, 0.4, a.sfxBus);

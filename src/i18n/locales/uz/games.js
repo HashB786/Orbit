@@ -50,6 +50,32 @@ export const games = {
             order: 'Oʻquvchilar javoblarni toʻgʻri tartibda bosadi.'
         }
     },
+    climb: {
+        name: 'Oyga sakrash',
+        tagline: 'Uchirish maydonchasidan Oygacha koʻtariling. Savollar raketa ryukzagini toʻldiradi, pastdan esa boʻron koʻtariladi.',
+        how: [
+            'Oʻquvchilar telefon, planshet yoki noutbukidan kod orqali qoʻshiladi.',
+            'Platformadan platformaga sakrab, imkon qadar yuqoriga chiqing: balandlik — bu ochkolaringiz.',
+            'Platformada turib savolga javob bering va ryukzakni toʻldiring. Havoda sakrash tugmasini bosib tursangiz, uchasiz.',
+            'Prujinalar, harakatlanuvchi va yemiriluvchi platformalar, uchayotgan toshlar, yoqilgʻi va etiklar har bir yoʻlni boshqacha qiladi.',
+            'Pastdan boʻron koʻtariladi: u yetib olsa, undan yuqoridagi eng yaqin stansiyadan davom etasiz.'
+        ],
+        zones: {
+            pad: 'Uchirish maydoni',
+            clouds: 'Bulutlar',
+            jet: 'Havo oqimi',
+            edge: 'Osmon cheti',
+            orbit: 'Past orbita',
+            belt: 'Asteroid kamari',
+            deep: 'Chuqur kosmos',
+            moon: 'Oy nuri'
+        },
+        notes: {
+            typed: 'Variantlar sifatida koʻrsatiladi: javob va toʻplamdagi boshqa savollardan chalgʻituvchi variantlar.',
+            multi: 'Oʻquvchilar barcha toʻgʻri javoblarni tanlab, «Tekshirish»ni bosadi.',
+            order: 'Oʻquvchilar javoblarni toʻgʻri tartibda bosadi.'
+        }
+    },
     grid: {
         name: 'Kataklar jangi',
         tagline: 'Koinot jamoalari kataklar taxtasini oʻrganadi: savollar, qora tuynuklar, uchar yulduzlar va meteor zarbalari.',
@@ -146,6 +172,29 @@ export const gs = {
         goldComets: { label: 'Oltin kometalar', help: 'Vaqti-vaqti bilan oltin kometa uchib oʻtadi. Uni parchalagan kema jekpot oladi.' },
         upgrades: { label: 'Ustaxona', help: 'Oʻquvchilar kristallarni kuchliroq lazer, zirh yoki kristall magnitiga sarflashi mumkin.' },
         bounty: { label: 'Yetakchi uchun mukofot', help: 'Birinchi oʻrindagi oʻyinchini talash +25 kristall beradi, bu oʻyinni teng tutadi.' },
+        hostTimeout: {
+            label: 'Ekraningiz oflayn boʻlib qolsa',
+            options: { 0: 'Meni kuting (tugatmang)', 60: '1 daqiqadan keyin tugatish', 180: '3 daqiqadan keyin tugatish', 300: '5 daqiqadan keyin tugatish' },
+            help: 'Ekraningiz oflayn boʻlganda oʻyin pauza qilinadi. Oʻz vaqtida qaytsangiz, toʻxtagan joyidan davom etadi.'
+        },
+        lateJoin: { label: 'Boshlangandan keyin qoʻshilishga ruxsat' },
+        randomNames: { label: 'Qiziqarli tasodifiy taxalluslar', help: 'Oʻquvchilar taxallus yozish oʻrniga «Cosmic Otter» kabi avtomatik ism oladi.' },
+        studentMusic: { label: 'Oʻquvchilar qurilmasida musiqa', help: 'Har bir oʻquvchining qurilmasida sokin fon musiqasi. Har bir oʻquvchi uni oʻchira oladi.' },
+        studentSound: { label: 'Oʻquvchilar qurilmasida ovoz effektlari' }
+    },
+    climb: {
+        duration: { label: 'Oʻyin davomiyligi' },
+        storm: {
+            label: 'Koʻtarilayotgan boʻron',
+            options: { off: 'Oʻchiq', slow: 'Yumshoq', normal: 'Oddiy', fast: 'Shiddatli' },
+            help: 'Boʻron oʻquvchilar ortidan minora boʻylab koʻtariladi. Ushlanib qolgan oʻquvchi undan yuqoridagi stansiyadan davom etadi, hech kim eng pastga tushmaydi.'
+        },
+        timer: { label: 'Savol taymeri', help: 'Har bir savol uchun teskari sanoq. Vaqt tugasa, notoʻgʻri javob hisoblanadi.' },
+        timerSeconds: { label: 'Har bir savolga soniya', helpOwn: 'Oʻz vaqt chegarasi bor savollarda oʻsha vaqt ishlatiladi.' },
+        useQuestionTime: { label: 'Har bir savolning oʻz vaqt chegarasidan foydalanish' },
+        hazards: { label: 'Xavflar', help: 'Yemiriluvchi platformalar va uchayotgan toshlar. Osonroq boʻlishi uchun oʻchiring.' },
+        powerUps: { label: 'Yoqilgʻi va bonuslar', help: 'Minora boʻylab zaxira yoqilgʻi, prujinali etiklar va qalqonlar sochilgan.' },
+        ghosts: { label: 'Sinfdoshlarni koʻrish', help: 'Oʻquvchilar oʻziga yaqin balandlikdagilarni koʻradi — poyga qiziqroq boʻladi.' },
         hostTimeout: {
             label: 'Ekraningiz oflayn boʻlib qolsa',
             options: { 0: 'Meni kuting (tugatmang)', 60: '1 daqiqadan keyin tugatish', 180: '3 daqiqadan keyin tugatish', 300: '5 daqiqadan keyin tugatish' },

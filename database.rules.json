@@ -76,6 +76,13 @@
             ".write": "auth != null && $playerId.beginsWith(auth.uid + '_') && root.child('rooms').child($code).child('players').child($playerId).child('name').exists() && !root.child('rooms').child($code).child('players').child($playerId).child('kicked').exists()",
             ".validate": "newData.isString() && newData.val().length <= 120"
           }
+        },
+
+        "climbers": {
+          "$playerId": {
+            ".write": "auth != null && $playerId.beginsWith(auth.uid + '_') && root.child('rooms').child($code).child('players').child($playerId).child('name').exists() && !root.child('rooms').child($code).child('players').child($playerId).child('kicked').exists()",
+            ".validate": "newData.isString() && newData.val().length <= 70"
+          }
         }
       }
     }
