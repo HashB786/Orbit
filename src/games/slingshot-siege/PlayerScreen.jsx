@@ -233,7 +233,7 @@ const Battle = ({ rt, code, playerId, me, siege, settings, questions, startedAt,
     const sound = settings.studentSound !== false;
     const count = siege.count || 2;
     const team = me.team;
-    const world = useMemo(() => worldOf(count, settings), [count, settings.orbit, settings.moon]); // eslint-disable-line react-hooks/exhaustive-deps
+    const world = useMemo(() => worldOf(count, settings), [count, settings.orbit, settings.planetSpeed, settings.moon]); // eslint-disable-line react-hooks/exhaustive-deps
     const gameTime = useRef(() => (rt.now() - startedAt) / 1000).current;
     const pool = useMemo(() => decoyPool(questions), [questions]);
     const deck = useRef({ order: [], retry: [], served: 0, last: -1 });

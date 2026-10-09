@@ -69,6 +69,13 @@
               ".validate": "newData.child('k').val() === 'a' || newData.child('k').val() === 's'"
             }
           }
+        },
+
+        "ships": {
+          "$playerId": {
+            ".write": "auth != null && $playerId.beginsWith(auth.uid + '_') && root.child('rooms').child($code).child('players').child($playerId).child('name').exists() && !root.child('rooms').child($code).child('players').child($playerId).child('kicked').exists()",
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          }
         }
       }
     }

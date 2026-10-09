@@ -26,11 +26,27 @@ export const games = {
             'Har bir toʻgʻri javob kometa beradi, jamoaga +5 ball qoʻshadi va uning qalqonini quvvatlaydi.',
             'Barmoq yoki sichqoncha bilan surib yoki strelka tugmalari bilan moʻljal oling. Quyosh gravitatsiyasi kometani egadi.',
             'Zarba +10 ball, sayyora qalqoni oʻchgan boʻlsa +25. Avval quyosh yonidan oʻtsangiz, quyosh manevri ikki baravar ball beradi.',
-            'Sayyoralar aylanadi, Oy esa yoʻlni toʻsadi. Kuch yulduzlaridan oʻtib uchlik kometa, mega kometa va qalqon oling; ketma-ket 3 ta toʻgʻri javob olovli kometa beradi.'
+            'Sayyoralar aylanadi (Tartibsiz rejimda ular har tomonga halqa boʻylab aylanib yuradi), Oy esa yoʻlni toʻsadi. Kuch yulduzlaridan oʻtib uchlik kometa, mega kometa va qalqon oling; ketma-ket 3 ta toʻgʻri javob olovli kometa beradi.'
         ],
         notes: {
             typed: 'Variantlar sifatida koʻrsatiladi: javob va toʻplamdagi boshqa javoblardan chalgʻituvchilar.',
             multi: 'Oʻquvchilar barcha toʻgʻri javoblarni tanlab, tekshiradi.',
+            order: 'Oʻquvchilar javoblarni toʻgʻri tartibda bosadi.'
+        }
+    },
+    corsair: {
+        name: 'Yulduz korsarlari',
+        tagline: 'Kosmik qaroqchilar! Oʻz kemangizni boshqaring, meteoritlar va doʻstlaringizni portlating, lazerlarni esa savollarga javob berib zaryadlang.',
+        how: [
+            'Oʻquvchilar telefon, planshet yoki noutbukidan kod orqali qoʻshiladi va kema tanlaydi.',
+            'Dokda, xavfsiz pufak ichida savollarga javob beradi: har bir toʻgʻri javob lazer energiyasini ⚡ zaryadlaydi.',
+            'Keyin uchishadi: sensorli ekranda joystik va oʻq tugmasi, noutbukda sichqoncha yoki WASD va Space.',
+            'Kristall uchun meteoritlarga oʻq uzing. Raqib qalqonini sindirsangiz, kemasi portlaydi va kristallari sochilib ketadi — kim birinchi olsa, oʻsha oladi.',
+            'Oltin kometalar, yaxshilashlar va javob qaytaradigan ona kema. Oxirida eng koʻp kristall yiqqan gʻolib.'
+        ],
+        notes: {
+            typed: 'Variantlar sifatida koʻrsatiladi: javob va toʻplamdagi boshqa savollardan chalgʻituvchi variantlar.',
+            multi: 'Oʻquvchilar barcha toʻgʻri javoblarni tanlab, «Tekshirish»ni bosadi.',
             order: 'Oʻquvchilar javoblarni toʻgʻri tartibda bosadi.'
         }
     },
@@ -102,13 +118,34 @@ export const gs = {
         useQuestionTime: { label: 'Har bir savolning oʻz vaqt chegarasidan foydalanish' },
         orbit: {
             label: 'Sayyoralar aylanishi',
-            options: { still: 'Toʻxtagan', slow: 'Sekin', fast: 'Tez' },
-            help: 'Barcha sayyoralar quyosh atrofida birga aylanadi, shuning uchun oʻquvchilar oldinroqqa moʻljal oladi. Har bir jamoa uchun adolatli.'
+            options: { still: 'Joyida', ring: 'Aylana', wild: 'Tartibsiz' },
+            help: 'Tartibsiz: sayyoralar halqa boʻylab aylanib yuradi, tezlashadi, sekinlashadi va orqaga qaytadi. Hammasi bir xil raqsni takrorlaydi, shuning uchun adolatli.'
         },
+        planetSpeed: { label: 'Sayyoralar tezligi', options: { slow: 'Sekin', normal: 'Oddiy', fast: 'Tez', turbo: 'Turbo' } },
         moon: { label: 'Oy', help: 'Oy quyoshga yaqinroqda teskari tomonga aylanadi. U kometalarni toʻsadi va biroz tortadi, shuning uchun vaqtni tanlash muhim.' },
         powerUps: { label: 'Kuch yulduzlari', help: 'Vaqti-vaqti bilan yulduzlar paydo boʻladi. Kometani ulardan oʻtkazing: uchlik kometa, mega kometa yoki +30 qalqon.' },
         bounty: { label: 'Yetakchi uchun mukofot', help: 'Birinchi oʻrindagi jamoaga zarba +5 beradi, bu oʻyinni teng tutadi.' },
         slingshotBonus: { label: 'Quyosh manevri bonusi', help: 'Zarbadan oldin quyosh yonidan (oltin halqa ichida) oʻtgan kometalar ikki baravar ball oladi.' },
+        hostTimeout: {
+            label: 'Ekraningiz oflayn boʻlib qolsa',
+            options: { 0: 'Meni kuting (tugatmang)', 60: '1 daqiqadan keyin tugatish', 180: '3 daqiqadan keyin tugatish', 300: '5 daqiqadan keyin tugatish' },
+            help: 'Ekraningiz oflayn boʻlganda oʻyin pauza qilinadi. Oʻz vaqtida qaytsangiz, toʻxtagan joyidan davom etadi.'
+        },
+        lateJoin: { label: 'Boshlangandan keyin qoʻshilishga ruxsat' },
+        randomNames: { label: 'Qiziqarli tasodifiy taxalluslar', help: 'Oʻquvchilar taxallus yozish oʻrniga «Cosmic Otter» kabi avtomatik ism oladi.' },
+        studentMusic: { label: 'Oʻquvchilar qurilmasida musiqa', help: 'Har bir oʻquvchining qurilmasida sokin fon musiqasi. Har bir oʻquvchi uni oʻchira oladi.' },
+        studentSound: { label: 'Oʻquvchilar qurilmasida ovoz effektlari' }
+    },
+    corsair: {
+        duration: { label: 'Oʻyin davomiyligi' },
+        raids: { label: 'Oʻyinchilar bir-biriga hujum qila oladi', help: 'Oʻchirilsa — tinch rejim: hamma meteorit qazadi va ona kemaga qarshi birga jang qiladi.' },
+        timer: { label: 'Savol taymeri', help: 'Har bir savol uchun teskari sanoq. Vaqt tugasa, notoʻgʻri javob hisoblanadi.' },
+        timerSeconds: { label: 'Har bir savolga soniya', helpOwn: 'Oʻz vaqt chegarasi bor savollarda oʻsha vaqt ishlatiladi.' },
+        useQuestionTime: { label: 'Har bir savolning oʻz vaqt chegarasidan foydalanish' },
+        invasions: { label: 'Ona kema bosqinlari', help: 'Har bir necha daqiqada begona ona kema hujum qiladi. Toʻgʻri javoblar unga oʻq uzadi; qochib ketsa, eng yaxshi 3 oʻyinchini talaydi.' },
+        goldComets: { label: 'Oltin kometalar', help: 'Vaqti-vaqti bilan oltin kometa uchib oʻtadi. Uni parchalagan kema jekpot oladi.' },
+        upgrades: { label: 'Ustaxona', help: 'Oʻquvchilar kristallarni kuchliroq lazer, zirh yoki kristall magnitiga sarflashi mumkin.' },
+        bounty: { label: 'Yetakchi uchun mukofot', help: 'Birinchi oʻrindagi oʻyinchini talash +25 kristall beradi, bu oʻyinni teng tutadi.' },
         hostTimeout: {
             label: 'Ekraningiz oflayn boʻlib qolsa',
             options: { 0: 'Meni kuting (tugatmang)', 60: '1 daqiqadan keyin tugatish', 180: '3 daqiqadan keyin tugatish', 300: '5 daqiqadan keyin tugatish' },

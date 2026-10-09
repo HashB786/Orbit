@@ -27,7 +27,23 @@ export const games = {
             'Every correct answer earns a comet, gives the team +5 and recharges its shield.',
             'Aim by dragging with a finger or the mouse, or with the arrow keys. The sun\'s gravity bends the comet.',
             'A hit is worth +10, or +25 once the planet\'s shield is down. Skim past the sun first for a slingshot: double points.',
-            'Planets orbit and the moon gets in the way. Fly through power stars for Triple comets, Mega comets and shields; 3 right answers in a row make a fire comet.'
+            'Planets orbit (in Wild mode they roam in loops in every direction) and the moon gets in the way. Fly through power stars for Triple comets, Mega comets and shields; 3 right answers in a row make a fire comet.'
+        ],
+        notes: {
+            typed: 'Shown as options: the answer plus decoys from the rest of the set.',
+            multi: 'Students pick every correct answer, then check.',
+            order: 'Students tap the answers in the right order.'
+        }
+    },
+    corsair: {
+        name: 'Star Corsairs',
+        tagline: 'Space pirates! Fly your own ship, blast meteors and your friends, and charge your lasers by answering questions.',
+        how: [
+            'Students join with the code on their phones, tablets or laptops and pick a ship.',
+            'Docked in a safe bubble, they answer questions: every right answer charges laser energy ⚡.',
+            'Then they launch and fly: a joystick and fire button on touch screens, the mouse or WASD and Space on laptops.',
+            'Shoot meteors for crystals. Break a rival\'s shield and their ship explodes, spilling crystals that anyone can grab.',
+            'Golden comets, upgrades and a mothership that fires back keep it wild. Most crystals at the end wins.'
         ],
         notes: {
             typed: 'Shown as options: the answer plus decoys from the rest of the set.',
@@ -102,14 +118,35 @@ export const gs = {
         timerSeconds: { label: 'Seconds per question', helpOwn: 'Questions with their own time limit use it instead.' },
         useQuestionTime: { label: 'Use each question\'s own time limit' },
         orbit: {
-            label: 'Planets orbit',
-            options: { still: 'Still', slow: 'Slow', fast: 'Fast' },
-            help: 'All planets circle the sun together, so students have to lead their shots. Fair for every team.'
+            label: 'Planets move',
+            options: { still: 'Still', ring: 'Circle', wild: 'Wild' },
+            help: 'Wild: planets loop in and out, speed up, slow down and turn back. Every planet does the same dance, so it stays fair.'
         },
+        planetSpeed: { label: 'Planet speed', options: { slow: 'Slow', normal: 'Normal', fast: 'Fast', turbo: 'Turbo' } },
         moon: { label: 'The Moon', help: 'A moon circles closer to the sun the other way. It blocks comets and pulls them a little, so timing matters.' },
         powerUps: { label: 'Power stars', help: 'Stars appear now and then. Fly a comet through one for a Triple comet, a Mega comet or +30 shield.' },
         bounty: { label: 'Bounty on the leader', help: 'Hitting the team in first place gives +5, which keeps the game close.' },
         slingshotBonus: { label: 'Slingshot bonus', help: 'Comets that skim past the sun (inside the golden ring) before a hit score double.' },
+        hostTimeout: {
+            label: 'If your screen goes offline',
+            options: { 0: 'Wait for me (never end)', 60: 'End the game after 1 min', 180: 'End the game after 3 min', 300: 'End the game after 5 min' },
+            help: 'While your screen is offline the game pauses. Come back in time and it continues where it stopped.'
+        },
+        lateJoin: { label: 'Allow joining after the start' },
+        randomNames: { label: 'Fun random nicknames', help: 'Students get a generated name like "Cosmic Otter" instead of typing one.' },
+        studentMusic: { label: 'Music on student devices', help: 'Soft background music on every student\'s device. Each student can mute it.' },
+        studentSound: { label: 'Sound effects on student devices' }
+    },
+    corsair: {
+        duration: { label: 'Game length' },
+        raids: { label: 'Players can raid each other', help: 'Off is peace mode: everyone mines meteors and fights the mothership together.' },
+        timer: { label: 'Question timer', help: 'A countdown for every question. Running out of time counts as a wrong answer.' },
+        timerSeconds: { label: 'Seconds per question', helpOwn: 'Questions with their own time limit use it instead.' },
+        useQuestionTime: { label: 'Use each question\'s own time limit' },
+        invasions: { label: 'Mothership invasions', help: 'Every few minutes an alien mothership attacks. Right answers fire at it; if it escapes, it robs the top 3 players.' },
+        goldComets: { label: 'Golden comets', help: 'Now and then a golden comet races across. The ship that smashes it wins a jackpot.' },
+        upgrades: { label: 'Upgrade bay', help: 'Students can spend crystals on a stronger laser, armor or a crystal magnet.' },
+        bounty: { label: 'Bounty on the leader', help: 'Plundering the player in first place pays +25 crystals, which keeps the game close.' },
         hostTimeout: {
             label: 'If your screen goes offline',
             options: { 0: 'Wait for me (never end)', 60: 'End the game after 1 min', 180: 'End the game after 3 min', 300: 'End the game after 5 min' },

@@ -281,9 +281,78 @@ const SlingshotSiegeArt = ({ id }) => (
     </>
 );
 
+// Two corsair ships blast a cracking meteor; crystals stream home; the alien mothership looms above
+const ArtShip = ({ x, y, angle, color, id, design }) => (
+    <g transform={`translate(${x} ${y}) rotate(${angle}) scale(0.62)`}>
+        <path
+            d={design ? 'M21,0 L3,-6 L-7,-20 L-14,-19 L-10,-5 L-17,0 L-10,5 L-14,19 L-7,20 L3,6 Z' : 'M23,0 L-16,-14.4 L-9,0 L-16,14.4 Z'}
+            fill={`url(#${id})`} stroke="#ffffff" strokeOpacity="0.8" strokeWidth="1.8" strokeLinejoin="round"
+        />
+        <ellipse cx="4" cy="0" rx="4.8" ry="3.4" fill="#bae6fd" />
+        <circle cx="-19" cy="0" r="4" fill="#fb923c" opacity="0.85" />
+        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#ffffff" />
+            <stop offset="0.35" stopColor={color} />
+            <stop offset="1" stopColor="#0f172a" />
+        </linearGradient>
+    </g>
+);
+
+const StarCorsairsArt = ({ id }) => (
+    <>
+        <defs>
+            <linearGradient id={`${id}-bg`} x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#0b1d3a" />
+                <stop offset="0.6" stopColor="#140b33" />
+                <stop offset="1" stopColor="#04040f" />
+            </linearGradient>
+            <radialGradient id={`${id}-rock`} cx="0.35" cy="0.35" r="0.7">
+                <stop offset="0" stopColor="#d6d3d1" />
+                <stop offset="0.6" stopColor="#78716c" />
+                <stop offset="1" stopColor="#292524" />
+            </radialGradient>
+            <radialGradient id={`${id}-ufo`} cx="0.5" cy="0.5" r="0.5">
+                <stop offset="0" stopColor="#4ade80" stopOpacity="0.45" />
+                <stop offset="1" stopColor="#4ade80" stopOpacity="0" />
+            </radialGradient>
+        </defs>
+        <rect width={W} height={H} fill={`url(#${id}-bg)`} />
+        <Stars seed={57} count={60} width={W} height={H} />
+
+        {/* The mothership */}
+        <ellipse cx="236" cy="30" rx="60" ry="26" fill={`url(#${id}-ufo)`} />
+        <ellipse cx="236" cy="34" rx="44" ry="11" fill="#475569" />
+        <ellipse cx="236" cy="31" rx="40" ry="8" fill="#64748b" />
+        <path d="M218,29 A18,14 0 0,1 254,29 Z" fill="#86efac" opacity="0.9" />
+        {[204, 220, 236, 252, 268].map((x, i) => <circle key={x} cx={x} cy="35" r="2.2" fill={i % 2 ? '#4ade80' : '#facc15'} />)}
+
+        {/* The meteor, cracking under fire */}
+        <path d="M150,82 L170,74 L188,84 L192,104 L180,120 L158,122 L142,108 L140,92 Z" fill={`url(#${id}-rock)`} stroke="#1c1917" strokeOpacity="0.6" strokeWidth="1.5" />
+        <path d="M166,98 L176,88 L184,92 M166,98 L158,112 M166,98 L152,94" fill="none" stroke="#fdba74" strokeWidth="1.8" strokeLinecap="round" />
+
+        {/* Laser beams */}
+        <line x1="62" y1="140" x2="160" y2="104" stroke="#22d3ee" strokeOpacity="0.4" strokeWidth="7" strokeLinecap="round" />
+        <line x1="62" y1="140" x2="160" y2="104" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" />
+        <line x1="268" y1="134" x2="182" y2="104" stroke="#fde047" strokeOpacity="0.45" strokeWidth="8" strokeLinecap="round" />
+        <line x1="268" y1="134" x2="182" y2="104" stroke="#fffbeb" strokeWidth="2.6" strokeLinecap="round" />
+
+        <ArtShip x={54} y={144} angle={-20} color="#34d399" id={`${id}-s1`} design={0} />
+        <ArtShip x={276} y={138} angle={200} color="#f472b6" id={`${id}-s2`} design={1} />
+
+        {/* Crystals flying home */}
+        {[[120, 128], [104, 140], [210, 132], [228, 140], [134, 116]].map(([x, y], i) => (
+            <path key={i} d={`M${x},${y - 5} L${x + 3.5},${y} L${x},${y + 5} L${x - 3.5},${y} Z`} fill={i % 2 ? '#67e8f9' : '#fde047'} />
+        ))}
+        <Sparkle x={196} y={74} size={7} color="#fde68a" />
+        <text x="170" y="66" textAnchor="middle" fontFamily="Inter, sans-serif" fontWeight="900" fontSize="13" fill="#fde047">CRIT!</text>
+        <text x="96" y="164" textAnchor="middle" fontFamily="Inter, sans-serif" fontWeight="900" fontSize="12" fill="#67e8f9">+24</text>
+    </>
+);
+
 const SCENES = {
     'comet-clash': CometClashArt,
     'slingshot-siege': SlingshotSiegeArt,
+    'star-corsairs': StarCorsairsArt,
     'grid-battle': GridBattleArt,
     millionaire: MillionaireArt
 };

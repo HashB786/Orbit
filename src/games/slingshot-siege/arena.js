@@ -3,7 +3,7 @@
 // devices (with an aim arrow and a preview of the first second of flight).
 // Planets and the moon follow the shared game clock, so every screen shows them in the same place.
 
-import { ARENA, CENTER, SUN_R, PLANET_R, COMET_R, MEGA_R, STAR_R, SLING_R, RING_R, MOON, SAMPLE_MS, PREVIEW_STEPS, planetPos, moonPos, simulate } from './physics';
+import { ARENA, CENTER, SUN_R, PLANET_R, COMET_R, MEGA_R, STAR_R, SLING_R, MOON, SAMPLE_MS, PREVIEW_STEPS, planetPos, moonPos, simulate, worldOf } from './physics';
 import { teamOf } from './teams';
 
 const TAU = Math.PI * 2;
@@ -31,14 +31,17 @@ const starPath = (ctx, x, y, outer, inner, rot) => {
     ctx.closePath();
 };
 
+// Planet wakes: [share of the wake's length, width (× planet radius), opacity]
+const WAKE_LAYERS = [[1, 0.9, 0.14], [0.6, 0.6, 0.22], [0.3, 0.32, 0.42]];
+
 export class ArenaView {
-    // world: { teams, spin, moon }; timeFn(): game time in seconds; myTeam: the student's own team (aiming view)
+    // world: from worldOf() in physics; timeFn(): game time in seconds; myTeam: the student's own team (aiming view)
     constructor(canvas, { lowFx = false, myTeam = null, world, timeFn = () => 0 } = {}) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d', { alpha: false });
         this.lowFx = lowFx;
         this.myTeam = myTeam;
-        this.world = world || { teams: 2, spin: 0, moon: false };
+        this.world = world || worldOf(2, { orbit: 'still', moon: false });
         this.timeFn = timeFn;
         this.teams = {};
         this.stars = [];
@@ -94,7 +97,7 @@ export class ArenaView {
     toWorld(px, py) { return { x: (px - this.ox) / this.scale, y: (py - this.oy) / this.scale }; }
 
     setWorld(world) {
-        const changed = world.teams !== this.world.teams || world.moon !== this.world.moon;
+        const changed = world.teams !== this.world.teams || world.moon !== this.world.moon || world.orbit !== this.world.orbit;
         this.world = world;
         if (changed && this.w) {
             this.buildBackground();
@@ -229,13 +232,15 @@ export class ArenaView {
         }
         c.globalAlpha = 1;
 
-        // The planets' orbit, the moon's orbit and the golden slingshot zone
+        // The planets' orbit (Wild planets roam, so they have none), the moon's orbit and the golden slingshot zone
         c.lineWidth = Math.max(1, 1.2 * s);
         c.setLineDash([2 * s + 1, 8 * s + 3]);
-        c.strokeStyle = 'rgba(148, 163, 255, 0.22)';
-        c.beginPath();
-        c.arc(cx, cy, RING_R * s, 0, TAU);
-        c.stroke();
+        if (this.world.rMin === this.world.rMax) {
+            c.strokeStyle = 'rgba(148, 163, 255, 0.22)';
+            c.beginPath();
+            c.arc(cx, cy, this.world.ring * s, 0, TAU);
+            c.stroke();
+        }
         if (this.world.moon) {
             c.strokeStyle = 'rgba(203, 213, 225, 0.16)';
             c.beginPath();
@@ -345,6 +350,7 @@ export class ArenaView {
             const sp = this.moonSprite;
             ctx.drawImage(sp.canvas, this.sx(m.x) - sp.size / 2, this.sy(m.y) - sp.size / 2, sp.size, sp.size);
         }
+        this.drawWakes(tau);
         for (let i = 0; i < this.world.teams; i++) this.drawPlanet(i, tau);
         if (this.aimSource && this.myTeam !== null) this.drawAim(tau);
 
@@ -452,6 +458,37 @@ export class ArenaView {
             ctx.fillStyle = style.color;
             ctx.fillText(style.label, x, y + r + 3 * s);
         }
+    }
+
+    // A wake behind each planet shows which way and how fast it is moving
+    drawWakes(tau) {
+        if (!this.world.spin && !this.world.swing) return;
+        const ctx = this.ctx;
+        const s = this.scale;
+        const steps = this.lowFx ? 8 : 16;
+        const span = 4; // seconds of wake
+        const pts = new Array((steps + 1) * 2);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        for (let i = 0; i < this.world.teams; i++) {
+            for (let k = 0; k <= steps; k++) {
+                const p = planetPos(this.world, i, tau - (span * k) / steps);
+                pts[k * 2] = this.sx(p.x);
+                pts[k * 2 + 1] = this.sy(p.y);
+            }
+            ctx.strokeStyle = teamOf(i).color;
+            // Each layer shorter, narrower and brighter: the wake tapers away from the planet
+            for (const [part, width, alpha] of WAKE_LAYERS) {
+                const n = Math.max(2, Math.round(steps * part));
+                ctx.globalAlpha = alpha;
+                ctx.lineWidth = Math.max(1.5, PLANET_R * width * s);
+                ctx.beginPath();
+                ctx.moveTo(pts[0], pts[1]);
+                for (let k = 1; k <= n; k++) ctx.lineTo(pts[k * 2], pts[k * 2 + 1]);
+                ctx.stroke();
+            }
+        }
+        ctx.globalAlpha = 1;
     }
 
     drawPlanet(i, tau) {

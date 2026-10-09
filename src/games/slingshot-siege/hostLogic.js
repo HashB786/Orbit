@@ -17,7 +17,7 @@
 
 import { normalizeQuestion } from '../../platform/questions/normalize';
 import { roomPath, assignPath, collapsePatch } from '../../platform/rooms/shared';
-import { simulate, isValidShot, worldOf, turnVector, firstStar, CENTER, TRIPLE_SPREAD } from './physics';
+import { simulate, isValidShot, worldOf, turnVector, firstStar, starSpot, TRIPLE_SPREAD } from './physics';
 import { clampTeams, leaderOf, RULES } from './teams';
 
 export const STAR_KINDS = ['triple', 'mega', 'shield'];
@@ -398,7 +398,7 @@ export class SiegeHost {
         }
     }
 
-    // Power stars come and go in the space between the sun and the planets
+    // Power stars come and go where planets never pass (see starSpot)
     tendStars(set, now) {
         const stars = this.state.siege.stars || {};
         const gameNow = this.gameTime(now);
@@ -410,14 +410,9 @@ export class SiegeHost {
         if (now < this.nextStarAt) return;
         this.nextStarAt = now + 15000 + this.random() * 10000;
         if (Object.keys(this.state.siege.stars || {}).length >= MAX_STARS) return;
-        // Inside the moon's orbit, or between it and the planets
-        const inner = this.random() < 0.5;
-        const r = inner ? 100 + this.random() * 60 : 245 + this.random() * 22;
-        const a = this.random() * Math.PI * 2;
         const id = this.rt.newKey();
         const star = {
-            x: Math.round(CENTER + Math.cos(a) * r),
-            y: Math.round(CENTER + Math.sin(a) * r),
+            ...starSpot(this.world, () => this.random()),
             kind: STAR_KINDS[Math.floor(this.random() * STAR_KINDS.length)],
             at: gameNow,
             until: gameNow + STAR_LIFE

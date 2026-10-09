@@ -1,23 +1,56 @@
-// Slingshot Siege physics: one sun in the middle pulls every comet, the team planets orbit it together
-// and a moon circles closer in the other way, blocking comets.
+// Slingshot Siege physics: one sun in the middle pulls every comet, the team planets orbit it (all
+// together on one ring, or in Wild mode each roaming in its own loops) and a moon circles closer in the
+// other way, blocking comets.
 // Shared by the teacher's screen (which decides every hit and score) and the students' devices (aim
 // preview and the flight of their own comet). Aim travels as a rounded direction plus the launch time,
 // and the simulation uses only + − × ÷, √ and its own sine (below), so every device and browser gets
 // exactly the same flight.
 
+const PI = 3.141592653589793;
+const TWO_PI = 6.283185307179586;
+const HALF_PI = 1.5707963267948966;
+
 export const ARENA = 1000; // square world; the sun sits in the middle
 export const CENTER = ARENA / 2;
 export const SUN_R = 56;
 export const PLANET_R = 42;
-export const RING_R = 335; // planets' distance from the sun
+export const RING_R = 335; // planets' distance from the sun (Wild: see WILD.ring)
 export const COMET_R = 8;
 export const MEGA_R = 20; // a mega comet is much easier to land
 export const STAR_R = 22; // power stars
 export const SLING_R = SUN_R + 94; // passing this close to the sun before a hit doubles the points
 // The moon pulls a little too (6% of the sun): the same shot lands differently depending on where it is
 export const MOON = { orbit: 205, r: 26, spin: -0.42, phase: Math.PI / 4, gm: 1.5e6 };
-// How fast the planets orbit (radians per second): all together, so no team is easier to hit
-export const SPINS = { still: 0, slow: 0.08, fast: 0.16 };
+// How fast the planets drift around the sun (radians per second, before the speed setting). Circle
+// turns all planets together on one ring. Wild adds the dance below on top of a gentle drift.
+export const SPINS = { still: 0, ring: 0.08, wild: 0.03 };
+// The host's planet speed setting. The whole system turns this much faster; each planet's own loops
+// only by the square root, so a faster game stays readable instead of turning into sudden jerks.
+export const PACES = { slow: 0.8, normal: 1.5, fast: 2.1, turbo: 2.8 };
+// Rooms started before Circle and Wild existed
+const LEGACY = { slow: ['ring', 1], fast: ['ring', 2] };
+// Wild orbits: every planet roams in two dimensions. It loops in towards the moon and out towards the
+// edge, swings forward and back, speeds up and slows down, and now and then the whole system turns back.
+// Every planet does the same dance, just at a different moment, so over a game no team is easier to
+// hit, and the dance is sized so two planets never touch.
+// k: how many steps around the ring the dance moves from one planet to the next ('half': opposite to
+// its neighbours). A loop moves a planet in and out by r (world units) and sideways as much, so it
+// traces a circle (turn: which way round); a sway only moves it sideways, using share of the room left.
+const WILD = {
+    ring: 352, // home distance from the sun: loops reach from just outside the moon's path to near the edge
+    swing: 0.45, // the whole system rocks back and forth by up to this angle...
+    swingSpeed: TWO_PI / 47, // ...once every 47 s
+    loops: [
+        { k: 'half', r: 42, speed: TWO_PI / 9, turn: 1 },
+        { k: 1, r: 24, speed: TWO_PI / 21, turn: -1 }
+    ],
+    sways: [
+        { k: 'half', speed: TWO_PI / 19, share: 0.6, max: 0.3 },
+        { k: 1, speed: TWO_PI / 31, share: 0.4, max: 0.25 }
+    ],
+    grace: 4 // roaming planets are harder to lead, so comets count as hits a few units sooner
+};
+const MIN_GAP = 0.4; // radians (23°) between neighbouring planets at their closest: clear even at the inner edge
 export const TRIPLE_SPREAD = 7; // degrees between the three comets of a Triple comet
 
 // Tuned so a thoughtful aim usually hits and a random one rarely does: below the slowest speed
@@ -32,10 +65,6 @@ export const SAMPLE_EVERY = 4; // flight paths keep every 4th step: 60 points pe
 export const SAMPLE_MS = DT * SAMPLE_EVERY * 1000;
 export const PREVIEW_STEPS = 240; // the aim preview shows the first second: enough to see the curve start
 
-const PI = 3.141592653589793;
-const TWO_PI = 6.283185307179586;
-const HALF_PI = 1.5707963267948966;
-
 // Math.sin/cos may differ in the last digit between browsers; this polynomial does not
 export const dsin = (x) => {
     let r = x - TWO_PI * Math.round(x / TWO_PI);
@@ -47,18 +76,83 @@ export const dsin = (x) => {
 export const dcos = (x) => dsin(x + HALF_PI);
 
 // Everything that is the same for the whole room
-export const worldOf = (teams, settings = {}) => ({
-    teams,
-    spin: SPINS[settings.orbit] ?? SPINS.slow,
-    moon: settings.moon !== false
-});
+export const worldOf = (teams, settings = {}) => {
+    const legacy = LEGACY[settings.orbit];
+    const orbit = legacy ? legacy[0] : SPINS[settings.orbit] === undefined ? 'wild' : settings.orbit;
+    const pace = legacy ? legacy[1] : PACES[settings.planetSpeed] ?? PACES.normal;
+    const world = {
+        teams, orbit, pace, dance: Math.sqrt(pace), spin: SPINS[orbit], moon: settings.moon !== false,
+        ring: RING_R, rMin: RING_R, rMax: RING_R, swing: 0, swingSpeed: 0, loops: [], sways: [], grace: 0
+    };
+    if (orbit !== 'wild') return world;
+    world.ring = WILD.ring;
+    world.grace = Math.round(WILD.grace * world.dance);
+    world.swing = WILD.swing;
+    world.swingSpeed = WILD.swingSpeed;
+    // A sideways swing of `amp` radians can bring two neighbours closer by 2 × amp × sin(step / 2):
+    // all of them together may use the room between neighbours minus MIN_GAP
+    const stepOf = (k) => (TWO_PI * (k === 'half' ? Math.floor(teams / 2) : k)) / teams;
+    const cost = (amp, step) => 2 * Math.abs(amp * dsin(step / 2));
+    const room = TWO_PI / teams - MIN_GAP;
+    const loops = WILD.loops.map(l => ({ r: l.r, side: (l.turn * l.r) / WILD.ring, speed: l.speed, step: stepOf(l.k) }));
+    const used = loops.reduce((sum, l) => sum + cost(l.side, l.step), 0);
+    // With many teams the loops get narrower (never shallower) so the sways keep some room
+    const fit = Math.min(1, (room * 0.6) / used);
+    for (const l of loops) l.side *= fit;
+    const left = room - used * fit;
+    world.loops = loops;
+    world.sways = WILD.sways.map(w => {
+        const step = stepOf(w.k);
+        return { amp: Math.min(w.max, (w.share * left) / cost(1, step)), speed: w.speed, step };
+    });
+    const reach = loops.reduce((sum, l) => sum + l.r, 0);
+    world.rMin = WILD.ring - reach;
+    world.rMax = WILD.ring + reach;
+    return world;
+};
 
-export const planetAngle = (world, team, tau) => -HALF_PI + (TWO_PI * team) / world.teams + world.spin * tau;
+// A planet's angle around the sun at game time `tau` (seconds since the start)
+export const planetAngle = (world, team, tau) => {
+    const t = tau * world.pace;
+    const d = tau * world.dance;
+    let a = -HALF_PI + (TWO_PI * team) / world.teams + world.spin * t;
+    if (world.swing) a += world.swing * dsin(world.swingSpeed * t);
+    for (const l of world.loops) a += l.side * dsin(l.speed * d + l.step * team);
+    for (const w of world.sways) a += w.amp * dsin(w.speed * d + w.step * team);
+    return a;
+};
+
+// ... and its distance from the sun
+export const planetRadius = (world, team, tau) => {
+    const d = tau * world.dance;
+    let r = world.ring;
+    for (const l of world.loops) r += l.r * dcos(l.speed * d + l.step * team);
+    return r;
+};
 
 // Where a team's planet is at game time `tau` (seconds since the start)
 export const planetPos = (world, team, tau = 0) => {
     const a = planetAngle(world, team, tau);
-    return { x: CENTER + dcos(a) * RING_R, y: CENTER + dsin(a) * RING_R };
+    const r = planetRadius(world, team, tau);
+    return { x: CENTER + dcos(a) * r, y: CENTER + dsin(a) * r };
+};
+
+// Where a new power star may appear: inside the moon's path, or between the moon and the planets.
+// Wild planets roam that second space, so their stars go out towards the corners instead.
+export const starSpot = (world, rnd) => {
+    let r;
+    let a;
+    if (rnd() < (world.orbit === 'wild' ? 0.65 : 0.5)) {
+        r = 100 + rnd() * 60;
+        a = rnd() * TWO_PI;
+    } else if (world.orbit !== 'wild') {
+        r = 245 + rnd() * 15;
+        a = rnd() * TWO_PI;
+    } else {
+        r = world.rMax + PLANET_R + STAR_R + 18 + rnd() * 30;
+        a = PI / 4 + HALF_PI * Math.floor(rnd() * 4) + (rnd() - 0.5) * 0.3;
+    }
+    return { x: Math.round(CENTER + Math.cos(a) * r), y: Math.round(CENTER + Math.sin(a) * r) };
 };
 
 export const moonPos = (tau) => {
@@ -113,14 +207,15 @@ export const simulate = (world, shot, { maxSteps = MAX_STEPS, sample = true } = 
     let ax = 0;
     let ay = 0;
     let closest = Infinity;
-    // Planets at game time 0, relative to the sun; at time tau they are turned by spin × tau
-    const base = Array.from({ length: world.teams }, (_, j) => {
-        const a = planetAngle(world, j, 0);
-        return { x: dcos(a) * RING_R, y: dsin(a) * RING_R };
-    });
-    const hitR2 = (PLANET_R + cometR) * (PLANET_R + cometR);
+    const hitR = PLANET_R + cometR + world.grace;
+    const hitR2 = hitR * hitR;
     const sunR2 = (SUN_R + cometR) * (SUN_R + cometR);
     const moonR2 = (MOON.r + cometR) * (MOON.r + cometR);
+    // Planets can only be touched while the comet is in the band they move in
+    const inner = Math.max(0, world.rMin - hitR);
+    const outer = world.rMax + hitR;
+    const ringIn = inner * inner;
+    const ringOut = outer * outer;
     const path = sample ? [x, y] : null;
     let moonD2 = Infinity;
 
@@ -166,19 +261,13 @@ export const simulate = (world, shot, { maxSteps = MAX_STEPS, sample = true } = 
         else if (Math.abs(x - CENTER) > BOUND || Math.abs(y - CENTER) > BOUND) end = 'lost';
         else {
             if (world.moon && moonD2 < moonR2) end = 'moon';
-            if (!end) {
-                // Compare in the planets' turning frame: one rotation per step instead of one per planet
-                const th = world.spin * tau;
-                const c = dcos(th);
-                const s = dsin(th);
-                const rx = x - CENTER;
-                const ry = y - CENTER;
-                const qx = c * rx + s * ry;
-                const qy = c * ry - s * rx;
+            if (!end && d2 > ringIn && d2 < ringOut) {
                 for (let j = 0; j < world.teams; j++) {
                     if (j === team) continue; // comets pass through their own planet
-                    const ex = qx - base[j].x;
-                    const ey = qy - base[j].y;
+                    const a = planetAngle(world, j, tau);
+                    const pr = planetRadius(world, j, tau);
+                    const ex = x - (CENTER + dcos(a) * pr);
+                    const ey = y - (CENTER + dsin(a) * pr);
                     if (ex * ex + ey * ey < hitR2) {
                         end = 'hit';
                         target = j;

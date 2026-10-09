@@ -20,7 +20,7 @@ import { gameName, getGame } from '../../platform/games/registry';
 import { Pill, HostButton, SoundToggle, useHostClaim } from '../shared/liveUi';
 import { SiegeHost } from './hostLogic';
 import { ArenaView, STAR_STYLE } from './arena';
-import { planetPos, worldOf } from './physics';
+import { planetPos, worldOf, PACES } from './physics';
 import { teamOf, clampTeams, rankTeams, teamMembers, leaderOf, MAX_SHIELD } from './teams';
 
 const MEDALS = ['#fbbf24', '#cbd5e1', '#f59e0b'];
@@ -28,6 +28,13 @@ const MEDALS = ['#fbbf24', '#cbd5e1', '#f59e0b'];
 const TeamDot = ({ team, size = 12 }) => (
     <span className="inline-block rounded-full shrink-0" style={{ width: size, height: size, background: teamOf(team).color, boxShadow: `0 0 10px ${teamOf(team).color}88` }} />
 );
+
+// "Wild · Fast" (rooms from before Circle and Wild show as Circle)
+const orbitLabel = (t, s) => {
+    const { orbit } = worldOf(2, s);
+    const name = t(`gs.siege.orbit.options.${orbit}`);
+    return orbit !== 'still' && PACES[s.planetSpeed] ? `${name} · ${t(`gs.siege.planetSpeed.options.${s.planetSpeed}`)}` : name;
+};
 
 // ---------- LOBBY ----------
 
@@ -52,7 +59,7 @@ const Lobby = ({ code, meta, players, now, onStart, onKick, onLock, onShuffle })
                 <div className="mt-5 flex flex-wrap justify-center gap-2">
                     <Pill><Users size={14} /> {t('siege.teamsCount', { count })}</Pill>
                     <Pill><Timer size={14} /> {t('units.minutes', { n: Math.round((s.duration || 0) / 60) })}</Pill>
-                    <Pill><OrbitIcon size={14} /> {t(`gs.siege.orbit.options.${s.orbit || 'slow'}`)}</Pill>
+                    <Pill><OrbitIcon size={14} /> {orbitLabel(t, s)}</Pill>
                 </div>
             </section>
 
@@ -120,7 +127,7 @@ const Live = ({ rt, code, meta, players, siege, now, subscribe, onEnd, onAddTime
     const [feed, setFeed] = useState([]);
     const count = siege?.count || 2;
     const settings = meta.settings || {};
-    const world = useMemo(() => worldOf(count, settings), [count, settings.orbit, settings.moon]); // eslint-disable-line react-hooks/exhaustive-deps
+    const world = useMemo(() => worldOf(count, settings), [count, settings.orbit, settings.planetSpeed, settings.moon]); // eslint-disable-line react-hooks/exhaustive-deps
     const gameTime = useRef(() => (rt.now() - meta.startedAt) / 1000).current;
     const leader = settings.bounty === false ? null : leaderOf(siege);
     const ranking = rankTeams(siege);

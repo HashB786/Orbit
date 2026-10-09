@@ -1,5 +1,8 @@
-// Orbit's sound: every effect and both music tracks are synthesized with the Web Audio API.
-// No audio files to download, tiny CPU cost, and it all respects the volume settings.
+// Orbit's sound: every effect and every music track is synthesized with the Web Audio API.
+// No audio files to download, small CPU cost, and it all respects the volume settings.
+// The bigger soundtracks (Star Corsairs) use the richer instruments in ./studio.
+
+import { buildStudio, setTempo, STUDIO_TRACKS, STUDIO_SFX } from './studio';
 
 const SETTINGS_KEY = 'orbit.audio';
 const DEFAULTS = { music: 0.5, sfx: 0.8, muted: false };
@@ -270,16 +273,7 @@ class AudioEngine {
             } catch {
                 return;
             }
-            const comp = this.ctx.createDynamicsCompressor();
-            comp.threshold.value = -12;
-            comp.ratio.value = 4;
-            comp.connect(this.ctx.destination);
-            this.master = this.ctx.createGain();
-            this.master.connect(comp);
-            this.musicBus = this.ctx.createGain();
-            this.sfxBus = this.ctx.createGain();
-            this.musicBus.connect(this.master);
-            this.sfxBus.connect(this.master);
+            this.attach(this.ctx);
             this.applyVolumes();
 
             document.addEventListener('visibilitychange', () => {
@@ -291,6 +285,48 @@ class AudioEngine {
         if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
         // Music asked for before the first tap starts now
         if (this.desiredTrack && !this.trackId) this.playMusic(this.desiredTrack);
+    }
+
+    // Buses for a context: master (with a compressor), music and effects, and the studio's reverb,
+    // echo and pumping bus. Tests render tracks with an OfflineAudioContext through this too.
+    attach(ctx, { offline = false } = {}) {
+        this.ctx = ctx;
+        this.offline = offline;
+        const comp = ctx.createDynamicsCompressor();
+        comp.threshold.value = -12;
+        comp.ratio.value = 4;
+        comp.connect(ctx.destination);
+        this.master = ctx.createGain();
+        this.master.connect(comp);
+        this.musicBus = ctx.createGain();
+        this.sfxBus = ctx.createGain();
+        this.musicBus.connect(this.master);
+        this.sfxBus.connect(this.master);
+        try {
+            buildStudio(this);
+        } catch {
+            // Very old browsers: the studio tracks play straight into the music bus
+            this.mix = this.musicBus;
+            this.pumpBus = this.musicBus;
+            this.revIn = ctx.createGain();
+            this.dlyIn = ctx.createGain();
+            this.curves = new Map();
+        }
+    }
+
+    // Thinner studio synths (for weak devices or when the teacher picked a performance mode)
+    setLite(on) {
+        this.lite = !!on || this.liteDevice;
+    }
+
+    noiseBuf() {
+        if (!this.noiseBuffer) {
+            const len = this.ctx.sampleRate;
+            this.noiseBuffer = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+            const data = this.noiseBuffer.getChannelData(0);
+            for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+        }
+        return this.noiseBuffer;
     }
 
     applyVolumes() {
@@ -339,15 +375,9 @@ class AudioEngine {
 
     noise({ start, dur = 0.2, gain = 0.2, type = 'lowpass', freq = 2000, freqEnd = null, q = 0.7, bus }) {
         const ctx = this.ctx;
-        if (!this.noiseBuffer) {
-            const len = ctx.sampleRate;
-            this.noiseBuffer = ctx.createBuffer(1, len, ctx.sampleRate);
-            const data = this.noiseBuffer.getChannelData(0);
-            for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
-        }
         const t0 = Math.max(start ?? ctx.currentTime, ctx.currentTime);
         const src = ctx.createBufferSource();
-        src.buffer = this.noiseBuffer;
+        src.buffer = this.noiseBuf();
         const filter = ctx.createBiquadFilter();
         filter.type = type;
         filter.frequency.setValueAtTime(freq, t0);
@@ -390,42 +420,67 @@ class AudioEngine {
 
     // ---------- MUSIC ----------
 
-    playMusic(trackId) {
+    // quantize: wait for the next bar line, so a change of track (a mothership arriving) lands on the beat
+    playMusic(trackId, { quantize = false } = {}) {
         this.desiredTrack = trackId;
-        if (!this.ctx || this.trackId === trackId) return;
+        if (!this.ctx) return;
+        if (this.trackId === trackId) {
+            this.pendingTrack = null;
+            return;
+        }
+        if (!TRACKS[trackId]) return;
+        if (quantize && this.track) {
+            this.pendingTrack = trackId;
+            return;
+        }
+        this.startTrack(trackId);
+    }
+
+    startTrack(trackId) {
         clearInterval(this.schedulerTimer);
-        const track = TRACKS[trackId];
-        if (!track) return;
-        this.track = track;
+        this.pendingTrack = null;
+        this.track = TRACKS[trackId];
         this.trackId = trackId;
         this.step = 0;
         this.nextTime = this.ctx.currentTime + 0.08;
-        this.schedulerTimer = setInterval(() => this.scheduleMusic(), 50);
-        this.scheduleMusic();
+        setTempo(this, this.track.tempo);
+        if (!this.offline) {
+            this.schedulerTimer = setInterval(() => this.scheduleMusic(), 50);
+            this.scheduleMusic();
+        }
     }
 
     stopMusic() {
         this.desiredTrack = null;
+        this.pendingTrack = null;
         clearInterval(this.schedulerTimer);
         this.schedulerTimer = 0;
         this.track = null;
         this.trackId = null;
     }
 
-    scheduleMusic() {
-        const track = this.track;
-        if (!track || !this.ctx || this.ctx.state !== 'running') return;
-        const stepDur = 60 / track.tempo / 4;
-        const totalSteps = track.bars.length * 16;
+    // Schedules every step up to `horizon` (a little ahead of now while playing live)
+    scheduleMusic(horizon = this.ctx?.currentTime + 0.2) {
+        if (!this.track || !this.ctx || (this.ctx.state !== 'running' && !this.offline)) return;
         // Skip ahead after the tab was hidden instead of playing a burst of old notes
-        if (this.nextTime < this.ctx.currentTime - 0.2) this.nextTime = this.ctx.currentTime + 0.05;
-        while (this.nextTime < this.ctx.currentTime + 0.2) {
+        if (!this.offline && this.nextTime < this.ctx.currentTime - 0.2) this.nextTime = this.ctx.currentTime + 0.05;
+        while (this.nextTime < horizon) {
+            // A queued track starts on a bar line
+            if (this.pendingTrack && this.step % 16 === 0) {
+                this.track = TRACKS[this.pendingTrack];
+                this.trackId = this.pendingTrack;
+                this.pendingTrack = null;
+                this.step = 0;
+                setTempo(this, this.track.tempo);
+            }
+            const track = this.track;
+            const stepDur = 60 / track.tempo / 4;
             const barIndex = Math.floor(this.step / 16);
             if (this.settings.music > 0 && !this.settings.muted) {
                 track.play(this, this.step, track.bars[barIndex], this.nextTime, stepDur, barIndex);
             }
             this.nextTime += stepDur;
-            this.step = (this.step + 1) % totalSteps;
+            this.step = (this.step + 1) % (track.bars.length * 16);
         }
     }
 }
@@ -555,7 +610,49 @@ const SFX = {
     gameStart: (a, t) => {
         arp(a, t, [60, 64, 67, 72, 76, 79, 84], { type: 'triangle', gap: 0.06, dur: 0.08, gain: 0.08, release: 0.12 });
         a.noise({ start: t + 0.35, dur: 0.5, gain: 0.06, type: 'highpass', freq: 5000 });
+    },
+    // ----- Star Corsairs -----
+    laser: (a, t) => a.tone({ freq: 1400, slideTo: 380, type: 'sawtooth', start: t, dur: 0.12, gain: 0.035, release: 0.04, filter: 4000 }),
+    crit: (a, t) => {
+        a.tone({ freq: 1900, slideTo: 300, type: 'sawtooth', start: t, dur: 0.18, gain: 0.045, release: 0.05, filter: 5000 });
+        arp(a, t + 0.03, [88, 95], { type: 'square', gap: 0.04, dur: 0.05, gain: 0.045 });
+    },
+    mine: (a, t) => {
+        a.noise({ start: t, dur: 0.12, gain: 0.13, type: 'bandpass', freq: 900, freqEnd: 300, q: 1.5 });
+        a.tone({ freq: 1900, type: 'sine', start: t + 0.03, dur: 0.06, gain: 0.035, release: 0.05 });
+    },
+    plunder: (a, t) => {
+        arp(a, t, [79, 83, 86, 91, 95], { type: 'square', gap: 0.05, dur: 0.06, gain: 0.045 });
+        a.noise({ start: t + 0.2, dur: 0.25, gain: 0.04, type: 'highpass', freq: 6000 });
+    },
+    raided: (a, t) => {
+        a.tone({ freq: 660, slideTo: 220, type: 'square', start: t, dur: 0.3, gain: 0.045, release: 0.08, filter: 1800 });
+        a.noise({ start: t, dur: 0.25, gain: 0.1, type: 'lowpass', freq: 900, freqEnd: 200 });
+    },
+    shieldUp: (a, t) => {
+        a.tone({ freq: 400, slideTo: 1200, type: 'sine', start: t, dur: 0.25, gain: 0.06, release: 0.1 });
+        arp(a, t + 0.12, [76, 83], { type: 'sine', gap: 0.06, dur: 0.1, gain: 0.05 });
+    },
+    cloak: (a, t) => {
+        a.noise({ start: t, dur: 0.4, gain: 0.07, type: 'bandpass', freq: 3000, freqEnd: 400, q: 2 });
+        a.tone({ freq: 900, slideTo: 200, type: 'sine', start: t, dur: 0.4, gain: 0.04, release: 0.1 });
+    },
+    alarm: (a, t) => [0, 0.45].forEach(o => a.tone({ freq: 520, slideTo: 880, type: 'sawtooth', start: t + o, dur: 0.4, gain: 0.045, release: 0.05, filter: 2000 })),
+    bossDown: (a, t) => {
+        a.noise({ start: t, dur: 0.9, gain: 0.32, type: 'lowpass', freq: 2200, freqEnd: 80 });
+        arp(a, t + 0.25, [67, 72, 76, 79, 84], { gap: 0.09, dur: 0.14, gain: 0.1 });
+    },
+    jackpot: (a, t) => {
+        arp(a, t, [72, 76, 79, 84, 88, 91, 96], { type: 'square', gap: 0.045, dur: 0.07, gain: 0.045 });
+        a.noise({ start: t + 0.3, dur: 0.4, gain: 0.05, type: 'highpass', freq: 7000 });
+    },
+    upgrade: (a, t) => {
+        arp(a, t, [60, 67, 72, 79], { type: 'triangle', gap: 0.07, dur: 0.1, gain: 0.09 });
+        a.tone({ freq: 300, slideTo: 900, type: 'square', start: t, dur: 0.3, gain: 0.02, release: 0.08, filter: 1500 });
     }
 };
+
+Object.assign(TRACKS, STUDIO_TRACKS);
+Object.assign(SFX, STUDIO_SFX);
 
 export const audio = new AudioEngine();

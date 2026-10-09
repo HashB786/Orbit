@@ -16,7 +16,7 @@ import { lazy } from 'react';
 const minutes = (list) => list.map(m => ({ value: m * 60, label: ['units.minutes', { n: m }] }));
 const literal = (list) => list.map(([value, text]) => ({ value, text }));
 
-// Optional countdown per question (smart-board games and Slingshot Siege)
+// Optional countdown per question (smart-board games, Slingshot Siege and Star Corsairs)
 const questionTimer = [
     { key: 'timer', type: 'toggle', default: false, help: true },
     {
@@ -92,8 +92,12 @@ export const GAMES = [
             { key: 'teams', type: 'number', min: 2, max: 6, default: 4, help: true },
             { key: 'duration', type: 'select', options: minutes([3, 5, 8, 10, 15]), default: 300 },
             {
-                key: 'orbit', type: 'segmented', default: 'slow', help: true,
-                options: [{ value: 'still' }, { value: 'slow' }, { value: 'fast' }]
+                key: 'orbit', type: 'segmented', default: 'wild', help: true,
+                options: [{ value: 'still' }, { value: 'ring' }, { value: 'wild' }]
+            },
+            {
+                key: 'planetSpeed', type: 'segmented', default: 'normal', showIf: s => s.orbit !== 'still',
+                options: [{ value: 'slow' }, { value: 'normal' }, { value: 'fast' }, { value: 'turbo' }]
             },
             ...questionTimer,
             { key: 'moon', type: 'toggle', default: true, advanced: true, help: true },
@@ -112,6 +116,35 @@ export const GAMES = [
         ],
         Host: lazy(() => import('../../games/slingshot-siege/HostScreen')),
         Player: lazy(() => import('../../games/slingshot-siege/PlayerScreen'))
+    },
+    {
+        id: 'star-corsairs',
+        i18n: 'corsair',
+        kind: 'live',
+        accent: 'from-cyan-400 to-violet-600',
+        compat: { mc: 'native', tf: 'native', multi: 'native', order: 'native', typed: 'adapted' },
+        notes: ['typed', 'multi', 'order'],
+        minQuestions: 3,
+        settings: [
+            { key: 'duration', type: 'select', options: minutes([5, 8, 10, 15, 20]), default: 480 },
+            { key: 'raids', type: 'toggle', default: true, help: true },
+            ...questionTimer,
+            { key: 'invasions', type: 'toggle', default: true, advanced: true, help: true },
+            { key: 'goldComets', type: 'toggle', default: true, advanced: true, help: true },
+            { key: 'upgrades', type: 'toggle', default: true, advanced: true, help: true },
+            { key: 'bounty', type: 'toggle', default: true, advanced: true, help: true, showIf: s => s.raids !== false },
+            {
+                key: 'hostTimeout', type: 'select', default: 180, advanced: true,
+                options: [{ value: 0 }, { value: 60 }, { value: 180 }, { value: 300 }],
+                help: true
+            },
+            { key: 'lateJoin', type: 'toggle', default: true, advanced: true },
+            { key: 'randomNames', type: 'toggle', default: false, advanced: true, help: true },
+            { key: 'studentMusic', type: 'toggle', default: true, advanced: true, help: true },
+            { key: 'studentSound', type: 'toggle', default: true, advanced: true }
+        ],
+        Host: lazy(() => import('../../games/star-corsairs/HostScreen')),
+        Player: lazy(() => import('../../games/star-corsairs/PlayerScreen'))
     },
     {
         id: 'grid-battle',

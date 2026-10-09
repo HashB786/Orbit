@@ -26,7 +26,7 @@ const SettingRow = ({ game, s, value, set }) => {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{label}</span>
                         {s.type === 'segmented' || options.length <= 3 ? (
-                            <Segmented value={value[s.key]} onChange={v => set(s.key, v)} options={options} size="sm" className="sm:w-72" />
+                            <Segmented value={value[s.key]} onChange={v => set(s.key, v)} options={options} size="sm" className={options.length > 3 ? 'sm:w-96' : 'sm:w-72'} />
                         ) : (
                             <select
                                 value={String(value[s.key])}
